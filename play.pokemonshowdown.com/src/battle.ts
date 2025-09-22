@@ -681,7 +681,7 @@ export class Side {
 	addSideCondition(effect: Effect, persist: boolean) {
 		let condition = effect.id;
 		if (this.sideConditions[condition]) {
-			if (condition === 'spikes' || condition === 'toxicspikes') {
+			if (condition === 'spikes' || condition === 'toxicspikes' || condition === 'gasoline') {
 				this.sideConditions[condition][1]++;
 			}
 			this.battle.scene.addSideCondition(this.n, condition);
@@ -714,6 +714,7 @@ export class Side {
 		case 'spikes':
 		case 'toxicspikes':
 		case 'stickyweb':
+		case 'gasoline' :
 			this.sideConditions[condition] = [effect.name, 1, 0, 0];
 			break;
 		case 'gmaxwildfire':

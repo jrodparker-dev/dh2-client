@@ -1267,6 +1267,62 @@ export class BattleScene implements BattleSceneStub {
 			this.$spritesFront[spriteIndex].append(surge3.$el!);
 			this.sideConditions[siden][id] = [surge1, surge2, surge3];
 			break;
+			case 'gasoline': {
+  // Keep per-side sprite refs (mirror how spikes does it)
+  let gasArray = this.sideConditions[siden]['gasoline'];
+  if (!gasArray) {
+    gasArray = [];
+    this.sideConditions[siden]['gasoline'] = gasArray;
+  }
+
+  // PS convention: [name, layers, minDur, maxDur]
+  const layers = this.battle.sides[siden].sideConditions['gasoline']?.[1] ?? 1;
+
+  if (gasArray.length < 1 && layers >= 1) {
+    const g1 = new Sprite(BattleEffects.gasoline, {
+      display: 'block',
+      x: x - 25,
+      y: y - 40,
+      z: side.z,
+      scale: 0.3,
+    }, this);
+    this.$spritesFront[spriteIndex].append(g1.$el);
+    gasArray.push(g1);
+  }
+  if (gasArray.length < 2 && layers >= 2) {
+    const g2 = new Sprite(BattleEffects.gasoline, {
+      display: 'block',
+      x: x + 30,
+      y: y - 45,
+      z: side.z,
+      scale: 0.3,
+    }, this);
+    this.$spritesFront[spriteIndex].append(g2.$el);
+    gasArray.push(g2);
+  }
+  if (gasArray.length < 3 && layers >= 3) {
+    const g3 = new Sprite(BattleEffects.gasoline, {
+      display: 'block',
+      x: x + 50,
+      y: y - 40,
+      z: side.z,
+      scale: 0.3,
+    }, this);
+    this.$spritesFront[spriteIndex].append(g3.$el);
+    gasArray.push(g3);
+  }
+}
+  break;
+case 'gasoline': {
+  const arr = this.sideConditions[siden]['gasoline'];
+  if (arr && arr.length) {
+    for (let i = 0; i < arr.length; i++) arr[i].destroy();
+    this.sideConditions[siden]['gasoline'] = [];
+  }}
+  break;
+
+
+
 		case 'spikes':
 			let spikeArray = this.sideConditions[siden]['spikes'];
 			if (!spikeArray) {
