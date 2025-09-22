@@ -35704,6 +35704,40 @@ export const BattleMoveAnims: AnimTable = {
 			}, 'swing');
 		},
 	},
+	gasoline: {
+    anim(scene, [attacker, defender]) {
+        scene.showEffect('gasoline', {
+            x: attacker.x,
+            y: attacker.y,
+            z: attacker.z,
+            scale: 0.1,
+            opacity: 0.5,
+        }, {
+            x: defender.x,
+            y: defender.y - 40,
+            z: defender.z,
+            scale: 0.3,
+            opacity: 1,
+        }, 'ballistic');
+
+        // optional: add multiple bursts like Spikes does
+        scene.showEffect('gasoline', {
+            x: attacker.x,
+            y: attacker.y,
+            z: attacker.z,
+            scale: 0.1,
+            opacity: 0.5,
+            time: 200,
+        }, {
+            x: defender.x + 20,
+            y: defender.y - 35,
+            z: defender.z,
+            scale: 0.3,
+            opacity: 1,
+        }, 'ballistic');
+    },
+},
+
 };
 
 // placeholder animations
