@@ -747,14 +747,18 @@ const Dex = new class implements ModdedDex {
 			spriteData.h *= 1.5;
 			spriteData.y += -11;
 		}
-		if (window.BattlePokemonSprites) {
-			if (!window.ModSprites[modSpriteId] && !window.BattlePokemonSprites[modSpriteId] && pokemon !== 'substitute') {
-				spriteData = Dex.getSpriteData('substitute', spriteData.isFrontSprite, {
-					gen: options.gen,
-					mod: options.mod,
-				});
-			}
-		}
+		if (pokemon !== 'substitute') {
+  const knownStock = window.BattlePokemonSprites?.[modSpriteId] || window.BattlePokemonSpritesBW?.[modSpriteId];
+  const knownMod = window.ModSprites?.[modSpriteId];
+  const hasURL = !!spriteData.url;          // we already built a concrete URL earlier
+
+  if (!knownStock && !knownMod && !hasURL) {
+    spriteData = Dex.getSpriteData('substitute', spriteData.isFrontSprite, {
+      gen: options.gen,
+      mod: options.mod,
+    });
+  }
+}
 		return spriteData;
 	}
 
