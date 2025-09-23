@@ -442,10 +442,10 @@ License: GPLv2
 	color: #554433;
 }
 .snowweather {
-	background: #DDEBFF url(../fx/weather-snowscape.png) no-repeat left top;
+	background: #DDEBFF url(../fx/weather-hail.png) no-repeat scroll left top;
 }
 .snowscapeweather {
-  background: #DDEBFF url(../fx/weather-snowscape.png) no-repeat left top;
+  background: #DDEBFF url(../fx/weather-hail.png) no-repeat scroll left top;
 }
 .hailweather {
 	background: #AADDEE url(../fx/weather-hail.png) no-repeat scroll left top;
