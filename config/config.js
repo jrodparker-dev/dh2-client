@@ -19,7 +19,7 @@ Config.whitelist = [
 // address bar is `Config.routes.client`.
 Config.defaultserver = {
 	id: 'dragonheaven',
-	host: '192.168.0.230',
+	host: '192.168.0.76',
 	port: 8000,
 	httpport: 80,
 	altport: 80,
@@ -33,7 +33,7 @@ Config.customcolors = {
 	'zarel': 'aeo'
 };
 /*** Begin automatically generated configuration ***/
-Config.version = "0.11.2 (2678ac84/b472a8ce)";
+Config.version = "0.11.2 (c0e9dca5/b472a8ce)";
 
 Config.routes = {
 	root: '191.101.232.116',
