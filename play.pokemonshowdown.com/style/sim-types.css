@@ -19,7 +19,29 @@
 	background: linear-gradient(to bottom,  hsl(60,14%,77%),  hsl(60,14%,83%));
 	border-color: hsl(60,14%,41%);
 }
-
+/* New Paste*/
+.movemenu button.type-Blood {
+	/* bg: 97 to 90, border: 70 */
+	background: hsl(0, 81%, 69%);
+	background: linear-gradient(to bottom,  hsl(0, 85%, 74%),  hsl(0, 52%, 37%));
+	border-color: hsl(0, 82%, 22%);
+}
+.movemenu button.type-Blood small {
+	color: hsl(4, 87%, 41%);
+}
+.movemenu button.type-Blood:hover {
+	/* bg: 95 to 83, border: 41 */
+	background: hsl(0, 81%, 69%);
+	background: linear-gradient(to bottom,  hsl(0, 85%, 74%),  hsl(0, 52%, 37%));
+	border-color: hsl(0, 87%, 41%);
+}
+.movemenu button.type-Blood:active, .movemenu button.type-Blood.pressed {
+	/* bg: 83 to 88, border: 41 */
+	background: hsl(60,14%,77%);
+	background: linear-gradient(to bottom,  hsl(60,14%,77%),  hsl(60,14%,83%));
+	border-color: hsl(4,87%,41%);
+}
+/* End New Paste */
 .movemenu button.type-Fighting {
 	/* bg: 97 to 90, border: 70 */
 	background: hsl(3,40%,93%);

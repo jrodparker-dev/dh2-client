@@ -289,4 +289,17 @@ if ($replay) {
 
 ?>
 
-<script defer src="js/replays.js?"></script>
+<?php
+$inline = isset($_GET['inline']) || isset($_GET['offline']);
+if ($inline) {
+    $replaysJs = @file_get_contents(__DIR__ . '/js/replays.js');
+    if ($replaysJs === false) $replaysJs = '';
+    echo "<script>\n{$replaysJs}\n</script>\n";
+} else {
+    $ver = gmdate('Ymd'); // simple cache-buster
+    echo '<script defer src="js/replays.js?v=' . $ver . '"></script>';
+}
+?>
+</body>
+</html>
+
