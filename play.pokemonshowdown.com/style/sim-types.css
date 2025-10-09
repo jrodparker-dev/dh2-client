@@ -21,27 +21,71 @@
 }
 /* New Paste*/
 .movemenu button.type-Blood {
-	/* bg: 97 to 90, border: 70 */
-	background: hsl(0, 81%, 69%);
-	background: linear-gradient(to bottom,  hsl(0, 85%, 74%),  hsl(0, 52%, 37%));
-	border-color: hsl(0, 82%, 22%);
+	/* bg: rich dark red tone with smoother gradient */
+	background: hsl(0, 80%, 65%);
+	background: linear-gradient(to bottom, hsl(0, 85%, 72%), hsl(0, 60%, 42%));
+	border-color: hsl(0, 75%, 30%);
 }
 .movemenu button.type-Blood small {
-	color: hsl(4, 87%, 41%);
+	color: hsl(0, 90%, 35%);
 }
 .movemenu button.type-Blood:hover {
-	/* bg: 95 to 83, border: 41 */
-	background: hsl(0, 81%, 69%);
-	background: linear-gradient(to bottom,  hsl(0, 85%, 74%),  hsl(0, 52%, 37%));
-	border-color: hsl(0, 87%, 41%);
+	/* slightly brighter for hover */
+	background: hsl(0, 85%, 68%);
+	background: linear-gradient(to bottom, hsl(0, 90%, 75%), hsl(0, 65%, 45%));
+	border-color: hsl(0, 80%, 38%);
 }
 .movemenu button.type-Blood:active, .movemenu button.type-Blood.pressed {
-	/* bg: 83 to 88, border: 41 */
-	background: hsl(60,14%,77%);
-	background: linear-gradient(to bottom,  hsl(60,14%,77%),  hsl(60,14%,83%));
-	border-color: hsl(4,87%,41%);
+	/* a muted highlight, softer than the hover */
+	background: hsl(0, 30%, 80%);
+	background: linear-gradient(to bottom, hsl(0, 30%, 80%), hsl(0, 30%, 85%));
+	border-color: hsl(0, 80%, 35%);
 }
+
 /* End New Paste */
+.movemenu button.type-Light {
+	/* luminous gradient with warm white glow */
+	background: hsl(50, 80%, 88%);
+	background: linear-gradient(to bottom, hsl(55, 90%, 95%), hsl(45, 60%, 75%));
+	border-color: hsl(45, 40%, 60%);
+}
+.movemenu button.type-Light small {
+	color: hsl(45, 80%, 40%);
+}
+.movemenu button.type-Light:hover {
+	/* brighter hover with more golden hue */
+	background: hsl(55, 90%, 92%);
+	background: linear-gradient(to bottom, hsl(60, 100%, 98%), hsl(45, 70%, 78%));
+	border-color: hsl(45, 50%, 55%);
+}
+.movemenu button.type-Light:active, .movemenu button.type-Light.pressed {
+	/* slight dimming for pressed */
+	background: hsl(50, 30%, 85%);
+	background: linear-gradient(to bottom, hsl(50, 30%, 85%), hsl(50, 30%, 90%));
+	border-color: hsl(45, 50%, 50%);
+}
+.movemenu button.type-Gamma {
+	/* bright lime-green gradient */
+	background: hsl(90, 85%, 55%);
+	background: linear-gradient(to bottom, hsl(95, 90%, 60%), hsl(90, 70%, 40%));
+	border-color: hsl(95, 80%, 30%);
+}
+.movemenu button.type-Gamma small {
+	color: hsl(100, 90%, 25%);
+}
+.movemenu button.type-Gamma:hover {
+	/* brighter, more electric hover */
+	background: hsl(95, 90%, 58%);
+	background: linear-gradient(to bottom, hsl(100, 95%, 65%), hsl(90, 75%, 45%));
+	border-color: hsl(100, 80%, 35%);
+}
+.movemenu button.type-Gamma:active, .movemenu button.type-Gamma.pressed {
+	/* softer green-gray press tone */
+	background: hsl(90, 20%, 75%);
+	background: linear-gradient(to bottom, hsl(90, 20%, 75%), hsl(90, 20%, 80%));
+	border-color: hsl(100, 70%, 35%);
+}
+
 .movemenu button.type-Fighting {
 	/* bg: 97 to 90, border: 70 */
 	background: hsl(3,40%,93%);
