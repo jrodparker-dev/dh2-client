@@ -1195,14 +1195,14 @@ export class BattleScene implements BattleSceneStub {
 			});
 			break;
 		case 'steamfield':
-			const steamfield = new Sprite(BattleEffects.mist, {
+			const steamfield = new Sprite(BattleEffects.steamfield, {
 				display: 'block',
 				x,
 				y,
 				z: side.behind(-27),
 				xscale: 1,
 				yscale: 0,
-				opacity: 0.1,
+				opacity: 0.4,
 			}, this);
 			this.$spritesFront[spriteIndex].append(steamfield.$el!);
 			this.sideConditions[siden][id] = [steamfield];
@@ -1214,6 +1214,12 @@ export class BattleScene implements BattleSceneStub {
 				time: instant ? 0 : 300,
 			});
 			break;
+		case 'steamfield': {
+  const ref = this.sideConditions[siden][id];
+  if (ref && ref[0]) ref[0].destroy();
+  this.sideConditions[siden][id] = undefined!;
+  break;
+}
 		case 'stealthrock':
 			const rock1 = new Sprite(BattleEffects.rock1, {
 				display: 'block',
