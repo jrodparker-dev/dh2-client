@@ -35882,9 +35882,9 @@ BattleMoveAnims['dragonrage'] = {anim: BattleMoveAnims['dragonbreath'].anim};
 BattleMoveAnims['silverwind'] = {anim: BattleMoveAnims['whirlwind'].anim};
 BattleMoveAnims['gust'] = {anim: BattleMoveAnims['whirlwind'].anim};
 BattleMoveAnims['twister'] = {anim: BattleMoveAnims['whirlwind'].anim};
-BattleMoveAnims['razorwind'].anim = BattleMoveAnims['airslash'].anim;
-BattleMoveAnims['dreadgale'].anim = BattleMoveAnims['airslash'].anim;
-BattleMoveAnims['cyclonewing'].anim = BattleMoveAnims['airslash'].anim;
+BattleMoveAnims['razorwind'] = {anim: BattleMoveAnims['airslash'].anim};
+BattleMoveAnims['dreadgale'] = {anim: BattleMoveAnims['airslash'].anim};
+BattleMoveAnims['cyclonewing'] = {anim: BattleMoveAnims['airslash'].anim};
 
 BattleMoveAnims['chatter'] = {anim: BattleMoveAnims['hypervoice'].anim};
 BattleMoveAnims['echoedvoice'] = {anim: BattleMoveAnims['hypervoice'].anim};
