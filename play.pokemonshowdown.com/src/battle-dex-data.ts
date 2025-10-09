@@ -621,6 +621,17 @@ const BattlePokemonIconIndexes: {[id: string]: number} = {
 	draggalong: 1512 + 77,
 	ramnarok: 1512 + 78,
 	thornox: 1512 + 79,
+	aqualume: 1512 + 80,
+	embergeist: 1512 + 81,
+	ferraclaw: 1512 + 82,
+	floracern: 1512 + 83,
+	glaciarch: 1512 + 84,
+	oblivara: 1512 + 85,
+	pyrelith: 1512 + 86,
+	terrabite: 1512 + 87,
+	umbraquill: 1512 + 88,
+	venomire: 1512 + 89,
+	zephyren: 1512 + 90,
 };
 
 const BattlePokemonIconIndexesLeft: {[id: string]: number} = {
