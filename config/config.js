@@ -33,7 +33,7 @@ Config.customcolors = {
 	'zarel': 'aeo'
 };
 /*** Begin automatically generated configuration ***/
-Config.version = "0.11.2 (30249ecf/b472a8ce)";
+Config.version = "0.11.2 (5f7f0020/b472a8ce)";
 
 Config.routes = {
 	root: '191.101.232.116',

@@ -710,6 +710,9 @@ export class Side {
 		case 'luckychant':
 			this.sideConditions[condition] = [effect.name, 1, 5, 0];
 			break;
+		case 'steamfield':
+			this.sideConditions[condition] = [effect.name, 1, 3, 0];
+			break;
 		case 'stealthrock':
 		case 'spikes':
 		case 'toxicspikes':

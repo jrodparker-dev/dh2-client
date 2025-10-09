@@ -1194,6 +1194,26 @@ export class BattleScene implements BattleSceneStub {
 				time: instant ? 0 : 300,
 			});
 			break;
+		case 'steamfield':
+			const steamfield = new Sprite(BattleEffects.mist, {
+				display: 'block',
+				x,
+				y,
+				z: side.behind(-27),
+				xscale: 1,
+				yscale: 0,
+				opacity: 0.1,
+			}, this);
+			this.$spritesFront[spriteIndex].append(steamfield.$el!);
+			this.sideConditions[siden][id] = [steamfield];
+			steamfield.anim({
+				opacity: 0.7,
+				time: instant ? 0 : 400,
+			}).anim({
+				opacity: 0.3,
+				time: instant ? 0 : 300,
+			});
+			break;
 		case 'stealthrock':
 			const rock1 = new Sprite(BattleEffects.rock1, {
 				display: 'block',
@@ -1944,6 +1964,7 @@ export class PokemonSprite extends Sprite {
 		// Gen 1
 		lightscreen: ['Light Screen', 'good'],
 		reflect: ['Reflect', 'good'],
+		steamfield: ['Steam Field', 'bad'],
 	};
 	forme = '';
 	cryurl: string | undefined = undefined;
@@ -3191,6 +3212,10 @@ const BattleEffects: {[k: string]: SpriteData} = {
 	protect: {
 		rawHTML: '<div class="turnstatus-protect" style="display:none;position:absolute" />',
 		w: 100, h: 70,
+	},
+	steamfield: {
+		url: 'steamfield.png',
+		w: 100, h: 100,
 	},
 	auroraveil: {
 		rawHTML: '<div class="sidecondition-auroraveil" style="display:none;position:absolute" />',
