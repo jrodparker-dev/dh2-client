@@ -171,29 +171,36 @@ class BattleDiv extends preact.Component {
 
 
 function MoveButton(props: {
-	children: preact.ComponentChildren;
-	cmd: string;
-	moveData: { pp: number; maxpp: number };
-	type: TypeName;
-	tooltip: string;
-}) {
-	return (
-		<button
-			name="cmd"
-			value={props.cmd}
-			class={`type-${props.type} has-tooltip`}
-			data-tooltip={props.tooltip}
-		>
-			{/* Allow string or JSX children */}
-			{props.children}
-			<br />
-			<small class="type">{props.type}</small>{' '}
-			<small class="pp">
-				{props.moveData.pp}/{props.moveData.maxpp}
-			</small>
-			&nbsp;
-		</button>
-	);
+    children: preact.ComponentChildren;
+    cmd: string;
+    moveData: { pp: number; maxpp: number };
+    type: TypeName;
+    tooltip: string;
+}): JSX.Element {
+    // Detect if the command is a move choice (e.g., "/move 2", "/move 2 zmove")
+    const moveMatch = /^\/move\s+(\d+)(?:\s+(zmove|max))?$/i.exec(props.cmd);
+
+    // If it's a move choice, use 'chooseMove' and the slot number (e.g., 1, 2, 3, 4)
+    const nameAttr = moveMatch ? 'chooseMove' : 'cmd';
+    const valueAttr = moveMatch ? Number(moveMatch[1]) : props.cmd;
+
+    return (
+        <button
+            name={nameAttr}
+            value={valueAttr}
+            class={`type-${props.type} has-tooltip`}
+            data-tooltip={props.tooltip}
+        >
+            {/* The children now contain the move name and the effectiveness tag */}
+            {props.children}
+            <br />
+            <small class="type">{props.type}</small>{' '}
+            <small class="pp">
+                {props.moveData.pp}/{props.moveData.maxpp}
+            </small>
+            &nbsp;
+        </button>
+    );
 }
 
 function PokemonButton(props: {
@@ -445,20 +452,20 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
         }
 
         // *** FIX/ADDITION 3: Apply effectiveness logic to regular moves ***
-        return active.moves.map((moveData, i) => {
-            const move = dex.moves.get(moveData.name);
-            const tooltip = `move|${moveData.name}|${pokemonIndex}`;
-            // 1. Calculate the effectiveness label
-            const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
 
-            return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
-                {/* 2. Render the move name and the effectiveness tag */}
-                <>
-                    {move.name}
-                    {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
-                </>
-            </MoveButton>;
-        });
+return active.moves.map((moveData, i) => {
+    const move = dex.moves.get(moveData.name);
+    const tooltip = `move|${moveData.name}|${pokemonIndex}`;
+    const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
+
+    return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
+        <>
+            {move.name}
+            {/* The FIX: Include a space/separator within the fragment */}
+            {eff.text ? <>&nbsp;<small class={`eff-tag ${eff.cls}`}>{eff.text}</small></> : null}
+        </>
+    </MoveButton>;
+});
     }
 	renderMoveTargetControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
 		const battle = this.props.room.battle;
