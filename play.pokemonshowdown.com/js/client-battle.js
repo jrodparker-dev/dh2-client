@@ -672,49 +672,60 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// Compute short effectiveness label for the default target (slot 0) in singles.
-// ---- effectiveness label (client-side computation) ----
+// ---- effectiveness label (robust + debuggable) ----
 var eff = '';
-
 try {
-  // Helper: compute PS-style effectiveness using the client type chart
-  // Returns: -Infinity (immune), negative (resist), 0 (neutral), positive (weak)
+  // 0) Optional debug toggle from console: window.SHOW_EFF_DEBUG = true;
+
+  // 1) Normalize attacking type (fallback to base move.type if tooltips gave nothing)
+  var atkType = moveType || (move && move.type) || null;
+  if (atkType && Dex.types && Dex.types.get) {
+    var atkTypeObj = Dex.types.get(atkType);
+    if (atkTypeObj && atkTypeObj.exists) atkType = atkTypeObj.name; // canonical name (e.g., 'Fire')
+    else atkType = null;
+  }
+
+  // 2) Pick a valid foe (first non-fainted with types)
+  var foe = null;
+  var foes = (this.battle && this.battle.foeSide && this.battle.foeSide.active) ? this.battle.foeSide.active : [];
+  for (var fi = 0; fi < foes.length; fi++) {
+    if (foes[fi] && !foes[fi].fainted && (foes[fi].types && foes[fi].types.length)) {
+      foe = foes[fi];
+      break;
+    }
+  }
+
+  // 3) Compute effectiveness using client type chart
   function clientGetEffectiveness(attackingType, defenderTypes) {
     if (!attackingType || !defenderTypes || !defenderTypes.length) return 0;
     var total = 0;
     for (var i = 0; i < defenderTypes.length; i++) {
-      var defType = defenderTypes[i];
-      var defTypeData = Dex.types && Dex.types.get ? Dex.types.get(defType) : null;
-      if (!defTypeData || !defTypeData.damageTaken) continue;
-
-      var dt = defTypeData.damageTaken[attackingType];
-      // PS mapping: 0 = neutral, 1 = resist, 2 = weak, 3 = immune
-      if (dt === 3) return -Infinity;      // immune trumps everything
-      if (dt === 1) total -= 1;            // resist
-      else if (dt === 2) total += 1;       // super effective
-      // 0 (neutral) -> no change
+      var defTypeObj = Dex.types.get(defenderTypes[i]);
+      if (!defTypeObj || !defTypeObj.damageTaken) continue;
+      var dt = defTypeObj.damageTaken[attackingType]; // 0=neutral,1=resist,2=weak,3=immune
+      if (dt === 3) return -Infinity; // immunity trumps all
+      if (dt === 1) total -= 1;       // resist
+      else if (dt === 2) total += 1;  // super-effective
     }
     return total;
   }
 
-  // Get the active foe's types
-  var foeActive = (this.battle && this.battle.foeSide && this.battle.foeSide.active)
-    ? this.battle.foeSide.active[0]
-    : null;
-  var ttypes = foeActive
-    ? (typeof foeActive.getTypes === 'function' ? foeActive.getTypes() : (foeActive.types || []))
-    : [];
-
-  if (moveType && typeof moveType === 'string' && ttypes.length) {
-    var effVal = clientGetEffectiveness(moveType, ttypes);
-    if (effVal === -Infinity) eff = 'Immune';
-    else if (effVal > 0)      eff = 'SE';
-    else if (effVal < 0)      eff = 'NVE';
-    else                      eff = ''; // neutral
+  if (atkType && foe) {
+    var ttypes = (typeof foe.getTypes === 'function') ? foe.getTypes() : (foe.types || []);
+    var effVal = clientGetEffectiveness(atkType, ttypes);
+    eff = (effVal === -Infinity) ? 'Immune' : (effVal > 0 ? 'SE' : (effVal < 0 ? 'NVE' : ''));
+    if (window.SHOW_EFF_DEBUG) {
+      console.debug('[EFF]', { move: name, atkType, foe: foe.name, ttypes, effVal, eff });
+    }
+  } else if (window.SHOW_EFF_DEBUG) {
+    console.debug('[EFF:SKIP]', { move: name, moveType, atkType, foeFound: !!foe });
   }
-} catch (_) {
+} catch (e) {
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
   eff = ''; // fail-safe
 }
 // ---- end effectiveness label ----
+
 
 
 					if (moveData.disabled) {
