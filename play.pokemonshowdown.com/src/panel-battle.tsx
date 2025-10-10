@@ -385,57 +385,81 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
   return { text: 'Effective', cls: 'eff-neutral' };
 }
 
-	renderMoveControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
-		const dex = this.props.room.battle.dex;
-		const pokemonIndex = choices.index();
-		const active = choices.currentMoveRequest();
-		if (!active) return <div class="message-error">Invalid pokemon</div>;
+	// panel-battle.tsx (Snippet)
 
-		if (choices.current.max || (active.maxMoves && !active.canDynamax)) {
-			if (!active.maxMoves) {
-				return <div class="message-error">Maxed with no max moves</div>;
-			}
-			return active.moves.map((moveData, i) => {
-  const move = dex.moves.get(moveData.name);
-  const tooltip = `move|${moveData.name}|${pokemonIndex}`;
-  const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
+// ... (other methods in BattlePanel)
+
+    renderMoveControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
+        const dex = this.props.room.battle.dex;
+        const pokemonIndex = choices.index();
+        const active = choices.currentMoveRequest();
+        if (!active) return <div class="message-error">Invalid pokemon</div>;
+
+        if (choices.current.max || (active.maxMoves && !active.canDynamax)) {
+            if (!active.maxMoves) {
+                return <div class="message-error">Maxed with no max moves</div>;
+            }
+            return active.moves.map((moveData, i) => {
+                const move = dex.moves.get(moveData.name);
+                const tooltip = `move|${moveData.name}|${pokemonIndex}`;
+                const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
 
 
-  return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
-    <>
-      {move.name}
-      {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
-    </>
-  </MoveButton>;
-});
+                return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
+                    <>
+                        {move.name}
+                        {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
+                    </>
+                </MoveButton>;
+            });
 
-		}
+        }
 
-		if (choices.current.z) {
-			if (!active.zMoves) {
-				return <div class="message-error">No Z moves</div>;
-			}
-			return active.moves.map((moveData, i) => {
-				const move = dex.moves.get(moveData.name);
-				const zMoveData = active.zMoves![i];
-				if (!zMoveData) {
-					return <button disabled>&nbsp;</button>;
-				}
-				const tooltip = `zmove|${moveData.name}|${pokemonIndex}`;
-				return <MoveButton cmd={`/move ${i + 1} zmove`} type={move.type} tooltip={tooltip} moveData={{pp: 1, maxpp: 1}}>
-					{zMoveData.name}
-				</MoveButton>;
-			});
-		}
+        if (choices.current.z) {
+            if (!active.zMoves) {
+                return <div class="message-error">No Z moves</div>;
+            }
+            return active.moves.map((moveData, i) => {
+                const move = dex.moves.get(moveData.name);
+                const zMoveData = active.zMoves![i];
+                if (!zMoveData) {
+                    return <button disabled>&nbsp;</button>;
+                }
+                const tooltip = `zmove|${moveData.name}|${pokemonIndex}`;
+                // *** FIX/ADDITION 1: Calculate effectiveness for the resulting Z-Move type ***
+                // The Z-Move's type is often the same as the base move, but might differ.
+                // Assuming zMoveData has the final type or you use the base move's type.
+                // Since zMoveData.name is often the resulting Z-Move (like 'Savage Spin-Out'),
+                // we should get the type from the Z-Move itself if possible, or fall back to the base move's type.
+                const zMove = dex.moves.get(zMoveData.name);
+                const eff = this.effectivenessLabel(zMove.type, this.props.room.battle, this.props.room.battle.dex);
+                
+                return <MoveButton cmd={`/move ${i + 1} zmove`} type={move.type} tooltip={tooltip} moveData={{pp: 1, maxpp: 1}}>
+                    {/* *** FIX/ADDITION 2: Render the Z-Move name and the effectiveness tag *** */}
+                    <>
+                        {zMoveData.name}
+                        {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
+                    </>
+                </MoveButton>;
+            });
+        }
 
-		return active.moves.map((moveData, i) => {
-			const move = dex.moves.get(moveData.name);
-			const tooltip = `move|${moveData.name}|${pokemonIndex}`;
-			return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
-				{move.name}
-			</MoveButton>;
-		});
-	}
+        // *** FIX/ADDITION 3: Apply effectiveness logic to regular moves ***
+        return active.moves.map((moveData, i) => {
+            const move = dex.moves.get(moveData.name);
+            const tooltip = `move|${moveData.name}|${pokemonIndex}`;
+            // 1. Calculate the effectiveness label
+            const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
+
+            return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
+                {/* 2. Render the move name and the effectiveness tag */}
+                <>
+                    {move.name}
+                    {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
+                </>
+            </MoveButton>;
+        });
+    }
 	renderMoveTargetControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
 		const battle = this.props.room.battle;
 		const moveTarget = choices.getChosenMove(choices.current, choices.index()).target;
