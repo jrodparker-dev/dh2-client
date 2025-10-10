@@ -677,34 +677,6 @@
 						movebuttons += '<button class="type-' + moveType + ' has-tooltip" name="chooseMove" value="' + (i + 1) + '" data-move="' + BattleLog.escapeHTML(moveData.move) + '" data-target="' + BattleLog.escapeHTML(moveData.target) + '" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
 						hasMoves = true;
 					}
-					// === effectiveness tag (regular move) ===
-(function () {
-	// Don’t bother if we don’t have a typing yet
-	if (!moveType) return;
-
-	var effText = '', effCls = '';
-	// Alive foes
-	var targets = (this.battle.farSide.active || []).filter(function (p) { return p && !p.fainted; });
-
-	// If more than one foe, show Varies (doubles, etc.)
-	if (targets.length > 1) {
-		effText = 'Varies'; effCls = 'eff-varies';
-	} else if (targets.length === 1) {
-		var t = targets[0];
-		var tTypes = (typeof t.getTypes === 'function') ? t.getTypes() : (t.types || []);
-		// Immunity first
-		if (!Dex.getImmunity(moveType, tTypes)) {
-			effText = 'No effect'; effCls = 'eff-immune';
-		} else {
-			var mod = Dex.getEffectiveness(moveType, tTypes);
-			if (mod <= -1) { effText = 'Not very effective'; effCls = (mod <= -2 ? 'eff-nve2' : 'eff-nve'); }
-			else if (mod >= 1) { effText = 'Super effective'; effCls = (mod >= 2 ? 'eff-se2' : 'eff-se'); }
-			else { effText = 'Effective'; effCls = 'eff-neutral'; }
-		}
-	}
-	if (effText) movebuttons += '&nbsp;<small class="eff-tag ' + effCls + '">' + effText + '</small>';
-}).call(this);
-
 					movebuttons += name + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
 				}
 				if (!hasMoves) {
@@ -738,31 +710,6 @@
 								} else if (!curActive.moves[i].maxpp) {
 									pp = '&ndash;';
 								}
-								// === effectiveness tag (Z / Max move) ===
-(function () {
-	// For Max Guard or unknown type, skip
-	if (!moveType || specialMove.name === 'Max Guard') return;
-
-	var effText = '', effCls = '';
-	var targets = (this.battle.farSide.active || []).filter(function (p) { return p && !p.fainted; });
-
-	if (targets.length > 1) {
-		effText = 'Varies'; effCls = 'eff-varies';
-	} else if (targets.length === 1) {
-		var t = targets[0];
-		var tTypes = (typeof t.getTypes === 'function') ? t.getTypes() : (t.types || []);
-		if (!Dex.getImmunity(moveType, tTypes)) {
-			effText = 'No effect'; effCls = 'eff-immune';
-		} else {
-			var mod = Dex.getEffectiveness(moveType, tTypes);
-			if (mod <= -1) { effText = 'Not very effective'; effCls = (mod <= -2 ? 'eff-nve2' : 'eff-nve'); }
-			else if (mod >= 1) { effText = 'Super effective'; effCls = (mod >= 2 ? 'eff-se2' : 'eff-se'); }
-			else { effText = 'Effective'; effCls = 'eff-neutral'; }
-		}
-	}
-	if (effText) movebuttons += '&nbsp;<small class="eff-tag ' + effCls + '">' + effText + '</small>';
-}).call(this);
-
 								movebuttons += specialMove.name + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
 							} else {
 								movebuttons += '<button disabled>&nbsp;</button>';
