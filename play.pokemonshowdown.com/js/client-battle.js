@@ -671,15 +671,42 @@
 					if (name.substr(0, 12) === 'Hidden Power') name = 'Hidden Power';
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
-					var eff = '';
-					if (this.battle.foeSide.active[0]) {
-					const target = this.battle.foeSide.active[0];
-					const effVal = Dex.getEffectiveness(moveType, target.getTypes());
-					if (effVal > 0) eff = 'SE';
-					else if (effVal < 0) eff = 'NVE';
-					else if (effVal === -Infinity) eff = 'Immune'; // in case of total immunity (rare, handled below too)
-					else eff = '';
-					}
+					// Compute short effectiveness label for the default target (slot 0) in singles.
+// Defensively handle missing types and the Dex handle.
+var eff = '';
+try {
+  var dexObj = (this.battle && this.battle.dex) ? this.battle.dex : Dex;
+
+  // Must have a valid moveType string
+  if (moveType && typeof moveType === 'string') {
+    // Ensure there IS a foe active
+    var foeActive = this.battle && this.battle.foeSide && this.battle.foeSide.active
+      ? this.battle.foeSide.active[0]
+      : null;
+
+    if (foeActive) {
+      // Client BattlePokemon may have .types (array). Some builds also expose .getTypes().
+      var ttypes = (typeof foeActive.getTypes === 'function') ? foeActive.getTypes() : foeActive.types || [];
+      if (Array.isArray(ttypes) && ttypes.length) {
+        var effVal = dexObj.getEffectiveness(moveType, ttypes);
+        // In PS, -Infinity represents immunity
+        if (effVal === -Infinity) {
+          eff = 'Immune';
+        } else if (effVal > 0) {
+          eff = 'SE';
+        } else if (effVal < 0) {
+          eff = 'NVE';
+        } else {
+          eff = ''; // neutral: leave blank
+        }
+      }
+    }
+  }
+} catch (e) {
+  // If anything goes wrong, fail safe (no label) so buttons still render
+  eff = '';
+}
+
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
 					} else {
