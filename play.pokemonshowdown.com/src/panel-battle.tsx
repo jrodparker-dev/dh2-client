@@ -453,22 +453,32 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 
         // *** FIX/ADDITION 3: Apply effectiveness logic to regular moves ***
 
+// panel-battle.tsx (Inside renderMoveControls, for regular moves)
+
 return active.moves.map((moveData, i) => {
     const move = dex.moves.get(moveData.name);
     const tooltip = `move|${moveData.name}|${pokemonIndex}`;
     
-    // const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex); // Original line
+    // Original line: const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
+    // Temporary TEST line: 
+    const eff = {text: 'TEST', cls: 'eff-se'}; // <--- KEEP this line for final testing/debugging
 
-    // *** TEMPORARY TEST FIX: Force the label to appear ***
-    const eff = {text: 'TEST', cls: 'eff-se'}; // <--- Use this line instead
-
-    return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
-        <>
+    return (
+        <button
+            class={`type-${move.type} has-tooltip`}
+            name="chooseMove" // name for live moves
+            value={i + 1}      // slot number
+            data-tooltip={tooltip}
+        >
             {move.name}
-            {/* Keeping the &nbsp; fix as it's structurally correct */}
+            {/* The effectiveness label, including the essential space */}
             {eff.text ? <>&nbsp;<small class={`eff-tag ${eff.cls}`}>{eff.text}</small></> : null}
-        </>
-    </MoveButton>;
+            
+            <br />
+            <small class="type">{move.type}</small>{' '}
+            <small class="pp">{moveData.pp}/{moveData.maxpp}</small>&nbsp;
+        </button>
+    );
 });
     }
 	renderMoveTargetControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
