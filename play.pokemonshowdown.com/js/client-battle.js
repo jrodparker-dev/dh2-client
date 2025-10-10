@@ -672,40 +672,50 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// Compute short effectiveness label for the default target (slot 0) in singles.
-// Defensively handle missing types and the Dex handle.
+// ---- effectiveness label (client-side computation) ----
 var eff = '';
+
 try {
-  var dexObj = (this.battle && this.battle.dex) ? this.battle.dex : Dex;
+  // Helper: compute PS-style effectiveness using the client type chart
+  // Returns: -Infinity (immune), negative (resist), 0 (neutral), positive (weak)
+  function clientGetEffectiveness(attackingType, defenderTypes) {
+    if (!attackingType || !defenderTypes || !defenderTypes.length) return 0;
+    var total = 0;
+    for (var i = 0; i < defenderTypes.length; i++) {
+      var defType = defenderTypes[i];
+      var defTypeData = Dex.types && Dex.types.get ? Dex.types.get(defType) : null;
+      if (!defTypeData || !defTypeData.damageTaken) continue;
 
-  // Must have a valid moveType string
-  if (moveType && typeof moveType === 'string') {
-    // Ensure there IS a foe active
-    var foeActive = this.battle && this.battle.foeSide && this.battle.foeSide.active
-      ? this.battle.foeSide.active[0]
-      : null;
-
-    if (foeActive) {
-      // Client BattlePokemon may have .types (array). Some builds also expose .getTypes().
-      var ttypes = (typeof foeActive.getTypes === 'function') ? foeActive.getTypes() : foeActive.types || [];
-      if (Array.isArray(ttypes) && ttypes.length) {
-        var effVal = dexObj.getEffectiveness(moveType, ttypes);
-        // In PS, -Infinity represents immunity
-        if (effVal === -Infinity) {
-          eff = 'Immune';
-        } else if (effVal > 0) {
-          eff = 'SE';
-        } else if (effVal < 0) {
-          eff = 'NVE';
-        } else {
-          eff = ''; // neutral: leave blank
-        }
-      }
+      var dt = defTypeData.damageTaken[attackingType];
+      // PS mapping: 0 = neutral, 1 = resist, 2 = weak, 3 = immune
+      if (dt === 3) return -Infinity;      // immune trumps everything
+      if (dt === 1) total -= 1;            // resist
+      else if (dt === 2) total += 1;       // super effective
+      // 0 (neutral) -> no change
     }
+    return total;
   }
-} catch (e) {
-  // If anything goes wrong, fail safe (no label) so buttons still render
-  eff = '';
+
+  // Get the active foe's types
+  var foeActive = (this.battle && this.battle.foeSide && this.battle.foeSide.active)
+    ? this.battle.foeSide.active[0]
+    : null;
+  var ttypes = foeActive
+    ? (typeof foeActive.getTypes === 'function' ? foeActive.getTypes() : (foeActive.types || []))
+    : [];
+
+  if (moveType && typeof moveType === 'string' && ttypes.length) {
+    var effVal = clientGetEffectiveness(moveType, ttypes);
+    if (effVal === -Infinity) eff = 'Immune';
+    else if (effVal > 0)      eff = 'SE';
+    else if (effVal < 0)      eff = 'NVE';
+    else                      eff = ''; // neutral
+  }
+} catch (_) {
+  eff = ''; // fail-safe
 }
+// ---- end effectiveness label ----
+
 
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
