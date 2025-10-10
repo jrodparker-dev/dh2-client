@@ -475,3 +475,24 @@
 	background: linear-gradient(90deg, hsl(330, 65%, 45%), hsl(126, 71%, 73%), hsl(231, 100%, 86%));
 	border-color: linear-gradient(90deg, hsl(330, 66%, 58%), hsl(126, 79%, 65%), hsl(231, 98%, 65%));
 }
+.movemenu button .eff-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 1.2;
+  opacity: 0.95;
+  vertical-align: middle;
+  background: rgba(0,0,0,0.15);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.movemenu button .eff-se    { background: rgba(20,180,20,0.20); }
+.movemenu button .eff-se2   { background: rgba(20,180,20,0.30); font-weight: 600; }
+.movemenu button .eff-neutral { background: rgba(0,0,0,0.12); }
+.movemenu button .eff-nve   { background: rgba(180,120,0,0.20); }
+.movemenu button .eff-nve2  { background: rgba(180,120,0,0.28); font-weight: 600; }
+.movemenu button .eff-immune{ background: rgba(180,30,30,0.25); font-weight: 600; }
+.movemenu button .eff-varies{ background: rgba(120,120,120,0.22); }
+

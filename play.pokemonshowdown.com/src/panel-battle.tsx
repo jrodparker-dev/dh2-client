@@ -169,14 +169,33 @@ class BattleDiv extends preact.Component {
 	}
 }
 
+
 function MoveButton(props: {
-	children: string, cmd: string, moveData: {pp: number, maxpp: number}, type: TypeName, tooltip: string,
+	children: preact.ComponentChildren;
+	cmd: string;
+	moveData: { pp: number; maxpp: number };
+	type: TypeName;
+	tooltip: string;
 }) {
-	return <button name="cmd" value={props.cmd} class={`type-${props.type} has-tooltip`} data-tooltip={props.tooltip}>
-		{props.children}<br />
-		<small class="type">{props.type}</small> <small class="pp">{props.moveData.pp}/{props.moveData.maxpp}</small>&nbsp;
-	</button>;
+	return (
+		<button
+			name="cmd"
+			value={props.cmd}
+			class={`type-${props.type} has-tooltip`}
+			data-tooltip={props.tooltip}
+		>
+			{/* Allow string or JSX children */}
+			{props.children}
+			<br />
+			<small class="type">{props.type}</small>{' '}
+			<small class="pp">
+				{props.moveData.pp}/{props.moveData.maxpp}
+			</small>
+			&nbsp;
+		</button>
+	);
 }
+
 function PokemonButton(props: {
 	pokemon: Pokemon | ServerPokemon | null, cmd: string, noHPBar?: boolean, disabled?: boolean | 'fade', tooltip: string,
 }) {
@@ -338,6 +357,34 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 			</p>
 		</div>;
 	}
+	private effectivenessLabel(
+  moveType: string,
+  battle: any,
+  dexIn?: any
+): { text: string; cls: string } {
+  if (!moveType || !battle) return { text: '', cls: '' };
+
+  const dex = (dexIn || battle.dex) as any; // <-- cast fixes TS complaints
+
+  const foeActive = battle?.farSide?.active?.filter((p: any) => p && !p.fainted) || [];
+  if (!foeActive.length) return { text: '', cls: '' };
+  if (foeActive.length > 1) return { text: 'Varies', cls: 'eff-varies' };
+
+  const target = foeActive[0];
+  const targetTypes: string[] =
+    typeof target.getTypes === 'function' ? target.getTypes() : (target.types || []);
+
+  // Immunity first
+  if (!dex.getImmunity(moveType as ID, targetTypes as any)) {
+    return { text: 'No effect', cls: 'eff-immune' };
+  }
+
+  const mod = dex.getEffectiveness(moveType as ID, targetTypes as any);
+  if (mod <= -1) return { text: 'Not very effective', cls: mod <= -2 ? 'eff-nve2' : 'eff-nve' };
+  if (mod >= 1) return { text: 'Super effective', cls: mod >= 2 ? 'eff-se2' : 'eff-se' };
+  return { text: 'Effective', cls: 'eff-neutral' };
+}
+
 	renderMoveControls(request: BattleMoveRequest, choices: BattleChoiceBuilder) {
 		const dex = this.props.room.battle.dex;
 		const pokemonIndex = choices.index();
@@ -349,14 +396,19 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 				return <div class="message-error">Maxed with no max moves</div>;
 			}
 			return active.moves.map((moveData, i) => {
-				const move = dex.moves.get(moveData.name);
-				const maxMoveData = active.maxMoves![i];
-				const gmaxTooltip = maxMoveData.id.startsWith('gmax') ? `|${maxMoveData.id}` : ``;
-				const tooltip = `maxmove|${moveData.name}|${pokemonIndex}${gmaxTooltip}`;
-				return <MoveButton cmd={`/move ${i + 1} max`} type={move.type} tooltip={tooltip} moveData={moveData}>
-					{maxMoveData.name}
-				</MoveButton>;
-			});
+  const move = dex.moves.get(moveData.name);
+  const tooltip = `move|${moveData.name}|${pokemonIndex}`;
+  const eff = this.effectivenessLabel(move.type, this.props.room.battle, this.props.room.battle.dex);
+
+
+  return <MoveButton cmd={`/move ${i + 1}`} type={move.type} tooltip={tooltip} moveData={moveData}>
+    <>
+      {move.name}
+      {eff.text ? <small class={`eff-tag ${eff.cls}`}>{eff.text}</small> : null}
+    </>
+  </MoveButton>;
+});
+
 		}
 
 		if (choices.current.z) {
