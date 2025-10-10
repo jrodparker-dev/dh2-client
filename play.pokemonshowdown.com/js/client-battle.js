@@ -707,7 +707,8 @@ var effHtml = '';
         else                { effText = 'Effective';            effCls = 'eff-neutral'; }
       }
     }
-    if (effText) effHtml = '<div class="eff-line"><small class="eff-tag ' + effCls + '">' + effText + '</small></div>';
+    // NEW (Fix: Use <span> and &nbsp; for inline rendering)
+if (effText) effHtml = '&nbsp;<span class="eff-tag ' + effCls + '">' + effText + '</span>';
   } catch (e) { /* never break the menu */ }
 }).call(this);
 
