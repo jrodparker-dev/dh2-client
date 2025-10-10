@@ -609,6 +609,56 @@ class BattleTooltips {
 				category,
 			});
 		}
+		// --- BEGIN effectiveness label (buttons' tooltip) ---
+{
+  // Collect all living foes this move could hit right now
+  const foes = foeActive.filter((p): p is Pokemon => !!p && !p.fainted);
+
+  const effFor = (t: Pokemon) => {
+    const ttypes: readonly string[] =
+      (typeof (t as any).getTypes === 'function' ? (t as any).getTypes() : (t as any).types) || [];
+    // Immunity first
+    if (!(this.battle.dex as any).getImmunity(moveType as ID, ttypes as any)) {
+      return {code: 'immune', text: 'No effect'};
+    }
+    const mod = (this.battle.dex as any).getEffectiveness(moveType as ID, ttypes as any);
+    if (mod <= -2) return {code: 'nve2', text: 'Not very effective'};
+    if (mod === -1) return {code: 'nve',  text: 'Not very effective'};
+    if (mod === 0)  return {code: 'ok',   text: 'Effective'};
+    if (mod === 1)  return {code: 'se',   text: 'Super effective'};
+    return {code: 'se2', text: 'Super effective'}; // mod >= 2
+  };
+
+  let labelText = '';
+  let cls = '';
+
+  if (!foes.length) {
+    labelText = 'Effective';
+    cls = 'eff-neutral';
+  } else {
+    const results = foes.map(effFor);
+    const allSame = results.every(r => r.code === results[0].code);
+    if (results.length > 1 && !allSame) {
+      labelText = 'Varies';
+      cls = 'eff-varies';
+    } else {
+      labelText = results[0].text;
+      switch (results[0].code) {
+        case 'immune': cls = 'eff-immune'; break;
+        case 'nve2':   cls = 'eff-nve2';   break;
+        case 'nve':    cls = 'eff-nve';    break;
+        case 'se2':    cls = 'eff-se2';    break;
+        case 'se':     cls = 'eff-se';     break;
+        default:       cls = 'eff-neutral';
+      }
+    }
+  }
+
+  // Add a compact line into the tooltip (styled via your CSS)
+  text += `<p class="movetag"><small class="eff-tag ${cls}">${labelText}</small></p>`;
+}
+// --- END effectiveness label ---
+
 
 		text += '<h2>' + move.name + '<br />';
 
