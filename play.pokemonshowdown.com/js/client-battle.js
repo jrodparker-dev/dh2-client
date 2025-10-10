@@ -677,49 +677,8 @@
 						movebuttons += '<button class="type-' + moveType + ' has-tooltip" name="chooseMove" value="' + (i + 1) + '" data-move="' + BattleLog.escapeHTML(moveData.move) + '" data-target="' + BattleLog.escapeHTML(moveData.target) + '" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
 						hasMoves = true;
 					}
-					// === effectiveness tag (regular move) ===
-var effHtml = '';
-(function () {
-  try {
-    if (!moveType) return;
-
-    var battle = this && this.battle;
-    if (!battle) return;
-
-    var dex = battle.dex;
-    var foes = (battle.farSide && battle.farSide.active) ? battle.farSide.active : [];
-    var targets = foes.filter(function (p) { return p && !p.fainted; });
-
-    var effText = '', effCls = '';
-    if (targets.length > 1) {
-      effText = 'Varies'; effCls = 'eff-varies';
-    } else if (targets.length === 1) {
-      var t = targets[0];
-      var tTypes = (t && typeof t.getTypes === 'function') ? t.getTypes()
-                 : (t && t.types) ? t.types : [];
-
-      if (!dex.getImmunity(moveType, tTypes)) {
-        effText = 'No effect'; effCls = 'eff-immune';
-      } else {
-        var mod = dex.getEffectiveness(moveType, tTypes);
-        if (mod <= -1)      { effText = 'Not very effective'; effCls = (mod <= -2 ? 'eff-nve2' : 'eff-nve'); }
-        else if (mod >= 1)  { effText = 'Super effective';     effCls = (mod >= 2 ? 'eff-se2'  : 'eff-se'); }
-        else                { effText = 'Effective';            effCls = 'eff-neutral'; }
-      }
-    }
-    // NEW (Fix: Use <span> and &nbsp; for inline rendering)
-if (effText) effHtml = '&nbsp;<span class="eff-tag ' + effCls + '">' + effText + '</span>';
-  } catch (e) { /* never break the menu */ }
-}).call(this);
-
-					// OLD
-// movebuttons += name + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
-
-// NEW (note the inserted effHtml between the name and the <br/>)
-movebuttons += name + effHtml + '<br /><small class="type">' +
-  (moveType ? Dex.types.get(moveType).name : "Unknown") +
-  '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
-}
+					movebuttons += name + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
+				}
 				if (!hasMoves) {
 					moveMenu += '<button class="movebutton" name="chooseMove" value="0" data-move="Struggle" data-target="randomNormal">Struggle<br /><small class="type">Normal</small> <small class="pp">&ndash;</small>&nbsp;</button> ';
 				} else {
