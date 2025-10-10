@@ -672,64 +672,85 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// Compute short effectiveness label for the default target (slot 0) in singles.
-// ---- effectiveness label (robust target discovery) ----
+// ---- effectiveness label (robust types resolution) ----
 var eff = '';
-
 try {
-  // Helper: pick the first valid foe (non-fainted, with types)
+  // 1) pick a foe from any client slot your build uses
   function findFoe(battle) {
     if (!battle) return null;
-    var candidates = [];
-
-    // Common client fields (depends on build)
-    if (battle.farSide && battle.farSide.active) candidates = candidates.concat(battle.farSide.active);
-    if (battle.foeSide && battle.foeSide.active) candidates = candidates.concat(battle.foeSide.active);
-    if (battle.sides && battle.sides[1] && battle.sides[1].active) candidates = candidates.concat(battle.sides[1].active);
-
-    for (var i = 0; i < candidates.length; i++) {
-      var p = candidates[i];
-      if (p && !p.fainted && p.types && p.types.length) return p;
+    var cand = [];
+    if (battle.farSide && battle.farSide.active)   cand = cand.concat(battle.farSide.active);
+    if (battle.foeSide && battle.foeSide.active)   cand = cand.concat(battle.foeSide.active);
+    if (battle.sides && battle.sides[1] && battle.sides[1].active) cand = cand.concat(battle.sides[1].active);
+    for (var i = 0; i < cand.length; i++) {
+      var p = cand[i];
+      if (p && !p.fainted) return p;
     }
     return null;
   }
 
-  // Effectiveness from client type chart
+  // 2) resolve a Pokémon’s types with multiple fallbacks
+  function resolveTypes(p) {
+    if (!p) return [];
+    // direct field first
+    if (Array.isArray(p.types) && p.types.length) return p.types.slice();
+
+    // method fallback
+    if (typeof p.getTypes === 'function') {
+      var gt = p.getTypes();
+      if (Array.isArray(gt) && gt.length) return gt.slice();
+    }
+
+    // species fallback (always available in the client)
+    var s = null;
+    var name = p.speciesForme || p.species || p.baseSpecies || p.name;
+    if (name && Dex && Dex.species && typeof Dex.species.get === 'function') {
+      s = Dex.species.get(name);
+    }
+    if (s && Array.isArray(s.types) && s.types.length) return s.types.slice();
+
+    return [];
+  }
+
+  // 3) compute effectiveness using client type chart
   function clientGetEffectiveness(attackingType, defenderTypes) {
     if (!attackingType || !defenderTypes || !defenderTypes.length) return 0;
     var total = 0;
     for (var i = 0; i < defenderTypes.length; i++) {
-      var defTypeObj = Dex.types.get(defenderTypes[i]);
+      var defTypeObj = Dex.types.get(defenderTypes[i]); // case-insensitive
       if (!defTypeObj || !defTypeObj.damageTaken) continue;
-      var dt = defTypeObj.damageTaken[attackingType]; // 0=neutral,1=resist,2=weak,3=immune
-      if (dt === 3) return -Infinity; // immunity overrides
+      var dt = defTypeObj.damageTaken[attackingType];   // keys like 'Fire','Electric', etc.
+      // 0 = neutral, 1 = resist, 2 = weak, 3 = immune
+      if (dt === 3) return -Infinity; // immunity overrides all
       if (dt === 1) total -= 1;
       else if (dt === 2) total += 1;
     }
     return total;
   }
 
-  // Normalize attack type (fallback to move.type)
+  // 4) normalize attacking type (fallback to the move’s base type)
   var atkType = moveType || (move && move.type) || null;
   if (atkType) {
-    var tObj = Dex.types.get(atkType);
-    atkType = (tObj && tObj.exists) ? tObj.name : null; // canonicalize
+    var t = Dex.types.get(atkType);
+    atkType = (t && t.exists) ? t.name : null; // canonicalize (e.g., 'Fire')
   }
 
+  // 5) resolve defender types and compute
   var foe = findFoe(this.battle);
-  if (atkType && foe) {
-    var ttypes = (typeof foe.getTypes === 'function') ? foe.getTypes() : foe.types;
-    var effVal = clientGetEffectiveness(atkType, ttypes);
+  var defTypes = resolveTypes(foe);
+
+  if (atkType && defTypes.length) {
+    var effVal = clientGetEffectiveness(atkType, defTypes);
     eff = (effVal === -Infinity) ? 'Immune' : (effVal > 0 ? 'SE' : (effVal < 0 ? 'NVE' : ''));
-    if (window.SHOW_EFF_DEBUG) console.debug('[EFF]', { move: name, atkType, foe: foe.name, ttypes, effVal, eff });
+    if (window.SHOW_EFF_DEBUG) console.debug('[EFF]', { move: name, atkType, foe: foe && foe.name, defTypes, effVal, eff });
   } else if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF:SKIP]', { move: name, moveType, atkType, foeFound: !!foe });
+    console.debug('[EFF:SKIP]', { move: name, moveType, atkType, foeFound: !!foe, defTypes });
   }
 } catch (e) {
   if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
   eff = ''; // fail-safe
 }
 // ---- end effectiveness label ----
-
 
 
 
