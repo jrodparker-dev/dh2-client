@@ -662,66 +662,83 @@
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
 
 				// --- Start Helper Functions (Place outside the main move loop) ---
-// === Effectiveness helpers (client-only) ===
-function _normTypeName(t) {
-  if (!t) return '';
-  const o = Dex.types.get(t);
-  return (o && o.exists) ? o.name : ''; // canonical Name form, e.g. "Fire"
-}
-function _getFoe(battle) {
-  if (!battle) return null;
-  let c = [];
-  if (battle.farSide && battle.farSide.active) c = c.concat(battle.farSide.active);
-  if (battle.foeSide && battle.foeSide.active) c = c.concat(battle.foeSide.active);
-  if (battle.sides && battle.sides[1] && battle.sides[1].active) c = c.concat(battle.sides[1].active);
-  for (let i = 0; i < c.length; i++) {
-    const p = c[i];
-    if (p && !p.fainted) return p;
+// === Effectiveness helpers (robust key detection + debug) ===
+
+// Toggle in console: window.SHOW_EFF_DEBUG = true;
+
+function _getOpponentActives(battle) {
+  if (!battle) return [];
+  let act = battle.farSide && battle.farSide.active ? battle.farSide.active
+          : battle.foeSide && battle.foeSide.active ? battle.foeSide.active
+          : (battle.sides && battle.sides[1] && battle.sides[1].active ? battle.sides[1].active : []);
+  const seen = new Set();
+  const uniq = [];
+  for (let i = 0; i < act.length; i++) {
+    const p = act[i];
+    const id = p && p.ident;
+    if (p && !p.fainted && id && !seen.has(id)) { seen.add(id); uniq.push(p); }
   }
-  return null;
-}
-function _getTypesNames(p) {
-  if (!p) return [];
-  // direct
-  if (Array.isArray(p.types) && p.types.length) return p.types.map(_normTypeName).filter(Boolean);
-  // method
-  if (typeof p.getTypes === 'function') {
-    const t = p.getTypes();
-    if (Array.isArray(t) && t.length) return t.map(_normTypeName).filter(Boolean);
-  }
-  // species fallback (always available)
-  const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-  const sp = key ? Dex.species.get(key) : null;
-  const ts = (sp && sp.types) ? sp.types : [];
-  return ts.map(_normTypeName).filter(Boolean);
-}
-function _effLabel(attackingTypeName, defenderTypeNames) {
-  // damageTaken keys use canonical Names ("Fire","Water",...) – NOT lowercase IDs
-  if (!attackingTypeName || !defenderTypeNames || !defenderTypeNames.length) return '';
-  let mult = 1;
-  for (let i = 0; i < defenderTypeNames.length; i++) {
-    const defObj = Dex.types.get(defenderTypeNames[i]);
-    if (!defObj || !defObj.damageTaken) continue;
-    const dt = defObj.damageTaken[attackingTypeName]; // 0=neutral,1=resist,2=weak,3=immune
-    if (dt === 3) return 'Immune';
-    if (dt === 2) mult *= 2;
-    else if (dt === 1) mult *= 0.5;
-  }
-  if (mult > 1) return 'SE';
-  if (mult < 1) return 'NVE';
-  return '';
-}
-function _effHtmlFromType(moveTypeOrName, battle, moveObj) {
-  // normalize attacking type: prefer tooltip type, fall back to move.type
-  const atkName = _normTypeName(moveTypeOrName || (moveObj && moveObj.type));
-  const foe = _getFoe(battle);
-  const defNames = _getTypesNames(foe);
-  const eff = _effLabel(atkName, defNames);
-  if (!eff) return '';
-  const cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE' ? 'eff-se' : 'eff-nve');
-  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  return uniq;
 }
 
+function _normTypeBoth(t) {
+  const ty = Dex.types.get(t);
+  if (!ty || !ty.exists) return { id: '', name: '' };
+  return { id: ty.id || '', name: ty.name || '' }; // e.g. id='fire', name='Fire'
+}
+
+function _getDefTypesBoth(p) {
+  if (!p) return [];
+  let arr = Array.isArray(p.types) && p.types.length ? p.types
+          : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+  if (!arr || !arr.length) {
+    const key = p.speciesForme || p.species || p.baseSpecies || p.name;
+    const sp = key ? Dex.species.get(key) : null;
+    arr = (sp && sp.types) ? sp.types : [];
+  }
+  // return array of {id,name} pairs
+  const out = [];
+  for (const t of arr) {
+    const both = _normTypeBoth(t);
+    if (both.id || both.name) out.push(both);
+  }
+  return out;
+}
+
+// Look up one defender type's damageTaken entry for an attacking type.
+// Try both key styles: id ('fire') and Name ('Fire').
+function _dtLookup(defTypeBoth, atkBoth) {
+  const def = Dex.types.get(defTypeBoth.id || defTypeBoth.name);
+  const dtMap = def && def.damageTaken ? def.damageTaken : null;
+  if (!dtMap) return undefined;
+  // Most builds: keys by **id**; some builds: keys by **Name**
+  return (dtMap[atkBoth.id] !== undefined) ? dtMap[atkBoth.id]
+       : (dtMap[atkBoth.name] !== undefined) ? dtMap[atkBoth.name]
+       : undefined;
+}
+
+// Convert damageTaken codes to a combined multiplier
+function _effValue(atkBoth, defBothArray) {
+  if ((!atkBoth.id && !atkBoth.name) || !defBothArray || !defBothArray.length) return 0;
+  let mult = 1;
+  for (const def of defBothArray) {
+    const dt = _dtLookup(def, atkBoth);
+    if (dt === 3) return -Infinity; // immune trumps all
+    if (dt === 2) mult *= 2;        // weak
+    else if (dt === 1) mult *= 0.5; // resist
+    // 0 or undefined => treat as neutral (mult *= 1)
+  }
+  if (mult > 1) return 1;       // SE
+  if (mult < 1) return -1;      // NVE
+  return 0;                     // neutral
+}
+
+function _effLabelFromVal(v) {
+  if (v === -Infinity) return 'Immune';
+  if (v > 0) return 'SE';
+  if (v < 0) return 'NVE';
+  return '';
+}
 
 // --- End Helper Functions ---
 				for (var i = 0; i < curActive.moves.length; i++) {
@@ -734,8 +751,51 @@ function _effHtmlFromType(moveTypeOrName, battle, moveObj) {
 					if (move.id === 'Recharge') move.type = '&ndash;';
 					if (name.substr(0, 12) === 'Hidden Power') name = 'Hidden Power';
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
-					var effHtml = _effHtmlFromType(moveType, this.battle, move);
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
+
+					var effHtml = (function () {
+  // normalize attacking type using tooltip type first, fallback to move.type
+  var atkBoth = _normTypeBoth(moveType || (move && move.type));
+  if (!atkBoth.id && !atkBoth.name) {
+    if (window.SHOW_EFF_DEBUG) console.debug('[EFF skip] bad atk type', { move: name, moveType, moveType_fallback: move && move.type });
+    return '';
+  }
+
+  var foes = _getOpponentActives(this.battle);
+  if (!foes.length) {
+    if (window.SHOW_EFF_DEBUG) console.debug('[EFF skip] no foes');
+    return '';
+  }
+
+  // Compute label per foe, then decide if they differ
+  var labels = [];
+  for (var i = 0; i < foes.length; i++) {
+    var defBoth = _getDefTypesBoth(foes[i]);
+    var val = _effValue(atkBoth, defBoth);
+    var lab = _effLabelFromVal(val);
+    labels.push(lab);
+
+    if (window.SHOW_EFF_DEBUG) {
+      console.debug('[EFF per-foe]', {
+        move: name,
+        atk: atkBoth,
+        foe: foes[i].name,
+        defTypes: defBoth,
+        dt0_example: defBoth[0] ? _dtLookup(defBoth[0], atkBoth) : undefined,
+        label: lab
+      });
+    }
+  }
+
+  var first = labels[0];
+  var allSame = labels.every(l => l === first);
+  var eff = allSame ? first : 'Varies';
+  if (!eff) return ''; // neutral
+
+  var cls = eff === 'Immune' ? 'eff-immune' : eff === 'SE' ? 'eff-se' : eff === 'NVE' ? 'eff-nve' : 'eff-varies';
+  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+}).call(this);
+
 					
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
