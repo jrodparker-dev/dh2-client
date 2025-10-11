@@ -662,62 +662,66 @@
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
 
 				// --- Start Helper Functions (Place outside the main move loop) ---
-// === Effectiveness helpers ===
-
-// Prefer one active list to avoid duplicates across fields.
-function _getOpponentActives(battle) {
-  if (!battle) return [];
-  let act = battle.farSide && battle.farSide.active ? battle.farSide.active
-          : battle.foeSide && battle.foeSide.active ? battle.foeSide.active
-          : (battle.sides && battle.sides[1] && battle.sides[1].active ? battle.sides[1].active : []);
-  // Dedupe by ident in case the array contains stale/dup entries
-  const seen = new Set();
-  const uniq = [];
-  for (let i = 0; i < act.length; i++) {
-    const p = act[i];
-    const id = p && p.ident;
-    if (p && !p.fainted && id && !seen.has(id)) { seen.add(id); uniq.push(p); }
+// === Effectiveness helpers (client-only) ===
+function _normTypeName(t) {
+  if (!t) return '';
+  const o = Dex.types.get(t);
+  return (o && o.exists) ? o.name : ''; // canonical Name form, e.g. "Fire"
+}
+function _getFoe(battle) {
+  if (!battle) return null;
+  let c = [];
+  if (battle.farSide && battle.farSide.active) c = c.concat(battle.farSide.active);
+  if (battle.foeSide && battle.foeSide.active) c = c.concat(battle.foeSide.active);
+  if (battle.sides && battle.sides[1] && battle.sides[1].active) c = c.concat(battle.sides[1].active);
+  for (let i = 0; i < c.length; i++) {
+    const p = c[i];
+    if (p && !p.fainted) return p;
   }
-  return uniq;
+  return null;
 }
-
-function _normTypeId(t) {
-  const ty = Dex.types.get(t);
-  return ty && ty.id ? ty.id : '';
-}
-
-function _getDefTypeIds(p) {
+function _getTypesNames(p) {
   if (!p) return [];
-  let arr = Array.isArray(p.types) && p.types.length ? p.types
-          : (typeof p.getTypes === 'function' ? p.getTypes() : null);
-  if (!arr || !arr.length) {
-    const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-    const sp = key ? Dex.species.get(key) : null;
-    arr = (sp && sp.types) ? sp.types : [];
+  // direct
+  if (Array.isArray(p.types) && p.types.length) return p.types.map(_normTypeName).filter(Boolean);
+  // method
+  if (typeof p.getTypes === 'function') {
+    const t = p.getTypes();
+    if (Array.isArray(t) && t.length) return t.map(_normTypeName).filter(Boolean);
   }
-  return arr.map(_normTypeId).filter(Boolean);
+  // species fallback (always available)
+  const key = p.speciesForme || p.species || p.baseSpecies || p.name;
+  const sp = key ? Dex.species.get(key) : null;
+  const ts = (sp && sp.types) ? sp.types : [];
+  return ts.map(_normTypeName).filter(Boolean);
 }
-
-// dt map uses type **ids** (lowercase) as keys on most client builds
-function _effValue(attId, defIds) {
-  if (!attId || !defIds || !defIds.length) return 0;
-  let total = 0;
-  for (const d of defIds) {
-    const to = Dex.types.get(d);
-    const dt = to && to.damageTaken ? to.damageTaken[attId] : undefined;
-    if (dt === 3) return -Infinity; // immune
-    if (dt === 1) total -= 1;       // resist
-    else if (dt === 2) total += 1;  // weak
+function _effLabel(attackingTypeName, defenderTypeNames) {
+  // damageTaken keys use canonical Names ("Fire","Water",...) – NOT lowercase IDs
+  if (!attackingTypeName || !defenderTypeNames || !defenderTypeNames.length) return '';
+  let mult = 1;
+  for (let i = 0; i < defenderTypeNames.length; i++) {
+    const defObj = Dex.types.get(defenderTypeNames[i]);
+    if (!defObj || !defObj.damageTaken) continue;
+    const dt = defObj.damageTaken[attackingTypeName]; // 0=neutral,1=resist,2=weak,3=immune
+    if (dt === 3) return 'Immune';
+    if (dt === 2) mult *= 2;
+    else if (dt === 1) mult *= 0.5;
   }
-  return total;
-}
-
-function _effLabelFromVal(v) {
-  if (v === -Infinity) return 'Immune';
-  if (v > 0) return 'SE';
-  if (v < 0) return 'NVE';
+  if (mult > 1) return 'SE';
+  if (mult < 1) return 'NVE';
   return '';
 }
+function _effHtmlFromType(moveTypeOrName, battle, moveObj) {
+  // normalize attacking type: prefer tooltip type, fall back to move.type
+  const atkName = _normTypeName(moveTypeOrName || (moveObj && moveObj.type));
+  const foe = _getFoe(battle);
+  const defNames = _getTypesNames(foe);
+  const eff = _effLabel(atkName, defNames);
+  if (!eff) return '';
+  const cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE' ? 'eff-se' : 'eff-nve');
+  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+}
+
 
 // --- End Helper Functions ---
 				for (var i = 0; i < curActive.moves.length; i++) {
@@ -730,37 +734,9 @@ function _effLabelFromVal(v) {
 					if (move.id === 'Recharge') move.type = '&ndash;';
 					if (name.substr(0, 12) === 'Hidden Power') name = 'Hidden Power';
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
+					var effHtml = _effHtmlFromType(moveType, this.battle, move);
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
-					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
-// Build the effectiveness HTML chunk
-var effHtml = (function () {
-  // normalize attacking type to **id**
-  var atkId = _normTypeId(moveType || (move && move.type));
-  if (!atkId) return '';
-
-  // get distinct, unfainted foes
-  var foes = _getOpponentActives(this.battle);
-  if (!foes.length) return '';
-
-  // compute label per foe, then decide whether they differ
-  var labels = [];
-  for (var i = 0; i < foes.length; i++) {
-    var defIds = _getDefTypeIds(foes[i]);
-    var val = _effValue(atkId, defIds);
-    labels.push(_effLabelFromVal(val));
-  }
-
-  // If all labels equal (including ''), use it; else show 'Varies'
-  var first = labels[0];
-  var allSame = labels.every(l => l === first);
-  var eff = allSame ? first : 'Varies';
-  if (!eff) return '';
-
-  var cls = eff === 'Immune' ? 'eff-immune' : eff === 'SE' ? 'eff-se' : eff === 'NVE' ? 'eff-nve' : 'eff-varies';
-  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
-}).call(this);
-
-
+					
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
 					} else {
@@ -771,7 +747,6 @@ var effHtml = (function () {
   + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small>'
   + effHtml
   + '<small class="pp">' + pp + '</small>&nbsp;</button> ';
-
 					}
 				if (!hasMoves) {
 					moveMenu += '<button class="movebutton" name="chooseMove" value="0" data-move="Struggle" data-target="randomNormal">Struggle<br /><small class="type">Normal</small> <small class="custom">test</small> <small class="pp">&ndash;</small>&nbsp;</button> ';
