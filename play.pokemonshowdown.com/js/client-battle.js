@@ -660,6 +660,60 @@
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
+
+				// --- Start Helper Functions (Place outside the main move loop) ---
+
+// Helper to find the active foe(s) and determine the battle scenario
+function findFoe(battle) {
+    if (!battle) return null;
+    
+    // Gather ALL currently active foe Pokémon from all potential slots
+    const foes = (battle.farSide?.active || [])
+        .concat(battle.foeSide?.active || [])
+        .concat(battle.sides?.[1]?.active || []);
+        
+    // Filter for only currently active AND unfainted targets
+    const targets = foes.filter(p => p && !p.fainted);
+
+    if (targets.length === 0) {
+        return null;
+    }
+    if (targets.length > 1) {
+        return 'VARIES'; // Multi-target scenario
+    }
+    
+    // Single-target scenario: Return the single active foe Pokémon object
+    return targets[0]; 
+}
+
+// Function to get array of defender type IDs (lowercase)
+function getDefTypeIds(p) {
+    if (!p) return [];
+    let types = Array.isArray(p.types) && p.types.length ? p.types
+             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+    if (!types || !types.length) {
+        const key = p.speciesForme || p.species || p.baseSpecies || p.name;
+        const sp = key ? Dex.species.get(key) : null;
+        types = sp?.types || [];
+    }
+    return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
+}
+
+// Function to compute effectiveness (returns numeric mod)
+function getEff(attackingTypeId, defenderTypeIds) {
+    if (!attackingTypeId || !defenderTypeIds?.length) return 0;
+    let total = 0;
+    for (const defId of defenderTypeIds) {
+        const def = Dex.types.get(defId);
+        const dt = def?.damageTaken?.[attackingTypeId];
+        if (dt === 3) return -Infinity; // Immune
+        if (dt === 1) total -= 1; // Resist (NVE)
+        else if (dt === 2) total += 1; // Weak (SE)
+    }
+    return total;
+}
+
+// --- End Helper Functions ---
 				for (var i = 0; i < curActive.moves.length; i++) {
 					var moveData = curActive.moves[i];
 					var move = this.battle.dex.moves.get(moveData.move);
@@ -671,94 +725,50 @@
 					if (name.substr(0, 12) === 'Hidden Power') name = 'Hidden Power';
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
-					// Compute short effectiveness label for the default target (slot 0) in singles.
-// ---- effectiveness label (FINAL) ----
+					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
 var effHtml = '';
 try {
-  // Helper to find the first valid foe
-  function findFoe(battle) {
-    if (!battle) return null;
-    // Look up all foe active slots and find the first non-fainted one
-    const foes = (battle.farSide?.active || []).concat(battle.foeSide?.active || []).concat(battle.sides?.[1]?.active || []);
-    const targets = foes.filter(p => p && !p.fainted);
+    const atkType = moveType || (move && move.type) || '';
+    const atkTypeId = Dex.types.get(atkType)?.id || '';
 
-    // Critical check for Varies case: If more than one target is active, we can't determine single effectiveness.
-    if (targets.length > 1) {
-      return 'VARIES'; // Use a special string sentinel
+    const foe = findFoe(this.battle);
+    
+    let eff = ''; // Final raw effectiveness string
+
+    if (foe === 'VARIES') {
+        eff = 'Varies';
+    } else if (foe && atkTypeId) {
+        const defTypeIds = getDefTypeIds(foe);
+        if (defTypeIds.length) {
+            const v = getEff(atkTypeId, defTypeIds);
+            if (v === -Infinity) eff = 'Immune';
+            else if (v > 0) eff = 'SE';
+            else if (v < 0) eff = 'NVE';
+            else eff = '';
+        }
     }
-    return targets[0] || null;
-  }
 
-  // Function to get array of defender type IDs (lowercase)
-  function getDefTypeIds(p) {
-    if (!p) return [];
-    let types = Array.isArray(p.types) && p.types.length ? p.types
-             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
-    if (!types || !types.length) {
-      const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-      const sp = key ? Dex.species.get(key) : null;
-      types = sp?.types || [];
+    // --- BUILD FINAL HTML CHUNK ---
+    if (eff) {
+        let cls = '';
+        // Map the raw string 'eff' to the correct class
+        if (eff === 'Immune') cls = 'eff-immune';
+        else if (eff === 'SE') cls = 'eff-se';
+        else if (eff === 'NVE') cls = 'eff-nve';
+        else if (eff === 'Varies') cls = 'eff-varies';
+
+        // eff is the text ('SE', 'NVE', etc.)
+        effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
     }
-    return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
-  }
 
-  // Function to compute effectiveness (returns numeric mod)
-  function getEff(attackingTypeId, defenderTypeIds) {
-    if (!attackingTypeId || !defenderTypeIds?.length) return 0;
-    let total = 0;
-    for (const defId of defenderTypeIds) {
-      const def = Dex.types.get(defId);
-      const dt = def?.damageTaken?.[attackingTypeId];
-      if (dt === 3) return -Infinity; // Immune
-      if (dt === 1) total -= 1; // Resist (NVE)
-      else if (dt === 2) total += 1; // Weak (SE)
+    if (window.SHOW_EFF_DEBUG) {
+        console.debug('[EFF]', { move: name, atkTypeId, foe: foe, eff, effHtml });
     }
-    return total;
-  }
-
-  // --- MAIN EXECUTION ---
-  const atkType = moveType || (move && move.type) || '';
-  const atkTypeId = Dex.types.get(atkType)?.id || '';
-
-  const foe = findFoe(this.battle);
-  
-  let eff = ''; // Final raw effectiveness string
-
-  if (foe === 'VARIES') {
-    eff = 'Varies';
-  } else if (foe && atkTypeId) {
-    const defTypeIds = getDefTypeIds(foe);
-    if (defTypeIds.length) {
-      const v = getEff(atkTypeId, defTypeIds);
-      if (v === -Infinity) eff = 'Immune';
-      else if (v > 0) eff = 'SE';
-      else if (v < 0) eff = 'NVE';
-      else eff = '';
-    }
-  }
-
-  // --- BUILD FINAL HTML CHUNK ---
-  if (eff) {
-    let cls = '';
-    // Map the raw string 'eff' to the correct class
-    if (eff === 'Immune') cls = 'eff-immune';
-    else if (eff === 'SE') cls = 'eff-se';
-    else if (eff === 'NVE') cls = 'eff-nve';
-    else if (eff === 'Varies') cls = 'eff-varies';
-
-    // eff is the text ('SE', 'NVE', etc.)
-    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
-  }
-
-  if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF]', { move: name, atkTypeId, foe: foe, eff, effHtml });
-  }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
-  effHtml = '';
+    if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
+    effHtml = '';
 }
-// ---- end effectiveness label ----
-
+// --- End Effectiveness Label Execution ---
 
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
