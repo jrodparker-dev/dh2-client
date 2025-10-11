@@ -672,61 +672,75 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// Compute short effectiveness label for the default target (slot 0) in singles.
-// ---- effectiveness label (lowercase fix) ----
-var eff = '';
+// ---- effectiveness label (works with client Dex) ----
+var effHtml = '';
 try {
-  // helper: get first valid foe
+  // pick first valid foe from any slot your client uses
   function findFoe(battle) {
     if (!battle) return null;
-    let sides = [];
-    if (battle.farSide?.active) sides = sides.concat(battle.farSide.active);
-    if (battle.foeSide?.active) sides = sides.concat(battle.foeSide.active);
-    if (battle.sides?.[1]?.active) sides = sides.concat(battle.sides[1].active);
-    return sides.find(p => p && !p.fainted) || null;
+    let c = [];
+    if (battle.farSide?.active) c = c.concat(battle.farSide.active);
+    if (battle.foeSide?.active) c = c.concat(battle.foeSide.active);
+    if (battle.sides?.[1]?.active) c = c.concat(battle.sides[1].active);
+    return c.find(p => p && !p.fainted) || null;
   }
 
-  // helper: compute effectiveness using lowercase keys
-  function clientGetEffectiveness(attType, defTypes) {
-    if (!attType || !defTypes?.length) return 0;
-    attType = attType.toLowerCase();
+  // get array of defender type **IDs** (lowercase), with fallbacks
+  function getDefTypeIds(p) {
+    if (!p) return [];
+    let types = Array.isArray(p.types) && p.types.length ? p.types
+             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+    if (!types || !types.length) {
+      const key = p.speciesForme || p.species || p.baseSpecies || p.name;
+      const sp = key ? Dex.species.get(key) : null;
+      types = sp?.types || [];
+    }
+    // map to canonical IDs (lowercase)
+    return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
+  }
+
+  // compute effectiveness using client type chart and **IDs**
+  function getEff(attackingTypeId, defenderTypeIds) {
+    if (!attackingTypeId || !defenderTypeIds?.length) return 0;
     let total = 0;
-    for (const def of defTypes) {
-      const defObj = Dex.types.get(def);
-      if (!defObj?.damageTaken) continue;
-      const dt = defObj.damageTaken[attType];
-      if (dt === 3) return -Infinity; // immune
-      if (dt === 1) total -= 1;       // resist
-      else if (dt === 2) total += 1;  // super-effective
+    for (const defId of defenderTypeIds) {
+      const def = Dex.types.get(defId);
+      const dt = def?.damageTaken?.[attackingTypeId];
+      // 0=neutral, 1=resist, 2=weak, 3=immune
+      if (dt === 3) return -Infinity;
+      if (dt === 1) total -= 1;
+      else if (dt === 2) total += 1;
     }
     return total;
   }
 
-  // normalize attack type (ensure lowercase id)
-  let atkType = (moveType || move?.type || '').toLowerCase();
-  const foe = findFoe(this.battle);
+  // normalize attacking type to an **ID**
+  const atkType = moveType || (move && move.type) || '';
+  const atkTypeId = Dex.types.get(atkType)?.id || '';
 
-  // resolve defender types (from object or species fallback)
-  let defTypes = [];
-  if (foe) {
-    if (Array.isArray(foe.types) && foe.types.length) defTypes = foe.types;
-    else if (typeof foe.getTypes === 'function') defTypes = foe.getTypes();
-    else if (foe.speciesForme || foe.species || foe.baseSpecies || foe.name)
-      defTypes = Dex.species.get(foe.speciesForme || foe.species || foe.baseSpecies || foe.name).types || [];
+  const foe = findFoe(this.battle);
+  const defTypeIds = getDefTypeIds(foe);
+
+  let eff = '';
+  if (atkTypeId && defTypeIds.length) {
+    const v = getEff(atkTypeId, defTypeIds);
+    eff = (v === -Infinity) ? 'Immune' : (v > 0 ? 'SE' : (v < 0 ? 'NVE' : ''));
   }
 
-  if (atkType && defTypes.length) {
-    const effVal = clientGetEffectiveness(atkType, defTypes);
-    eff = effVal === -Infinity ? 'Immune' : effVal > 0 ? 'SE' : effVal < 0 ? 'NVE' : '';
-    if (window.SHOW_EFF_DEBUG)
-      console.debug('[EFF]', { move: name, atkType, defTypes, effVal, eff });
+  // build final HTML chunk to inject between Type and PP
+  if (eff) {
+    const cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
+    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  }
+
+  if (window.SHOW_EFF_DEBUG) {
+    console.debug('[EFF]', { move: name, atkTypeId, defTypeIds, eff, effHtml });
   }
 } catch (e) {
   if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
-  eff = '';
+  effHtml = '';
 }
 // ---- end effectiveness label ----
-
-
 
 
 					if (moveData.disabled) {
@@ -735,7 +749,11 @@ try {
 						movebuttons += '<button class="type-' + moveType + ' has-tooltip" name="chooseMove" value="' + (i + 1) + '" data-move="' + BattleLog.escapeHTML(moveData.move) + '" data-target="' + BattleLog.escapeHTML(moveData.target) + '" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
 						hasMoves = true;
 					}
-					movebuttons += name + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small> <small class="custom">' + eff + '</small> <small class="pp">' + pp + '</small>&nbsp;</button> ';
+					movebuttons += name
+  + '<br /><small class="type">' + (moveType ? Dex.types.get(moveType).name : "Unknown") + '</small>'
+  + effHtml
+  + '<small class="pp">' + pp + '</small>&nbsp;</button> ';
+
 					}
 				if (!hasMoves) {
 					moveMenu += '<button class="movebutton" name="chooseMove" value="0" data-move="Struggle" data-target="randomNormal">Struggle<br /><small class="type">Normal</small> <small class="custom">test</small> <small class="pp">&ndash;</small>&nbsp;</button> ';
