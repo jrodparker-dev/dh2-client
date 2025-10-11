@@ -662,47 +662,63 @@
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
 
 				// --- Start Helper Functions (Place outside the main move loop) ---
+// === Effectiveness helpers ===
 
-// 1. Helper to find the single active foe in the primary slot (farSide[0])
-function findActiveFoe(battle) {
-    // Standard 1v1 opponent is at index 0 of the farSide active array.
-    const foes = battle.farSide?.active;
-    if (foes && foes.length) {
-        // Return the first active, non-fainted opponent
-        return foes[0] && !foes[0].fainted ? foes[0] : null;
-    }
-    return null;
+// Prefer one active list to avoid duplicates across fields.
+function _getOpponentActives(battle) {
+  if (!battle) return [];
+  let act = battle.farSide && battle.farSide.active ? battle.farSide.active
+          : battle.foeSide && battle.foeSide.active ? battle.foeSide.active
+          : (battle.sides && battle.sides[1] && battle.sides[1].active ? battle.sides[1].active : []);
+  // Dedupe by ident in case the array contains stale/dup entries
+  const seen = new Set();
+  const uniq = [];
+  for (let i = 0; i < act.length; i++) {
+    const p = act[i];
+    const id = p && p.ident;
+    if (p && !p.fainted && id && !seen.has(id)) { seen.add(id); uniq.push(p); }
+  }
+  return uniq;
 }
 
-// 2. Helper to get array of defender type IDs (FORCE lookup via species ID)
-function getDefTypeIds(p) {
-    if (!p) return [];
-    
-    // Determine the species key (e.g., 'terrakion')
+function _normTypeId(t) {
+  const ty = Dex.types.get(t);
+  return ty && ty.id ? ty.id : '';
+}
+
+function _getDefTypeIds(p) {
+  if (!p) return [];
+  let arr = Array.isArray(p.types) && p.types.length ? p.types
+          : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+  if (!arr || !arr.length) {
     const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-    
-    // Use the species key to look up the types from the Dex directly
     const sp = key ? Dex.species.get(key) : null;
-    
-    let types = sp?.types || [];
-    
-    // Map to canonical IDs (lowercase) and filter out any blanks
-    return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
+    arr = (sp && sp.types) ? sp.types : [];
+  }
+  return arr.map(_normTypeId).filter(Boolean);
 }
 
-// 3. Function to compute effectiveness (returns numeric mod)
-function getEff(attackingTypeId, defenderTypeIds) {
-    if (!attackingTypeId || !defenderTypeIds?.length) return 0;
-    let total = 0;
-    for (const defId of defenderTypeIds) {
-        const def = Dex.types.get(defId);
-        const dt = def?.damageTaken?.[attackingTypeId];
-        if (dt === 3) return -Infinity; // Immune
-        if (dt === 1) total -= 1; // Resist (NVE)
-        else if (dt === 2) total += 1; // Weak (SE)
-    }
-    return total;
+// dt map uses type **ids** (lowercase) as keys on most client builds
+function _effValue(attId, defIds) {
+  if (!attId || !defIds || !defIds.length) return 0;
+  let total = 0;
+  for (const d of defIds) {
+    const to = Dex.types.get(d);
+    const dt = to && to.damageTaken ? to.damageTaken[attId] : undefined;
+    if (dt === 3) return -Infinity; // immune
+    if (dt === 1) total -= 1;       // resist
+    else if (dt === 2) total += 1;  // weak
+  }
+  return total;
 }
+
+function _effLabelFromVal(v) {
+  if (v === -Infinity) return 'Immune';
+  if (v > 0) return 'SE';
+  if (v < 0) return 'NVE';
+  return '';
+}
+
 // --- End Helper Functions ---
 				for (var i = 0; i < curActive.moves.length; i++) {
 					var moveData = curActive.moves[i];
@@ -716,46 +732,34 @@ function getEff(attackingTypeId, defenderTypeIds) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
-var effHtml = '';
-try {
-    // 1. Get Attacker Type ID
-    const atkType = moveType || (move && move.type) || '';
-    const atkTypeId = Dex.types.get(atkType)?.id || '';
+// Build the effectiveness HTML chunk
+var effHtml = (function () {
+  // normalize attacking type to **id**
+  var atkId = _normTypeId(moveType || (move && move.type));
+  if (!atkId) return '';
 
-    // 2. Get Defender (Foe) and its Type IDs
-    const foe = findActiveFoe(this.battle);
-    const defTypeIds = getDefTypeIds(foe); // Safely returns ['fighting', 'rock'] for Terrakion
-    
-    let eff = ''; // Final raw effectiveness string: 'SE', 'NVE', 'Immune', or ''
+  // get distinct, unfainted foes
+  var foes = _getOpponentActives(this.battle);
+  if (!foes.length) return '';
 
-    if (foe && atkTypeId && defTypeIds.length) {
-        const v = getEff(atkTypeId, defTypeIds);
-        if (v === -Infinity) eff = 'Immune';
-        else if (v > 0) eff = 'SE';
-        else if (v < 0) eff = 'NVE';
-        else eff = ''; // Blank for neutral/1x
-    }
+  // compute label per foe, then decide whether they differ
+  var labels = [];
+  for (var i = 0; i < foes.length; i++) {
+    var defIds = _getDefTypeIds(foes[i]);
+    var val = _effValue(atkId, defIds);
+    labels.push(_effLabelFromVal(val));
+  }
 
-    // --- BUILD FINAL HTML CHUNK ---
-    if (eff) {
-        let cls = '';
-        if (eff === 'Immune') cls = 'eff-immune';
-        else if (eff === 'SE') cls = 'eff-se';
-        else if (eff === 'NVE') cls = 'eff-nve';
+  // If all labels equal (including ''), use it; else show 'Varies'
+  var first = labels[0];
+  var allSame = labels.every(l => l === first);
+  var eff = allSame ? first : 'Varies';
+  if (!eff) return '';
 
-        // Final HTML generation
-        effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
-    }
+  var cls = eff === 'Immune' ? 'eff-immune' : eff === 'SE' ? 'eff-se' : eff === 'NVE' ? 'eff-nve' : 'eff-varies';
+  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+}).call(this);
 
-    if (window.SHOW_EFF_DEBUG) {
-        // Use this to check your console for: atkTypeId, defTypeIds, and eff
-        console.debug('[EFF]', { move: name, atkTypeId, defTypeIds, eff, effHtml });
-    }
-} catch (e) {
-    if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
-    effHtml = '';
-}
-// --- End Effectiveness Label Execution ---
 
 					if (moveData.disabled) {
 						movebuttons += '<button disabled class="has-tooltip" data-tooltip="' + BattleLog.escapeHTML(tooltipArgs) + '">';
