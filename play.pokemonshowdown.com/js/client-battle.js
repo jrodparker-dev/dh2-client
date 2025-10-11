@@ -661,42 +661,18 @@
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
 
-				// --- Start Helper Functions (Place outside the main move loop) ---
+				// --- Start Simplified Helper Functions (Place outside the main move loop) ---
 
-// Helper to find the active foe(s) and determine the battle scenario
-function findFoe(battle) {
-    if (!battle) return null;
-    
-    // Gather ALL currently active foe Pokémon from all potential slots
-    const foes = (battle.farSide?.active || [])
-        .concat(battle.foeSide?.active || [])
-        .concat(battle.sides?.[1]?.active || []);
-        
-    // Filter for only currently active AND unfainted targets
-    const targets = foes.filter(p => p && !p.fainted);
-
-    if (targets.length === 0) {
-        return null;
+// Helper to find the single active foe in the primary slot (farSide[0])
+function findActiveFoe(battle) {
+    // Check farSide (opponent's side) active slots.
+    // In 1v1, the relevant opponent is usually at index 0.
+    const foes = battle.farSide?.active;
+    if (foes && foes.length) {
+        // Return the first active, non-fainted opponent
+        return foes[0] && !foes[0].fainted ? foes[0] : null;
     }
-    if (targets.length > 1) {
-        return 'VARIES'; // Multi-target scenario
-    }
-    
-    // Single-target scenario: Return the single active foe Pokémon object
-    return targets[0]; 
-}
-
-// Function to get array of defender type IDs (lowercase)
-function getDefTypeIds(p) {
-    if (!p) return [];
-    let types = Array.isArray(p.types) && p.types.length ? p.types
-             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
-    if (!types || !types.length) {
-        const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-        const sp = key ? Dex.species.get(key) : null;
-        types = sp?.types || [];
-    }
-    return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
+    return null;
 }
 
 // Function to compute effectiveness (returns numeric mod)
@@ -728,23 +704,26 @@ function getEff(attackingTypeId, defenderTypeIds) {
 					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
 var effHtml = '';
 try {
+    // Normalizes attack type to ID (e.g., 'Fire' -> 'fire')
     const atkType = moveType || (move && move.type) || '';
     const atkTypeId = Dex.types.get(atkType)?.id || '';
 
-    const foe = findFoe(this.battle);
+    // Gets the single active foe (or null)
+    const foe = findActiveFoe(this.battle);
     
-    let eff = ''; // Final raw effectiveness string
+    let eff = ''; // Final raw effectiveness string: 'SE', 'NVE', 'Immune', or ''
 
-    if (foe === 'VARIES') {
-        eff = 'Varies';
-    } else if (foe && atkTypeId) {
-        const defTypeIds = getDefTypeIds(foe);
+    if (foe && atkTypeId) {
+        // Gets defender type IDs (now using logic from the previous helper functions)
+        let defTypes = foe.types || (foe.speciesForme && Dex.species.get(foe.speciesForme)?.types) || [];
+        const defTypeIds = defTypes.map(t => Dex.types.get(t)?.id).filter(Boolean);
+
         if (defTypeIds.length) {
             const v = getEff(atkTypeId, defTypeIds);
             if (v === -Infinity) eff = 'Immune';
             else if (v > 0) eff = 'SE';
             else if (v < 0) eff = 'NVE';
-            else eff = '';
+            else eff = ''; // Blank for neutral
         }
     }
 
@@ -755,14 +734,13 @@ try {
         if (eff === 'Immune') cls = 'eff-immune';
         else if (eff === 'SE') cls = 'eff-se';
         else if (eff === 'NVE') cls = 'eff-nve';
-        else if (eff === 'Varies') cls = 'eff-varies';
 
-        // eff is the text ('SE', 'NVE', etc.)
+        // eff is the text ('SE', 'NVE', 'Immune')
         effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
     }
 
     if (window.SHOW_EFF_DEBUG) {
-        console.debug('[EFF]', { move: name, atkTypeId, foe: foe, eff, effHtml });
+        console.debug('[EFF]', { move: name, atkTypeId, foeName: foe ? foe.name : 'none', eff, effHtml });
     }
 } catch (e) {
     if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
