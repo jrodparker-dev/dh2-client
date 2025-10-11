@@ -672,20 +672,24 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 					// Compute short effectiveness label for the default target (slot 0) in singles.
-// ---- effectiveness label (works with client Dex) ----
+// ---- effectiveness label (FINAL) ----
 var effHtml = '';
 try {
-  // pick first valid foe from any slot your client uses
+  // Helper to find the first valid foe
   function findFoe(battle) {
     if (!battle) return null;
-    let c = [];
-    if (battle.farSide?.active) c = c.concat(battle.farSide.active);
-    if (battle.foeSide?.active) c = c.concat(battle.foeSide.active);
-    if (battle.sides?.[1]?.active) c = c.concat(battle.sides[1].active);
-    return c.find(p => p && !p.fainted) || null;
+    // Look up all foe active slots and find the first non-fainted one
+    const foes = (battle.farSide?.active || []).concat(battle.foeSide?.active || []).concat(battle.sides?.[1]?.active || []);
+    const targets = foes.filter(p => p && !p.fainted);
+
+    // Critical check for Varies case: If more than one target is active, we can't determine single effectiveness.
+    if (targets.length > 1) {
+      return 'VARIES'; // Use a special string sentinel
+    }
+    return targets[0] || null;
   }
 
-  // get array of defender type **IDs** (lowercase), with fallbacks
+  // Function to get array of defender type IDs (lowercase)
   function getDefTypeIds(p) {
     if (!p) return [];
     let types = Array.isArray(p.types) && p.types.length ? p.types
@@ -695,46 +699,59 @@ try {
       const sp = key ? Dex.species.get(key) : null;
       types = sp?.types || [];
     }
-    // map to canonical IDs (lowercase)
     return types.map(t => Dex.types.get(t)?.id).filter(Boolean);
   }
 
-  // compute effectiveness using client type chart and **IDs**
+  // Function to compute effectiveness (returns numeric mod)
   function getEff(attackingTypeId, defenderTypeIds) {
     if (!attackingTypeId || !defenderTypeIds?.length) return 0;
     let total = 0;
     for (const defId of defenderTypeIds) {
       const def = Dex.types.get(defId);
       const dt = def?.damageTaken?.[attackingTypeId];
-      // 0=neutral, 1=resist, 2=weak, 3=immune
-      if (dt === 3) return -Infinity;
-      if (dt === 1) total -= 1;
-      else if (dt === 2) total += 1;
+      if (dt === 3) return -Infinity; // Immune
+      if (dt === 1) total -= 1; // Resist (NVE)
+      else if (dt === 2) total += 1; // Weak (SE)
     }
     return total;
   }
 
-  // normalize attacking type to an **ID**
+  // --- MAIN EXECUTION ---
   const atkType = moveType || (move && move.type) || '';
   const atkTypeId = Dex.types.get(atkType)?.id || '';
 
   const foe = findFoe(this.battle);
-  const defTypeIds = getDefTypeIds(foe);
+  
+  let eff = ''; // Final raw effectiveness string
 
-  let eff = '';
-  if (atkTypeId && defTypeIds.length) {
-    const v = getEff(atkTypeId, defTypeIds);
-    eff = (v === -Infinity) ? 'Immune' : (v > 0 ? 'SE' : (v < 0 ? 'NVE' : ''));
+  if (foe === 'VARIES') {
+    eff = 'Varies';
+  } else if (foe && atkTypeId) {
+    const defTypeIds = getDefTypeIds(foe);
+    if (defTypeIds.length) {
+      const v = getEff(atkTypeId, defTypeIds);
+      if (v === -Infinity) eff = 'Immune';
+      else if (v > 0) eff = 'SE';
+      else if (v < 0) eff = 'NVE';
+      else eff = '';
+    }
   }
 
-  // build final HTML chunk to inject between Type and PP
+  // --- BUILD FINAL HTML CHUNK ---
   if (eff) {
-    const cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
+    let cls = '';
+    // Map the raw string 'eff' to the correct class
+    if (eff === 'Immune') cls = 'eff-immune';
+    else if (eff === 'SE') cls = 'eff-se';
+    else if (eff === 'NVE') cls = 'eff-nve';
+    else if (eff === 'Varies') cls = 'eff-varies';
+
+    // eff is the text ('SE', 'NVE', etc.)
     effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
   }
 
   if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF]', { move: name, atkTypeId, defTypeIds, eff, effHtml });
+    console.debug('[EFF]', { move: name, atkTypeId, foe: foe, eff, effHtml });
   }
 } catch (e) {
   if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
