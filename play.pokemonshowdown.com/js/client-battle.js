@@ -753,48 +753,91 @@ function _effLabelFromVal(v) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					var effHtml = (function () {
-  // normalize attacking type using tooltip type first, fallback to move.type
-  var atkBoth = _normTypeBoth(moveType || (move && move.type));
-  if (!atkBoth.id && !atkBoth.name) {
-    if (window.SHOW_EFF_DEBUG) console.debug('[EFF skip] bad atk type', { move: name, moveType, moveType_fallback: move && move.type });
-    return '';
-  }
+					// Build the effectiveness HTML chunk (inside the moves loop)
+var effHtml = (function () {
+  console.debug('[EFF enter] move=', name);
 
-  var foes = _getOpponentActives(this.battle);
-  if (!foes.length) {
-    if (window.SHOW_EFF_DEBUG) console.debug('[EFF skip] no foes');
-    return '';
-  }
-
-  // Compute label per foe, then decide if they differ
-  var labels = [];
-  for (var i = 0; i < foes.length; i++) {
-    var defBoth = _getDefTypesBoth(foes[i]);
-    var val = _effValue(atkBoth, defBoth);
-    var lab = _effLabelFromVal(val);
-    labels.push(lab);
-
-    if (window.SHOW_EFF_DEBUG) {
-      console.debug('[EFF per-foe]', {
-        move: name,
-        atk: atkBoth,
-        foe: foes[i].name,
-        defTypes: defBoth,
-        dt0_example: defBoth[0] ? _dtLookup(defBoth[0], atkBoth) : undefined,
-        label: lab
-      });
+  function getOpponentActives(battle) {
+    let act = battle?.farSide?.active
+           || battle?.foeSide?.active
+           || (battle?.sides && battle.sides[1]?.active) || [];
+    // Dedup + alive
+    const seen = new Set(), out = [];
+    for (const p of act) {
+      if (!p || p.fainted || !p.ident) continue;
+      if (!seen.has(p.ident)) { seen.add(p.ident); out.push(p); }
     }
+    return out;
   }
 
-  var first = labels[0];
-  var allSame = labels.every(l => l === first);
-  var eff = allSame ? first : 'Varies';
-  if (!eff) return ''; // neutral
+  function normBoth(t) {
+    const ty = Dex.types.get(t);
+    return ty?.exists ? { id: ty.id || '', name: ty.name || '' } : { id: '', name: '' };
+  }
 
-  var cls = eff === 'Immune' ? 'eff-immune' : eff === 'SE' ? 'eff-se' : eff === 'NVE' ? 'eff-nve' : 'eff-varies';
-  return '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  function defTypesBoth(p) {
+    let arr = (Array.isArray(p?.types) && p.types.length) ? p.types
+            : (typeof p?.getTypes === 'function' ? p.getTypes() : null);
+    if (!arr || !arr.length) {
+      const key = p?.speciesForme || p?.species || p?.baseSpecies || p?.name;
+      const sp = key ? Dex.species.get(key) : null;
+      arr = sp?.types || [];
+    }
+    return arr.map(normBoth).filter(t => t.id || t.name);
+  }
+
+  function dtLookup(def, atk) {
+    const d = Dex.types.get(def.id || def.name);
+    const map = d?.damageTaken;
+    if (!map) return undefined;
+    return (map[atk.id] !== undefined) ? map[atk.id]
+         : (map[atk.name] !== undefined) ? map[atk.name]
+         : undefined;
+  }
+
+  function effValue(atk, defs) {
+    if ((!atk.id && !atk.name) || !defs.length) return 0;
+    let mult = 1;
+    for (const def of defs) {
+      const dt = dtLookup(def, atk);
+      if (window.SHOW_EFF_DEBUG) console.debug('[EFF dt]', { def, atk, dt });
+      if (dt === 3) return -Infinity;
+      if (dt === 2) mult *= 2;
+      else if (dt === 1) mult *= 0.5;
+      // 0/undefined => neutral
+    }
+    if (mult > 1) return 1;
+    if (mult < 1) return -1;
+    return 0;
+  }
+
+  const atk = normBoth(moveType || (move && move.type));
+  const foes = getOpponentActives(this.battle);
+
+  console.debug('[EFF atk/foes]', { atk, foesCount: foes.length });
+
+  if ((!atk.id && !atk.name) || !foes.length) return '';
+
+  const labels = [];
+  for (const foe of foes) {
+    const defs = defTypesBoth(foe);
+    const val = effValue(atk, defs);
+    const lab = (val === -Infinity) ? 'Immune' : (val > 0 ? 'SE' : (val < 0 ? 'NVE' : ''));
+    labels.push(lab);
+    console.debug('[EFF per-foe]', { foe: foe.name, defs, val, lab });
+  }
+
+  const first = labels[0];
+  const allSame = labels.every(l => l === first);
+  const eff = allSame ? first : 'Varies';
+
+  if (!eff) return '';
+  const cls = eff === 'Immune' ? 'eff-immune' : eff === 'SE' ? 'eff-se' : eff === 'NVE' ? 'eff-nve' : 'eff-varies';
+  const html = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  console.debug('[EFF out]', { labels, eff, html });
+  return html;
 }).call(this);
+
 
 					
 					if (moveData.disabled) {
