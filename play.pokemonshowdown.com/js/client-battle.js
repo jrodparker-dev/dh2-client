@@ -737,35 +737,116 @@ function getEff(attackingTypeId, defenderTypeIds) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
+					// --- Start Effectiveness Label Execution (diagnostic) ---
 var effHtml = '';
 try {
-  var atkType = moveType || (move && move.type) || '';
-  var atkTypeId = Dex.types.get(atkType) ? Dex.types.get(atkType).id : '';
+  const atkType = moveType || (move && move.type) || '';
+  const atkTypeId = Dex.types.get(atkType)?.id || '';
 
-  var foe = findFoe(this.battle);   // <- now guaranteed to be 0 or 1 foe, never 'VARIES'
-  var eff = '';
+  const foeOrFlag = findFoe(this.battle); // <-- your original helper that returns 'VARIES'
+  let eff = '';
 
-  if (foe && atkTypeId) {
-    var defTypeIds = getDefTypeIds(foe);
-    if (defTypeIds.length) {
-      var v = getEff(atkTypeId, defTypeIds);
-      if (v === -Infinity) eff = 'Immune';
-      else if (v > 0)      eff = 'SE';
-      else if (v < 0)      eff = 'NVE';
-      else                 eff = ''; // neutral = blank
+  // helper (local) to resolve defender type IDs for a Pokémon
+  function _defTypeIds(p) {
+    if (!p) return [];
+    let types = (Array.isArray(p.types) && p.types.length) ? p.types
+             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+    if (!types || !types.length) {
+      const key = p.speciesForme || p.species || p.baseSpecies || p.name;
+      const sp = key ? Dex.species.get(key) : null;
+      types = sp?.types || [];
     }
+    return types
+      .map(t => (Dex.types.get(t)?.id) || '')
+      .filter(Boolean);
   }
 
-  if (eff) {
-    var cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
-    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  // helper (local) to compute effectiveness from id + defender ids
+  function _getEff(attId, defIds) {
+    if (!attId || !defIds?.length) return 0;
+    let mult = 1;
+    const atkName = Dex.types.get(attId)?.name || '';
+    for (const defId of defIds) {
+      const defObj = Dex.types.get(defId);
+      const map = defObj?.damageTaken;
+      if (!map) continue;
+      const dt = (map[attId] !== undefined) ? map[attId]
+               : (atkName && map[atkName] !== undefined) ? map[atkName]
+               : undefined;
+      if (dt === 3) return -Infinity; // immune
+      if (dt === 2) mult *= 2;        // weak
+      else if (dt === 1) mult *= 0.5; // resist
+    }
+    if (mult > 1) return 1;
+    if (mult < 1) return -1;
+    return 0;
+  }
+
+  if (foeOrFlag === 'VARIES') {
+    // === DIAGNOSTIC PATH ===
+    // Rebuild the same candidate list your findFoe() was looking at
+    const allFoes = []
+      .concat(this.battle?.farSide?.active || [])
+      .concat(this.battle?.foeSide?.active || [])
+      .concat((this.battle?.sides && this.battle.sides[1]?.active) || []);
+    const alive = allFoes.filter(p => p && !p.fainted);
+
+    // Dedupe by ident
+    const seen = new Set();
+    const uniqFoes = [];
+    for (const p of alive) {
+      if (p.ident && !seen.has(p.ident)) { seen.add(p.ident); uniqFoes.push(p); }
+    }
+
+    // Collect type IDs
+    const perFoeTypeIds = uniqFoes.map(_defTypeIds);         // e.g., [['water','psychic'], ...]
+    const allTypeIds = perFoeTypeIds.flat();
+    const uniqTypeIds = Array.from(new Set(allTypeIds));
+
+    // OPTION A: show how many foes it thinks are active
+    // eff = String(uniqFoes.length);
+
+    // OPTION B (default): show how many UNIQUE defender type IDs it sees
+    eff = String(uniqTypeIds.length);
+
+    // Also dump rich debug info to console
+    if (window.SHOW_EFF_DEBUG) {
+      console.debug('[EFF VARIES DIAG]', {
+        allFoesLen: allFoes.length,
+        aliveLen: alive.length,
+        uniqFoesIdents: uniqFoes.map(p => p.ident),
+        perFoeTypeIds,
+        allTypeIds,
+        uniqTypeIdsLen: uniqTypeIds.length,
+        uniqTypeIds
+      });
+    }
+
+    // Color it as "varies" for visibility
+    effHtml = '<small class="eff-tag eff-varies">' + eff + '</small> ';
+  } else if (foeOrFlag && atkTypeId) {
+    // === NORMAL SINGLE-FOE PATH === (kept as in your skeleton)
+    const defTypeIds = _defTypeIds(foeOrFlag);
+    if (defTypeIds.length) {
+      const v = _getEff(atkTypeId, defTypeIds);
+      let label = '';
+      if (v === -Infinity) label = 'Immune';
+      else if (v > 0)      label = 'SE';
+      else if (v < 0)      label = 'NVE';
+      else                 label = '';
+      if (label) {
+        const cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
+        effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+      }
+    }
   }
 
   if (window.SHOW_EFF_DEBUG) {
     console.debug('[EFF]', {
-      move: name, atkTypeId, foe: foe && foe.name, defTypeIds,
-      out: eff
+      move: name,
+      atkTypeId,
+      foeIdent: foeOrFlag && foeOrFlag.ident,
+      html: effHtml
     });
   }
 } catch (e) {
