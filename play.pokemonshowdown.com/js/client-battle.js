@@ -704,7 +704,7 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: diagnostic middle label (mult number / Chart Error / Math Error) ---
+					// --- Start: on-button debug of chart keys/codes ---
 var effHtml = '';
 try {
   // active foe slot 0
@@ -714,75 +714,57 @@ try {
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // resolve foe types
+  // resolve foe types -> ["Water","Psychic"] etc.
   var foeTypes = [];
   if (foe && !foe.fainted) {
-    if (Array.isArray(foe.types) && foe.types.length) {
-      foeTypes = foe.types.slice();
-    } else if (typeof foe.getTypes === 'function') {
-      var t = foe.getTypes();
-      foeTypes = Array.isArray(t) ? t.slice() : [];
+    if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
+    else if (typeof foe.getTypes === 'function') {
+      var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : [];
     } else {
       var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey);
-      foeTypes = (sp && sp.types) ? sp.types.slice() : [];
+      var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
 
-  // diagnostic label we'll print
-  var diag = '';
-
-  // Chart guard
+  // if chart missing, say so right on the button
   if (!window._EFF_CHART) {
-    diag = 'Chart Error';
+    effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
   } else {
-    // Get proper attack keys from Dex (this is the key change!)
-    var atkObj = Dex.types.get(moveType);
-    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);    // e.g. 'Fire'
-    var atkId   = (atkObj && atkObj.id)   ? atkObj.id   : atkName.toLowerCase(); // e.g. 'fire'
+    // Attacking key we will use to read each row
+    var atkObj  = Dex.types.get(moveType);
+    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);      // e.g. 'Steel'
+    var atkId   = (atkObj && atkObj.id)   ? atkObj.id   : atkName.toLowerCase(); // e.g. 'steel'
 
-    var mult = 1;
-    var sawAnyCode = false;
+    // Build a compact debug string: A:Steel W:2 P:key?
+    var parts = ['A:' + atkName];
+    for (var i2 = 0; i2 < foeTypes.length; i2++) {
+      var defName  = String(foeTypes[i2] || '');
+      var defLower = defName.toLowerCase();
+      var row = window._EFF_CHART[defLower];
 
-    if (atkName && foeTypes.length) {
-      for (var i2 = 0; i2 < foeTypes.length; i2++) {
-        var dKey = String(foeTypes[i2] || '').toLowerCase();        // defender row key in chart
-        var row  = window._EFF_CHART[dKey];
-        if (!row || !row.damageTaken) continue;
-
-        // Try Name key first (how your chart is authored), then id as a fallback
-        var code = row.damageTaken[atkName];
-        if (code === undefined) code = row.damageTaken[atkName[0].toUpperCase() + atkName.slice(1)]; // extra safety
-        if (code === undefined) code = row.damageTaken[atkId];
-
-        if (code === undefined) continue;
-        sawAnyCode = true;
-
-        // 0=neutral, 1=resist, 2=weak, 3=immune
-        if (code === 3) { mult = 0; break; }          // Immune trumps
-        if (code === 2) mult *= 2;
-        else if (code === 1) mult *= 0.5;
+      if (!row || !row.damageTaken) {
+        parts.push(defName[0] + ':' + 'row?');       // e.g. 'W:row?'
+        continue;
       }
 
-      if (!sawAnyCode) {
-        diag = 'Math Error';
+      // Try Name first (how your chart is authored), then ID as a last resort
+      var code = row.damageTaken[atkName];
+      if (code === undefined) code = row.damageTaken[atkId];
+
+      if (code === undefined) {
+        parts.push(defName[0] + ':' + 'key?');      // row exists but no entry for this attack key
       } else {
-        mult = Math.round(mult * 1000) / 1000;        // tidy floats
-        diag = String(mult);                           // show raw number
+        parts.push(defName[0] + ':' + String(code)); // 0/1/2/3
       }
-    } else {
-      diag = 'Math Error';
     }
-  }
 
-  effHtml = '<small class="eff-tag eff-debug">' + diag + '</small> ';
+    var txt = parts.join(' ');
+    effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
+  }
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">Math Error</small> ';
 }
-// --- End: diagnostic middle label ---
-
-
-
+// --- End: on-button debug of chart keys/codes ---
 
 
 
