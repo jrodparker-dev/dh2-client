@@ -27,6 +27,44 @@
   };
 })();
 // ===== End: Embedded Type Chart =====
+// === Normalize your embedded chart so lookups "just work" ===
+(function initEffChartIndex(){
+  if (!window._EFF_CHART || window._EFF_CHART_INDEX) return;
+
+  const idx = Object.create(null);
+
+  // Map defender rows by multiple keys: raw, trimmed-lower, Dex id
+  Object.keys(window._EFF_CHART).forEach(k => {
+    const row = window._EFF_CHART[k];
+    const raw = String(k);
+    const low = raw.toLowerCase().trim();
+
+    idx[raw] = row;
+    idx[low] = row;
+
+    const dx = Dex.types.get(raw);
+    if (dx && dx.id) idx[dx.id] = row;                 // e.g. 'water'
+    if (dx && dx.name) idx[dx.name] = row;             // e.g. 'Water'
+  });
+
+  // Normalize attack keys inside each row’s damageTaken:
+  // ensure both Name and id are present as synonyms for whatever the row had.
+  Object.values(idx).forEach(row => {
+    const dt = row && row.damageTaken;
+    if (!dt) return;
+    Object.keys(dt).forEach(k => {
+      const val = dt[k];
+      const dx = Dex.types.get(k);
+      if (dx && dx.name && dt[dx.name] === undefined) dt[dx.name] = val;   // 'Steel'
+      if (dx && dx.id && dt[dx.id] === undefined) dt[dx.id] = val;         // 'steel'
+      // also add a trimmed-lower alias for safety
+      const low = String(k).toLowerCase().trim();
+      if (dt[low] === undefined) dt[low] = val;
+    });
+  });
+
+  window._EFF_CHART_INDEX = idx;
+})();
 
 
 (function ($) {
@@ -704,22 +742,22 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: bulletproof on-button chart debug + key fixes ---
+					// --- Start: effectiveness as a number using normalized chart index ---
 var effHtml = '';
 try {
-  // active foe slot 0
+  // Active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // resolve foe types
+  // Foe types → ['Water','Psychic'] (drop undefined)
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
     else if (typeof foe.getTypes === 'function') {
-      var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : [];
+      var _t = foe.getTypes(); foeTypes = Array.isArray(_t) ? _t.slice() : [];
     } else {
       var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
       var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
@@ -727,73 +765,54 @@ try {
   }
   foeTypes = foeTypes.filter(Boolean);
 
-  // attacking type as a Name (e.g., 'Steel')
-  var atkObj  = Dex.types.get(moveType);
-  var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);
-  var mult = 1, sawAny = false;
-
-  // chart present?
-  var chart = window._EFF_CHART;
-  var chartInfo = chart ? ('ok(' + Object.keys(chart).length + ')') : 'MISSING';
-
-  // helper: best-effort row lookup (water/Water/trim)
-  function getRowFor(defName) {
-    if (!chart) return null;
-    var raw = String(defName || '');
-    var k1 = raw.toLowerCase().trim();    // 'water'
-    var k2 = raw.trim();                   // 'Water'
-    var k3 = k2.toLowerCase();             // again 'water', for safety
-    return chart[k1] || chart[k2] || chart[k3] || null;
-  }
-
-  // build debug parts
-  var parts = ['M:' + atkName, 'T:' + (foeTypes.join('/') || '?'), 'C:' + chartInfo];
-
-  // show which defender key form we’re using
-  if (foeTypes.length) {
-    parts.push('k:' + String(foeTypes[0]).toLowerCase().trim());
-  }
-
-  // try to read codes from chart
-  for (var i2 = 0; i2 < foeTypes.length; i2++) {
-    var defName = foeTypes[i2];
-    var row = getRowFor(defName);
-    if (!row || !row.damageTaken) {
-      parts.push(defName[0] + ':row?');
-      continue;
-    }
-    // your chart keys are attack **Names**, e.g. 'Steel'
-    var code = row.damageTaken[atkName];
-    if (code === undefined) {
-      parts.push(defName[0] + ':key?');
-      continue;
-    }
-    parts.push(defName[0] + ':' + String(code));
-    sawAny = true;
-    if (code === 3) { mult = 0; break; }
-    if (code === 2) mult *= 2;
-    else if (code === 1) mult *= 0.5;
-  }
-
-  // final text
-  var txt;
-  if (!chart) {
-    txt = parts.join(' ') + ' = Chart Error';
-  } else if (!foeTypes.length) {
-    txt = parts.join(' ') + ' = Types?';
-  } else if (!sawAny) {
-    txt = parts.join(' ') + ' = Math Error';
+  // Guard: chart and index must exist
+  if (!window._EFF_CHART || !window._EFF_CHART_INDEX) {
+    effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
   } else {
-    mult = Math.round(mult * 1000) / 1000;
-    txt = parts.join(' ') + ' = ' + mult;
-  }
+    // Attacking keys: use Dex so we match your chart synonyms
+    var atk = Dex.types.get(moveType);
+    var aName = (atk && atk.name) ? atk.name : String(moveType);
+    var aId   = (atk && atk.id)   ? atk.id   : aName.toLowerCase();
 
-  effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
+    var mult = 1, saw = false, missing = [];
+
+    for (var i2 = 0; i2 < foeTypes.length; i2++) {
+      var defName = foeTypes[i2];
+      // look up defender row in the normalized index using multiple candidates
+      var row = window._EFF_CHART_INDEX[defName] ||
+                window._EFF_CHART_INDEX[String(defName).toLowerCase().trim()] ||
+                window._EFF_CHART_INDEX[(Dex.types.get(defName)||{}).id || ''];
+
+      if (!row || !row.damageTaken) { missing.push(defName); continue; }
+
+      // prefer Name, fallback id, then lower alias (index normalization provides all)
+      var code = row.damageTaken[aName];
+      if (code === undefined) code = row.damageTaken[aId];
+      if (code === undefined) code = row.damageTaken[String(aName).toLowerCase()];
+
+      if (code === undefined) { missing.push(defName); continue; }
+
+      saw = true;
+      if (code === 3) { mult = 0; break; }
+      if (code === 2) mult *= 2;
+      else if (code === 1) mult *= 0.5;
+      // 0 -> neutral
+    }
+
+    if (!foeTypes.length) {
+      effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
+    } else if (!saw) {
+      // still no codes after normalization ⇒ show which defs missed
+      effHtml = '<small class="eff-tag eff-debug">Math Error: ' + BattleLog.escapeHTML(missing.join(',')) + '</small> ';
+    } else {
+      mult = Math.round(mult * 1000) / 1000;
+      effHtml = '<small class="eff-tag eff-debug">' + mult + '</small> ';
+    }
+  }
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: bulletproof on-button chart debug + key fixes ---
-
+// --- End: effectiveness as a number using normalized chart index ---
 
 
 
