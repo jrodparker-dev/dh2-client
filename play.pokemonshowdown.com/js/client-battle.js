@@ -688,6 +688,42 @@
 				var hasMoves = false;
 				var moveMenu = '';
 				var movebuttons = '';
+				// Normalize foe types: handles ["Water","Psychic"] or ["Water,Psychic"] or ["Water/Psychic"]
+function getFoeTypeIdsSafe(battle) {
+  var foe =
+    (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
+    (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
+    (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
+    null;
+
+  var pieces = [];
+  if (foe && !foe.fainted) {
+    var raw = [];
+    if (Array.isArray(foe.types) && foe.types.length) raw = foe.types.slice();
+    else if (typeof foe.getTypes === 'function') {
+      var t = foe.getTypes();
+      if (Array.isArray(t)) raw = t.slice();
+    }
+    // IMPORTANT: split entries like "Water,Psychic" or "Water/Psychic"
+    for (var i = 0; i < raw.length; i++) {
+      String(raw[i] || '')
+        .split(/[\/,]/)             // split on "," or "/"
+        .forEach(function (tok) {
+          tok = tok.trim();
+          if (tok) pieces.push(tok);
+        });
+    }
+  }
+
+  // map tokens to lowercase ids; dedupe; cap to 2
+  var out = [], seen = Object.create(null);
+  for (var j = 0; j < pieces.length && out.length < 2; j++) {
+    var id = String(pieces[j]).toLowerCase();
+    if (!seen[id]) { seen[id] = true; out.push(id); }
+  }
+  return out;
+}
+
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
@@ -750,7 +786,7 @@ try {
         return out;
       }
 
-      var defIds = normDefIdsFromFoe(this.battle); // e.g. ["water","psychic"]
+      var defIds = getFoeTypeIdsSafe(this.battle); // -> ["water","psychic"]
 
       if (!defIds.length) {
         effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
