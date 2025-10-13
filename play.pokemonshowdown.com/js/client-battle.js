@@ -757,6 +757,15 @@ try {
     }
   }
   foeTypes = foeTypes.filter(Boolean);
+  
+  if (window._EFF_CHART && !window._EFF_DEFROWS) {
+  var _idx = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (k) {
+    _idx[k.toLowerCase()] = window._EFF_CHART[k];
+  });
+  window._EFF_DEFROWS = _idx;
+}
+
 
   if (!window._EFF_CHART || !window._EFF_DEFROWS) {
     effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
