@@ -704,17 +704,17 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: ultra-minimal middle label (inside the move loop) ---
+					// --- Start: diagnostic middle label (mult number / Chart Error / Math Error) ---
 var effHtml = '';
 try {
-  // active foe slot 0
+  // 1) active foe slot 0 (same simple path you verified works)
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // resolve foe types → ["Water","Psychic"], etc.
+  // 2) resolve foe types -> ["Water","Psychic"] etc.
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
@@ -723,45 +723,62 @@ try {
       var t = foe.getTypes();
       foeTypes = Array.isArray(t) ? t.slice() : [];
     } else {
-      var key = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(key);
+      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(spKey);
       foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
 
-  // compute label ONLY using moveType vs foeTypes via the embedded chart
-  function titleCase(s){ s = String(s||''); return s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : ''; }
-  var mt = titleCase(moveType);
-  var mult = 1, saw = false;
+  // 3) diagnostics label
+  var diag = '';
 
-  for (var i2 = 0; i2 < foeTypes.length; i2++) {
-    var row = window._EFF_CHART[String(foeTypes[i2]||'').toLowerCase()];
-    if (!row || !row.damageTaken) continue;
-    var code = row.damageTaken[mt];   // 0/1/2/3 or undefined
-    if (code === undefined) continue;
-    saw = true;
-    if (code === 3) { mult = 0; break; }
-    if (code === 2) mult *= 2;
-    else if (code === 1) mult *= 0.5;
+  // If there is no embedded chart at all -> Chart Error
+  if (!window._EFF_CHART) {
+    diag = 'Chart Error';
+  } else {
+    // moveType is already computed earlier by your code; we use it directly
+    function titleCase(s){ s = String(s||''); return s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : ''; }
+    var atkKey = titleCase(moveType);                // attack key in chart rows (e.g., 'Fire')
+    var mult = 1;
+    var sawAnyCode = false;
+
+    // Only attempt math if we have both moveType and at least one foe type
+    if (atkKey && foeTypes.length) {
+      for (var i2 = 0; i2 < foeTypes.length; i2++) {
+        var defRow = window._EFF_CHART[String(foeTypes[i2] || '').toLowerCase()];
+        if (!defRow || !defRow.damageTaken) continue;
+        var code = defRow.damageTaken[atkKey];      // expected 0/1/2/3; undefined if not present
+        if (code === undefined) continue;
+        sawAnyCode = true;
+        if (code === 3) { mult = 0; break; }        // Immune trumps all
+        if (code === 2) mult *= 2;
+        else if (code === 1) mult *= 0.5;
+        // 0 => neutral (no change)
+      }
+
+      if (!sawAnyCode) {
+        // we saw types AND a chart, but no codes matched
+        diag = 'Math Error';
+      } else {
+        // show the raw multiplier number
+        // normalize tiny floating errors (e.g., 0.5000000001)
+        mult = Math.round(mult * 1000) / 1000;
+        diag = String(mult);
+      }
+    } else {
+      // we don't have either moveType or foeTypes populated yet
+      diag = 'Math Error';
+    }
   }
 
-  var label = '';
-  if (saw) {
-    if (mult === 0) label = 'Immune';
-    else if (mult > 1) label = 'SE';
-    else if (mult < 1) label = 'NVE';
-  }
-
-  effHtml = label
-    ? '<small class="eff-tag ' + (label==='Immune'?'eff-immune':label==='SE'?'eff-se':'eff-nve') + '">' + label + '</small> '
-    : '';
-
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE CHART]', { move: name, moveType, foeTypes, mt, label, mult });
+  // 4) render the diagnostic string in the middle
+  effHtml = '<small class="eff-tag eff-debug">' + diag + '</small> ';
 } catch (e) {
-  console.error('[EFF block error]', e);
-  effHtml = ''; // fail safe – never stop rendering the menu
+  // absolute fail-safe: never break the menu
+  effHtml = '<small class="eff-tag eff-debug">Math Error</small> ';
 }
-// --- End: ultra-minimal middle label ---
+// --- End: diagnostic middle label ---
+
 
 
 
