@@ -673,52 +673,75 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start Effectiveness Label (built on the working foe-type read) ---
-// We already have `foe` from the simple diagnostic block above.
+					// --- Start: Foe primary type + effectiveness label ---
 var effHtml = '';
 try {
-  // 1) Resolve full defender types (both slots), using your proven fallbacks
+  // a) Locate active foe in slot 0 (no concatenation, no "varies")
+  var foe =
+    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
+    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
+    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
+    null;
+
+  // b) Resolve foe primary type (for visibility)
+  var foePrimary = '';
+  if (foe && !foe.fainted) {
+    if (Array.isArray(foe.types) && foe.types.length) {
+      foePrimary = foe.types[0];
+    } else if (typeof foe.getTypes === 'function') {
+      var _t = foe.getTypes();
+      foePrimary = (Array.isArray(_t) && _t.length) ? _t[0] : '';
+    } else {
+      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(spKey);
+      foePrimary = (sp && sp.types && sp.types.length) ? sp.types[0] : '';
+    }
+  }
+  var foePrimaryHtml = foePrimary
+    ? ('<small class="eff-tag eff-type">' + foePrimary + '</small> ')
+    : (foe ? '<small class="eff-tag eff-nve">Unknown</small> ' : '<small class="eff-tag eff-nve">NoFoe</small> ');
+
+  // c) Build full defender type array (for effectiveness calc)
   var foeTypesArr = [];
   if (foe) {
     if (Array.isArray(foe.types) && foe.types.length) {
       foeTypesArr = foe.types.slice();
     } else if (typeof foe.getTypes === 'function') {
-      var _t = foe.getTypes();
-      foeTypesArr = Array.isArray(_t) ? _t.slice() : [];
+      var _gt = foe.getTypes();
+      foeTypesArr = Array.isArray(_gt) ? _gt.slice() : [];
     } else {
-      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey);
-      foeTypesArr = (sp && sp.types) ? sp.types.slice() : [];
+      var spKey2 = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp2 = Dex.species.get(spKey2);
+      foeTypesArr = (sp2 && sp2.types) ? sp2.types.slice() : [];
     }
   }
 
-  // 2) Normalize attacker type from tooltip/base move
+  // d) Attacking type (tooltip/base move), as Name and id
   var atkTypeName = (function () {
     var base = moveType || (move && move.type) || '';
     var ty = Dex.types.get(base);
-    return ty && ty.exists ? ty.name : ''; // canonical Name (e.g., "Fire")
+    return (ty && ty.exists) ? ty.name : '';
   })();
   var atkTypeId = (function () {
     var ty = Dex.types.get(atkTypeName);
-    return ty && ty.id ? ty.id : '';      // id (e.g., "fire")
+    return (ty && ty.id) ? ty.id : '';
   })();
 
-  // 3) Compute multiplier using damageTaken, probing by id first, then Name
+  // e) Effectiveness label using client chart (probe id first, then Name)
   function effectivenessLabel(attId, attName, defNames) {
-    if (!attId && !attName) return '';
-    if (!defNames || !defNames.length) return '';
+    if ((!attId && !attName) || !defNames || !defNames.length) return '';
     var mult = 1;
     for (var i = 0; i < defNames.length; i++) {
       var defObj = Dex.types.get(defNames[i]);
       if (!defObj || !defObj.damageTaken) continue;
       var dtMap = defObj.damageTaken;
       var dt = (dtMap[attId] !== undefined) ? dtMap[attId]
-             : (attName && dtMap[attName] !== undefined) ? dtMap[attName]
-             : undefined;
+               : (attName && dtMap[attName] !== undefined) ? dtMap[attName]
+               : undefined;
       // 0=neutral, 1=resist, 2=weak, 3=immune
-      if (dt === 3) return 'Immune'; // trumps everything
-      if (dt === 2) mult *= 2;
-      else if (dt === 1) mult *= 0.5;
+      if (dt === 3) return 'Immune';  // immunity trumps everything
+      if (dt === 2) mult *= 2;        // super-effective
+      else if (dt === 1) mult *= 0.5; // not very effective
     }
     if (mult > 1) return 'SE';
     if (mult < 1) return 'NVE';
@@ -726,23 +749,32 @@ try {
   }
 
   var label = effectivenessLabel(atkTypeId, atkTypeName, foeTypesArr);
+  var effLabelHtml = '';
   if (label) {
     var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
-    effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
-  } else {
-    effHtml = ''; // neutral
+    effLabelHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
   }
 
+  // f) Final chunk: foe primary type (always) + effectiveness label (if any)
+  effHtml = /*foePrimaryHtml +*/ effLabelHtml;
+
   if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF SIMPLE]', {
-      move: name, atkTypeName, atkTypeId, foeName: foe && foe.name, foeTypesArr, label
+    console.debug('[FOE+EFF]', {
+      move: name,
+      foeName: foe && foe.name,
+      foeTypesArr, foePrimary,
+      atkTypeName, atkTypeId,
+      label, effHtml
     });
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE ERROR]', e);
-  effHtml = '';
+  if (window.SHOW_EFF_DEBUG) console.debug('[FOE+EFF ERROR]', e);
+  effHtml = '<small class="eff-tag eff-nve">ERR</small> ';
 }
-// --- End Effectiveness Label ---
+// --- End: Foe primary type + effectiveness label ---
+
+
+
 
 					
 					if (moveData.disabled) {
