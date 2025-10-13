@@ -707,14 +707,14 @@
 					// --- Start: diagnostic middle label (mult number / Chart Error / Math Error) ---
 var effHtml = '';
 try {
-  // 1) active foe slot 0 (same simple path you verified works)
+  // active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // 2) resolve foe types -> ["Water","Psychic"] etc.
+  // resolve foe types
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
@@ -729,55 +729,58 @@ try {
     }
   }
 
-  // 3) diagnostics label
+  // diagnostic label we'll print
   var diag = '';
 
-  // If there is no embedded chart at all -> Chart Error
+  // Chart guard
   if (!window._EFF_CHART) {
     diag = 'Chart Error';
   } else {
-    // moveType is already computed earlier by your code; we use it directly
-    function titleCase(s){ s = String(s||''); return s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : ''; }
-    var atkKey = titleCase(moveType);                // attack key in chart rows (e.g., 'Fire')
+    // Get proper attack keys from Dex (this is the key change!)
+    var atkObj = Dex.types.get(moveType);
+    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);    // e.g. 'Fire'
+    var atkId   = (atkObj && atkObj.id)   ? atkObj.id   : atkName.toLowerCase(); // e.g. 'fire'
+
     var mult = 1;
     var sawAnyCode = false;
 
-    // Only attempt math if we have both moveType and at least one foe type
-    if (atkKey && foeTypes.length) {
+    if (atkName && foeTypes.length) {
       for (var i2 = 0; i2 < foeTypes.length; i2++) {
-        var defRow = window._EFF_CHART[String(foeTypes[i2] || '').toLowerCase()];
-        if (!defRow || !defRow.damageTaken) continue;
-        var code = defRow.damageTaken[atkKey];      // expected 0/1/2/3; undefined if not present
+        var dKey = String(foeTypes[i2] || '').toLowerCase();        // defender row key in chart
+        var row  = window._EFF_CHART[dKey];
+        if (!row || !row.damageTaken) continue;
+
+        // Try Name key first (how your chart is authored), then id as a fallback
+        var code = row.damageTaken[atkName];
+        if (code === undefined) code = row.damageTaken[atkName[0].toUpperCase() + atkName.slice(1)]; // extra safety
+        if (code === undefined) code = row.damageTaken[atkId];
+
         if (code === undefined) continue;
         sawAnyCode = true;
-        if (code === 3) { mult = 0; break; }        // Immune trumps all
+
+        // 0=neutral, 1=resist, 2=weak, 3=immune
+        if (code === 3) { mult = 0; break; }          // Immune trumps
         if (code === 2) mult *= 2;
         else if (code === 1) mult *= 0.5;
-        // 0 => neutral (no change)
       }
 
       if (!sawAnyCode) {
-        // we saw types AND a chart, but no codes matched
         diag = 'Math Error';
       } else {
-        // show the raw multiplier number
-        // normalize tiny floating errors (e.g., 0.5000000001)
-        mult = Math.round(mult * 1000) / 1000;
-        diag = String(mult);
+        mult = Math.round(mult * 1000) / 1000;        // tidy floats
+        diag = String(mult);                           // show raw number
       }
     } else {
-      // we don't have either moveType or foeTypes populated yet
       diag = 'Math Error';
     }
   }
 
-  // 4) render the diagnostic string in the middle
   effHtml = '<small class="eff-tag eff-debug">' + diag + '</small> ';
 } catch (e) {
-  // absolute fail-safe: never break the menu
   effHtml = '<small class="eff-tag eff-debug">Math Error</small> ';
 }
 // --- End: diagnostic middle label ---
+
 
 
 
