@@ -49,6 +49,16 @@
   };
 })();
 // ===== End: Embedded Type Chart =====
+// Put this ONCE somewhere that runs before the move buttons render.
+// If your chart is already on window._EFF_CHART with lowercase keys,
+// this builds a quick lowercase index we’ll use in the loop.
+if (window._EFF_CHART && !window._EFF_DEFROWS) {
+  var _idx = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (k) {
+    _idx[k.toLowerCase()] = window._EFF_CHART[k];
+  });
+  window._EFF_DEFROWS = _idx; // defender rows by lowercase key
+}
 
 (function ($) {
 
