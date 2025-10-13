@@ -27,6 +27,11 @@
   };
 })();
 // ===== End: Embedded Type Chart =====
+if (window._EFF_CHART && !window._EFF_DEFROWS) {
+  var _idx = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (k) { _idx[k.toLowerCase()] = window._EFF_CHART[k]; });
+  window._EFF_DEFROWS = _idx;
+}
 
 
 (function ($) {
@@ -772,48 +777,76 @@ function getEff(attackingTypeId, defenderTypeIds, chart) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
+					// --- Start: Effectiveness label (robust, minimal deps) ---
 var effHtml = '';
 try {
-  // Get move type ID (e.g., 'fire')
-  var atkType = moveType || (move && move.type) || '';
-  var atkTypeId = Dex.types.get(atkType) ? Dex.types.get(atkType).id : '';
+  // 1) Active foe in slot 0 (singles); bail if none
+  var foe =
+    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
+    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
+    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
+    null;
 
-  var foe = findFoe(this.battle);
-  var eff = '';
-  
-  // Use the globally defined chart variable
-  var chart = window._EFF_CHART;
-
-  if (foe && atkTypeId && chart) {
-    // Get array of foe type IDs (e.g., ['water', 'psychic'])
-    var defTypeIds = getDefTypeIds(foe);
-    
-    if (defTypeIds.length) {
-      // Get integer modifier: 1=SE, -1=NVE, 0=neutral, -Infinity=Immune
-      var v = getEff(atkTypeId, defTypeIds, chart);
-      
-      if (v === -Infinity) eff = 'Immune';
-      else if (v > 0)      eff = 'SE';
-      else if (v < 0)      eff = 'NVE';
-      else                 eff = ''; // neutral = blank
+  // 2) Resolve foe types -> lowercase ids (e.g. ["water","psychic"])
+  var foeTypes = [];
+  if (foe && !foe.fainted) {
+    var t = Array.isArray(foe.types) && foe.types.length ? foe.types
+          : (typeof foe.getTypes === 'function' ? foe.getTypes() : null);
+    if (!t || !t.length) {
+      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(spKey);
+      t = (sp && sp.types) ? sp.types : [];
+    }
+    // map to ids
+    for (var ii = 0; ii < t.length; ii++) {
+      var ty = Dex.types.get(t[ii]);
+      if (ty && ty.id) foeTypes.push(ty.id); // ids are lowercase
     }
   }
 
-  // Final HTML generation
-  if (eff) {
-    var cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
-    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+  // 3) Ensure chart + lowercase index exist
+  if (window._EFF_CHART && !window._EFF_DEFROWS) {
+    var _idx = Object.create(null);
+    Object.keys(window._EFF_CHART).forEach(function (k) { _idx[k.toLowerCase()] = window._EFF_CHART[k]; });
+    window._EFF_DEFROWS = _idx;
   }
 
-  if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF FINAL]', { move: name, atkTypeId, foe: foe && foe.name, defTypeIds, eff });
+  if (foeTypes.length && window._EFF_CHART && window._EFF_DEFROWS) {
+    // 4) Attacker name (TitleCase) to match chart keys like "Steel"
+    var atkName = (Dex.types.get(moveType)?.name) || String(moveType);
+
+    // 5) Multiply effectiveness across defender types; tolerate casing in damageTaken keys
+    var mult = 1, saw = false;
+    for (var i2 = 0; i2 < foeTypes.length; i2++) {
+      var defId = foeTypes[i2]; // lowercase defender id
+      var row = window._EFF_DEFROWS[defId] || window._EFF_CHART[defId];
+      if (!row || !row.damageTaken) continue;
+
+      var dt = row.damageTaken[atkName];
+      if (dt === undefined) dt = row.damageTaken[atkName.toLowerCase()];
+      if (dt === undefined) dt = row.damageTaken[atkName.toUpperCase()];
+      if (dt === undefined) continue;
+
+      saw = true;
+      if (dt === 3) { mult = 0; break; }      // immune
+      if (dt === 2) mult *= 2;                // super effective
+      else if (dt === 1) mult *= 0.5;         // not very effective
+      // 0 or undefined => neutral
+    }
+
+    if (saw) {
+      var label = (mult === 0) ? 'Immune' : (mult > 1 ? 'SE' : (mult < 1 ? 'NVE' : ''));
+      if (label) {
+        var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
+        effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+      }
+    }
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF FINAL ERROR]', e);
-  effHtml = '';
+  // keep effHtml empty on error
 }
-// --- End Effectiveness Label Execution ---
+// --- End: Effectiveness label ---
+
 
 
 					
