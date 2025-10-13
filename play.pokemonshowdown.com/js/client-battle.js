@@ -713,67 +713,102 @@ if (window._EFF_CHART && !window._EFF_DEFROWS) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: precise per-type debug (row? vs key?) ---
+					// --- Start: Effectiveness DEBUG (row? vs key?) ---
 var effHtml = '';
 try {
+  // 0) Active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
+  // 1) Resolve foe types
   var foeTypes = [];
   if (foe && !foe.fainted) {
-    if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
-    else if (typeof foe.getTypes === 'function') { var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : []; }
-    else { var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name; var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : []; }
+    if (Array.isArray(foe.types) && foe.types.length) {
+      foeTypes = foe.types.slice();
+    } else if (typeof foe.getTypes === 'function') {
+      var t = foe.getTypes();
+      foeTypes = Array.isArray(t) ? t.slice() : [];
+    } else {
+      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(spKey);
+      foeTypes = (sp && sp.types) ? sp.types.slice() : [];
+    }
   }
   foeTypes = foeTypes.filter(Boolean);
 
-  // (re)build lowercase index if needed
+  // 2) Ensure lowercase defender index exists (self-heal if load order changed)
   if (window._EFF_CHART && !window._EFF_DEFROWS) {
     var _idx = Object.create(null);
-    Object.keys(window._EFF_CHART).forEach(function (k) { _idx[k.toLowerCase()] = window._EFF_CHART[k]; });
+    Object.keys(window._EFF_CHART).forEach(function (k) {
+      _idx[k.toLowerCase()] = window._EFF_CHART[k];
+    });
     window._EFF_DEFROWS = _idx;
   }
 
+  // 3) Guard rails
   if (!window._EFF_CHART || !window._EFF_DEFROWS) {
     effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
   } else if (!foeTypes.length) {
     effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
   } else {
-    var atkName = (Dex.types.get(moveType)?.name) || String(moveType); // TitleCase, e.g. "Steel"
-    var mult = 1, sawAny = false;
+    // 4) Attack name (TitleCase) to match damageTaken keys
+    var atkObj  = Dex.types.get(moveType);
+    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // e.g. "Steel"
+
+    // 5) Helper to normalize defender name to a canonical id
+    function normId(s) {
+      return (typeof toID === 'function') ? toID(s) : String(s).trim().toLowerCase();
+    }
+
+    var mult = 1;
+    var sawAny = false;
     var parts = ['M:' + atkName];
 
     for (var i2 = 0; i2 < foeTypes.length; i2++) {
-      var defRaw = foeTypes[i2];                   // e.g. "Water"
-      var defKey = String(defRaw).toLowerCase();   // "water"
-      var row = window._EFF_DEFROWS[defKey];
+      var defRaw = foeTypes[i2];           // e.g. "Water"
+      var defKey = normId(defRaw);         // "water"
+
+      // Try indexed row first, then raw chart by id
+      var row = (window._EFF_DEFROWS && window._EFF_DEFROWS[defKey]) ||
+                (window._EFF_CHART && window._EFF_CHART[defKey]);
 
       if (!row || !row.damageTaken) { parts.push(defRaw[0] + ':row?'); continue; }
 
-      var code = row.damageTaken[atkName];         // expect 0/1/2/3
+      // Prefer TitleCase attack key; be tolerant to casing if chart entries vary
+      var code = (row.damageTaken[atkName] !== undefined)
+        ? row.damageTaken[atkName]
+        : (row.damageTaken[atkName.toLowerCase()] !== undefined)
+          ? row.damageTaken[atkName.toLowerCase()]
+          : row.damageTaken[atkName.toUpperCase()];
+
       if (code === undefined) { parts.push(defRaw[0] + ':key?'); continue; }
 
       sawAny = true;
       parts.push(defRaw[0] + ':' + code);
+
+      // 0=neutral, 1=resist, 2=weak, 3=immune
       if (code === 3) { mult = 0; break; }
-      if (code === 2) mult *= 2; else if (code === 1) mult *= 0.5;
+      if (code === 2) mult *= 2;
+      else if (code === 1) mult *= 0.5;
     }
 
     if (!sawAny) {
-      // show exactly which types failed and why
-      effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(parts.join(' ')) + '</small> ';
+      effHtml = '<small class="eff-tag eff-debug">' +
+        BattleLog.escapeHTML(parts.join(' ')) + '</small> ';
     } else {
       mult = Math.round(mult * 1000) / 1000;
-      effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(parts.join(' ') + ' = ' + mult) + '</small> ';
+      effHtml = '<small class="eff-tag eff-debug">' +
+        BattleLog.escapeHTML(parts.join(' ') + ' = ' + mult) + '</small> ';
     }
   }
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: precise per-type debug ---
+// --- End: Effectiveness DEBUG ---
+
 
 
 
