@@ -735,73 +735,67 @@ if (window._EFF_CHART && !window._EFF_DEFROWS) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: effectiveness with lowercase defender index ---
+					// --- Start: precise per-type debug (row? vs key?) ---
 var effHtml = '';
 try {
-  // Active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // Resolve foe types (drop undefined)
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
-    else if (typeof foe.getTypes === 'function') {
-      var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : [];
-    } else {
-      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
-    }
+    else if (typeof foe.getTypes === 'function') { var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : []; }
+    else { var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name; var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : []; }
   }
   foeTypes = foeTypes.filter(Boolean);
-  
-  if (window._EFF_CHART && !window._EFF_DEFROWS) {
-  var _idx = Object.create(null);
-  Object.keys(window._EFF_CHART).forEach(function (k) {
-    _idx[k.toLowerCase()] = window._EFF_CHART[k];
-  });
-  window._EFF_DEFROWS = _idx;
-}
 
+  // (re)build lowercase index if needed
+  if (window._EFF_CHART && !window._EFF_DEFROWS) {
+    var _idx = Object.create(null);
+    Object.keys(window._EFF_CHART).forEach(function (k) { _idx[k.toLowerCase()] = window._EFF_CHART[k]; });
+    window._EFF_DEFROWS = _idx;
+  }
 
   if (!window._EFF_CHART || !window._EFF_DEFROWS) {
     effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
+  } else if (!foeTypes.length) {
+    effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
   } else {
-    // Attack key must be TitleCase to match your chart’s damageTaken keys
-    var atkObj  = Dex.types.get(moveType);
-    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // e.g. "Steel"
+    var atkName = (Dex.types.get(moveType)?.name) || String(moveType); // TitleCase, e.g. "Steel"
+    var mult = 1, sawAny = false;
+    var parts = ['M:' + atkName];
 
-    var mult = 1, saw = false, miss = [];
     for (var i2 = 0; i2 < foeTypes.length; i2++) {
-      var defName = foeTypes[i2];
-      var row = window._EFF_DEFROWS[String(defName).toLowerCase()];
-      if (!row || !row.damageTaken) { miss.push(defName); continue; }
+      var defRaw = foeTypes[i2];                   // e.g. "Water"
+      var defKey = String(defRaw).toLowerCase();   // "water"
+      var row = window._EFF_DEFROWS[defKey];
 
-      var code = row.damageTaken[atkName]; // expect 0/1/2/3
-      if (code === undefined) { miss.push(defName); continue; }
+      if (!row || !row.damageTaken) { parts.push(defRaw[0] + ':row?'); continue; }
 
-      saw = true;
+      var code = row.damageTaken[atkName];         // expect 0/1/2/3
+      if (code === undefined) { parts.push(defRaw[0] + ':key?'); continue; }
+
+      sawAny = true;
+      parts.push(defRaw[0] + ':' + code);
       if (code === 3) { mult = 0; break; }
-      if (code === 2) mult *= 2;
-      else if (code === 1) mult *= 0.5;
+      if (code === 2) mult *= 2; else if (code === 1) mult *= 0.5;
     }
 
-    if (!foeTypes.length) {
-      effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
-    } else if (!saw) {
-      effHtml = '<small class="eff-tag eff-debug">Math Error: ' + BattleLog.escapeHTML(miss.join(',')) + '</small> ';
+    if (!sawAny) {
+      // show exactly which types failed and why
+      effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(parts.join(' ')) + '</small> ';
     } else {
       mult = Math.round(mult * 1000) / 1000;
-      effHtml = '<small class="eff-tag eff-debug">' + mult + '</small> ';
+      effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(parts.join(' ') + ' = ' + mult) + '</small> ';
     }
   }
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: effectiveness with lowercase defender index ---
+// --- End: precise per-type debug ---
 
 
 
