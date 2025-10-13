@@ -1,3 +1,60 @@
+// ===== Begin: Embedded Type Chart (cached once) =====
+(function initEffChart(){
+  if (window._EFF_CHART) return;
+  window._EFF_CHART = {
+    bug: {damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
+    electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
+    fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
+    flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
+    grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
+    ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
+    normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
+    poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
+    stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
+    water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
+    blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
+    light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
+    gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
+  };
+})();
+function _effFromChart(attackingType, defenderTypes){
+  // attackingType can be ID or Name; defenderTypes are Names (from foeTypes)
+  if (!attackingType || !defenderTypes || !defenderTypes.length) return '';
+  // normalize attacker -> Name (e.g., 'Fire') and ID (e.g., 'fire')
+  var aTy = Dex.types.get(attackingType);
+  var aName = (aTy && aTy.name) ? aTy.name : String(attackingType);
+  var aId = (aTy && aTy.id) ? aTy.id : aName.toLowerCase();
+
+  var mult = 1;
+  for (var i = 0; i < defenderTypes.length; i++) {
+    var dTy = Dex.types.get(defenderTypes[i]);
+    var dId = (dTy && dTy.id) ? dTy.id : String(defenderTypes[i]).toLowerCase();
+    var row = window._EFF_CHART[dId];
+    if (!row || !row.damageTaken) continue;
+
+    // Your chart’s damageTaken uses **Names** as keys (e.g., 'Fire', 'Water'),
+    // but also contains status keys we can ignore (par, brn, etc.)
+    var dt = row.damageTaken[aName];
+    if (dt === 3) return 'Immune';
+    if (dt === 2) mult *= 2;
+    else if (dt === 1) mult *= 0.5;
+  }
+  if (mult > 1) return 'SE';
+  if (mult < 1) return 'NVE';
+  return '';
+}
+// ===== End: Embedded Type Chart =====
+
+
 (function ($) {
 
 	var BattleRoom = this.BattleRoom = ConsoleRoom.extend({
@@ -673,17 +730,17 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: Foe types + simple effectiveness from moveType vs foeTypes ---
+					// --- Start: Foe types + label via embedded chart (moveType vs foeTypes) ---
 var effHtml = '';
 try {
-  // 1) Get active foe slot 0
+  // Get foe slot 0 (your working approach)
   var foe =
-    (this.battle.farSide?.active?.[0]) ||
-    (this.battle.foeSide?.active?.[0]) ||
-    (this.battle.sides?.[1]?.active?.[0]) ||
+    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
+    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
+    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // 2) Resolve foeTypes array (["Water","Psychic"] etc.), using your proven fallbacks
+  // Resolve foe types array
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
@@ -698,54 +755,24 @@ try {
     }
   }
 
-  // 3) Minimal effectiveness: ONLY moveType vs foeTypes
-  function effectivenessLabelSimple(_moveType, _foeTypes) {
-    if (!_moveType || !_foeTypes || !_foeTypes.length) return '';
-    // normalize attacking type (both id + Name for robustness)
-    var att = Dex.types.get(_moveType);
-    if (!att || !att.exists) return '';
-    var attId = att.id;       // e.g. 'fire'
-    var attName = att.name;   // e.g. 'Fire'
+  // Calculate label using ONLY moveType vs foeTypes, via the embedded chart
+  var label = _effFromChart(moveType, foeTypes);
 
-    var mult = 1;
-    for (var i = 0; i < _foeTypes.length; i++) {
-      var def = Dex.types.get(_foeTypes[i]);
-      if (!def || !def.damageTaken) continue;
-      var map = def.damageTaken;
-      // try id first, then Name (different client builds store either)
-      var dt = (map[attId] !== undefined) ? map[attId]
-             : (map[attName] !== undefined) ? map[attName]
-             : undefined;
-      // 0=neutral, 1=resist, 2=weak, 3=immune
-      if (dt === 3) return 'Immune';  // trumps everything
-      if (dt === 2) mult *= 2;
-      else if (dt === 1) mult *= 0.5;
-      // undefined/0 => neutral contribution
-    }
-
-    if (mult > 1) return 'SE';
-    if (mult < 1) return 'NVE';
-    return ''; // neutral => blank
-  }
-
-  var label = effectivenessLabelSimple(moveType, foeTypes);
-
-  // 4) Build the HTML chunk (just the label; add foe type name too if you want)
   if (label) {
     var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
     effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
   } else {
-    effHtml = ''; // neutral stays blank
+    effHtml = ''; // neutral => blank
   }
 
   if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF SIMPLE]', { move: name, moveType, foeName: foe && foe.name, foeTypes, label });
+    console.debug('[EFF CHART]', { move: name, moveType, foeName: foe && foe.name, foeTypes, label });
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE ERROR]', e);
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF CHART ERROR]', e);
   effHtml = '';
 }
-// --- End: Foe types + simple effectiveness from moveType vs foeTypes ---
+// --- End: Foe types + label via embedded chart ---
 
 
 					
