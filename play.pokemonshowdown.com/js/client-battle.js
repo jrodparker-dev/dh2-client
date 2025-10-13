@@ -1,3 +1,33 @@
+// ===== Begin: Embedded Type Chart (cached once) =====
+(function initEffChart(){
+  if (window._EFF_CHART) return;
+  window._EFF_CHART = {
+    bug: {damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
+    electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
+    fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
+    flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
+    grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
+    ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
+    normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
+    poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
+    stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
+    water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
+    blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
+    light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
+    gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
+  };
+})();
+// ===== End: Embedded Type Chart =====
+
 
 (function ($) {
 
@@ -674,17 +704,17 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: simple label from moveType vs foeTypes (no Dex calls) ---
+					// --- Start: ultra-minimal middle label (inside the move loop) ---
 var effHtml = '';
 try {
-  // 1) find active foe (slot 0) – same simple logic you had
+  // active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // 2) resolve foeTypes array (e.g., ["Water","Psychic"])
+  // resolve foe types → ["Water","Psychic"], etc.
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
@@ -693,56 +723,26 @@ try {
       var t = foe.getTypes();
       foeTypes = Array.isArray(t) ? t.slice() : [];
     } else {
-      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey);
+      var key = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(key);
       foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
 
-  // 3) embed chart once (defender key: lowercase; attack key: TitleCase)
-  if (!window._EFF_CHART) {
-    window._EFF_CHART = {
-      bug:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-      dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
-      dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
-      electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-      fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
-      fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
-      fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
-      flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-      ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
-      grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
-      ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
-      ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
-      normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
-      poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
-      psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
-      rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
-      steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
-      stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
-      water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
-      blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
-      light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
-      gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
-    };
-  }
-
-  // 4) super-simple calc: ONLY moveType vs foeTypes using that chart
+  // compute label ONLY using moveType vs foeTypes via the embedded chart
   function titleCase(s){ s = String(s||''); return s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : ''; }
-  var mt = titleCase(moveType);           // attack key in chart rows
+  var mt = titleCase(moveType);
   var mult = 1, saw = false;
 
-  for (var i = 0; i < foeTypes.length; i++) {
-    var dKey = String(foeTypes[i] || '').toLowerCase();       // defender row key
-    var row = window._EFF_CHART[dKey];
+  for (var i2 = 0; i2 < foeTypes.length; i2++) {
+    var row = window._EFF_CHART[String(foeTypes[i2]||'').toLowerCase()];
     if (!row || !row.damageTaken) continue;
-    var code = row.damageTaken[mt];                            // 0/1/2/3 or undefined
+    var code = row.damageTaken[mt];   // 0/1/2/3 or undefined
     if (code === undefined) continue;
     saw = true;
-    if (code === 3) { mult = 0; break; }                      // Immune trumps
+    if (code === 3) { mult = 0; break; }
     if (code === 2) mult *= 2;
     else if (code === 1) mult *= 0.5;
-    // 0 => neutral (no change)
   }
 
   var label = '';
@@ -750,21 +750,19 @@ try {
     if (mult === 0) label = 'Immune';
     else if (mult > 1) label = 'SE';
     else if (mult < 1) label = 'NVE';
-    // neutral stays ''
   }
 
-  effHtml = label ? '<small class="eff-tag ' +
-    (label==='Immune'?'eff-immune':label==='SE'?'eff-se':'eff-nve') +
-    '">' + label + '</small> ' : '';
+  effHtml = label
+    ? '<small class="eff-tag ' + (label==='Immune'?'eff-immune':label==='SE'?'eff-se':'eff-nve') + '">' + label + '</small> '
+    : '';
 
-  if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF SIMPLE CHART]', { move: name, moveType, foeTypes, mt, label, mult });
-  }
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE CHART]', { move: name, moveType, foeTypes, mt, label, mult });
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE CHART ERROR]', e);
-  effHtml = '';
+  console.error('[EFF block error]', e);
+  effHtml = ''; // fail safe – never stop rendering the menu
 }
-// --- End: simple label from moveType vs foeTypes (no Dex calls) ---
+// --- End: ultra-minimal middle label ---
+
 
 
 
