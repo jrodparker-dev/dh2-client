@@ -1,3 +1,71 @@
+// ===== Begin: Embedded Type Chart (cached once) =====
+(function initEffChart(){
+  if (window._EFF_CHART) return;
+  window._EFF_CHART = {
+    bug: {damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
+    electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
+    fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
+    flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
+    grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
+    ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
+    normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
+    poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
+    stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
+    water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
+    blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
+    light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
+    gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
+  };
+})();
+// ===== Normalize your custom chart once (no Dex needed) =====
+(function normalizeCustomChart() {
+  if (!window._EFF_CHART || window._EFF_NORM) return;
+
+  // to-id: letters+digits only, lowercase
+  function idify(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '');
+  }
+
+  // Collect all defender type ids from your chart's top-level keys
+  var typeSet = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (defK) {
+    typeSet[idify(defK)] = true;
+  });
+
+  // Build normalized chart: norm[defId][atkId] = code (0/1/2/3)
+  var norm = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (defK) {
+    var defId = idify(defK);
+    var row = window._EFF_CHART[defK] || {};
+    var dt = row.damageTaken || {};
+    var out = Object.create(null);
+
+    // copy only keys that are actual type ids (ignore psn/brn/etc)
+    Object.keys(dt).forEach(function (atkK) {
+      var atkId = idify(atkK);
+      if (typeSet[atkId]) out[atkId] = dt[atkK];
+    });
+
+    norm[defId] = out;
+  });
+
+  window._EFF_NORM = norm;      // normalized lowercase-lowercase map
+  window._EFF_TYPES = typeSet;  // set of valid type ids
+})();
+
+
+
 (function ($) {
 
 	var BattleRoom = this.BattleRoom = ConsoleRoom.extend({
@@ -657,6 +725,75 @@
 				var hasMoves = false;
 				var moveMenu = '';
 				var movebuttons = '';
+
+				// ===== Helpers (no Dex) =====
+function idify(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+// Get the active foe (slot 0 only) and their normalized type ids (max 2)
+function getFoeTypeIdsSafe(battle) {
+  var foe =
+    (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
+    (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
+    (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
+    null;
+
+  var types = [];
+  if (foe && !foe.fainted) {
+    if (Array.isArray(foe.types) && foe.types.length) {
+      types = foe.types.slice();
+    } else if (typeof foe.getTypes === 'function') {
+      var t = foe.getTypes();
+      types = Array.isArray(t) ? t.slice() : [];
+    } else {
+      // last-ditch: species fields if present
+      var key = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      // we don’t consult Dex; if this path is hit and types weren’t on the mon,
+      // we’ll just return [] and show "Types?"
+      types = [];
+    }
+  }
+  // Normalize and dedupe
+  var out = [];
+  var seen = Object.create(null);
+  for (var i = 0; i < types.length && out.length < 2; i++) {
+    var id = idify(types[i]);
+    if (id && !seen[id]) { seen[id] = true; out.push(id); }
+  }
+  return out;
+}
+
+// Compute combined effectiveness using normalized chart
+function combinedEffectLabel(atkId, defIds, normChart, typeSet) {
+  if (!normChart) return 'Chart Error';
+  if (!defIds || !defIds.length) return 'Types?';
+  if (!atkId) return 'Key?';
+
+  var mult = 1;
+  for (var i = 0; i < defIds.length; i++) {
+    var d = defIds[i];
+    var row = normChart[d];
+    if (!row) return 'Key?'; // defender row missing from chart
+
+    var code = row[atkId];
+    if (code === undefined) return 'Key?'; // attacker column missing
+
+    if (code === 3) { mult = 0; break; }     // immune trumps
+    if (code === 2) mult *= 2;               // super effective
+    else if (code === 1) mult *= 0.5;        // resist
+    // 0/undefined → neutral (already 1x)
+  }
+
+  if (mult === 0) return 'Immune';
+  if (mult > 1)   return 'SE';
+  if (mult < 1)   return 'NVE';
+  return ''; // neutral → blank
+}
+
+
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
@@ -673,115 +810,34 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: SUPER-ROBUST built-in Dex effectiveness DEBUG ---
+					// ===== Custom-chart effectiveness (bulletproof, no Dex) =====
 var effHtml = '';
 try {
-  // Active foe slot 0
-  var foe =
-    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
-    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
-    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
-    null;
+  // 1) Ensure normalized chart exists
+  var norm = window._EFF_NORM;
+  var typeSet = window._EFF_TYPES;
 
-  // Resolve foe types (current, then species fallback)
-  var foeTypes = [];
-  if (foe && !foe.fainted) {
-    if (Array.isArray(foe.types) && foe.types.length) {
-      foeTypes = foe.types.slice();
-    } else if (typeof foe.getTypes === 'function') {
-      var _t = foe.getTypes(); foeTypes = Array.isArray(_t) ? _t.slice() : [];
-    } else {
-      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
-    }
-  }
-  foeTypes = foeTypes.filter(Boolean);
-
-  // Attacking type in several forms
-  var atkObj   = Dex.types.get(moveType);
-  var atkName  = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // TitleCase intended
-  var atkLower = atkName.toLowerCase();
-  var atkUpper = atkName.toUpperCase();
-  var atkId    = (atkObj && atkObj.id) ? atkObj.id : (Dex.types.get(atkName)?.id || Dex.types.get(atkLower)?.id || Dex.types.get(atkUpper)?.id);
-
-  // Helper: generate candidate strings for a defender type and pick the first row that exists
-  function firstTypeRow(raw) {
-    var s = String(raw || '').trim();
-    if (!s) return null;
-
-    function cap(x){ return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; }
-
-    var variants = [];
-    var seen = Object.create(null);
-
-    function add(v){ if (v && !seen[v]) { variants.push(v); seen[v] = true; } }
-
-    add(s);
-    add(s.toLowerCase());
-    add(s.toUpperCase());
-    add(cap(s));
-
-    // also try resolving via Dex to get a canonical id, then try that id in multiple forms
-    var guess = Dex.types.get(s);
-    var gid = guess && guess.id;
-    if (gid) {
-      add(gid);               // id (lowercase)
-      add(gid.toUpperCase());
-      add(cap(gid));
-    }
-
-    for (var i = 0; i < variants.length; i++) {
-      var cand = variants[i];
-      var obj = Dex.types.get(cand);
-      if (obj && obj.damageTaken) return obj;
-    }
-    return null;
+  // 2) Get attacker type id from moveType (raw string → id)
+  var atkId = idify(moveType);
+  if (typeSet && !typeSet[atkId]) {
+    // If your move types sometimes include formatting (e.g. "??"), idify handles it;
+    // if still not in set, we’ll let label() return "Key?"
   }
 
-  var mult = 1, sawAny = false;
-  // // If you want the “move / types” header back, uncomment next line:
-  // var parts = ['M:' + atkName, 'T:' + (foeTypes.join('/') || '?')];
-  var parts = [];
+  // 3) Get foe’s two type ids
+  var defIds = getFoeTypeIdsSafe(this.battle); // e.g., ["water","psychic"]
 
-  for (var i2 = 0; i2 < foeTypes.length; i2++) {
-    var defRaw = foeTypes[i2];                   // e.g. "Water"
-    var defObj = firstTypeRow(defRaw);           // robust resolver
+  // 4) Compute label
+  var label = combinedEffectLabel(atkId, defIds, norm, typeSet);
 
-    if (!defObj) { parts.push(defRaw[0] + ':row?'); continue; }
-
-    // Read damageTaken, tolerating different attacker key casings/ids
-    var code = defObj.damageTaken[atkName];
-    if (code === undefined) code = defObj.damageTaken[atkLower];
-    if (code === undefined) code = defObj.damageTaken[atkUpper];
-    if (code === undefined && atkId) code = defObj.damageTaken[atkId];
-
-    if (code === undefined) { parts.push(defRaw[0] + ':key?'); continue; }
-
-    parts.push(defRaw[0] + ':' + String(code));
-    sawAny = true;
-
-    // 0=neutral, 1=resist, 2=weak, 3=immune
-    if (code === 3) { mult = 0; break; }
-    if (code === 2) mult *= 2;
-    else if (code === 1) mult *= 0.5;
+  // 5) Emit HTML
+  if (label) {
+    var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : (label === 'NVE') ? 'eff-nve' : 'eff-debug';
+    effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
   }
-
-  var txt;
-  if (!foeTypes.length) {
-    txt = 'Types?';
-  } else if (!sawAny) {
-    txt = parts.join(' ') + ' = Math Error';
-  } else {
-    mult = Math.round(mult * 1000) / 1000;
-    txt = parts.join(' ') + ' = ' + mult;
-  }
-
-  effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: SUPER-ROBUST built-in Dex effectiveness DEBUG ---
-
 
 					
 					if (moveData.disabled) {
