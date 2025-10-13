@@ -704,17 +704,17 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: on-button debug of chart keys/codes ---
+					// --- Start: hardened on-button debug with Dex fallback ---
 var effHtml = '';
 try {
-  // active foe slot 0
+  // 1) get foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // resolve foe types -> ["Water","Psychic"] etc.
+  // 2) resolve foe types & sanitize (drop falsy/undefined)
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
@@ -725,46 +725,86 @@ try {
       var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
+  foeTypes = foeTypes.filter(Boolean); // drop undefined/null
 
-  // if chart missing, say so right on the button
-  if (!window._EFF_CHART) {
-    effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
-  } else {
-    // Attacking key we will use to read each row
-    var atkObj  = Dex.types.get(moveType);
-    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);      // e.g. 'Steel'
-    var atkId   = (atkObj && atkObj.id)   ? atkObj.id   : atkName.toLowerCase(); // e.g. 'steel'
+  // 3) compute attack keys from Dex (so we match Name/id correctly)
+  var atkObj  = Dex.types.get(moveType);
+  var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType);      // e.g. 'Steel'
+  var atkId   = (atkObj && atkObj.id)   ? atkObj.id   : atkName.toLowerCase(); // e.g. 'steel'
 
-    // Build a compact debug string: A:Steel W:2 P:key?
-    var parts = ['A:' + atkName];
-    for (var i2 = 0; i2 < foeTypes.length; i2++) {
-      var defName  = String(foeTypes[i2] || '');
-      var defLower = defName.toLowerCase();
-      var row = window._EFF_CHART[defLower];
+  // 4) build debug parts + try lookup via chart, then Dex fallback
+  var parts = ['A:' + atkName];
+  var mult = 1;
+  var sawAnyCode = false;
 
-      if (!row || !row.damageTaken) {
-        parts.push(defName[0] + ':' + 'row?');       // e.g. 'W:row?'
+  function readCodeFromChart(defName) {
+    if (!window._EFF_CHART) return { ok:false, why:'chart?' };
+    var row = window._EFF_CHART[String(defName).toLowerCase()];
+    if (!row || !row.damageTaken) return { ok:false, why:'row?' };
+    // most charts: keys by Name (e.g. 'Steel'); try id as fallback
+    var code = row.damageTaken[atkName];
+    if (code === undefined) code = row.damageTaken[atkId];
+    return (code === undefined) ? { ok:false, why:'key?' } : { ok:true, code:code };
+  }
+
+  function readCodeFromDex(defName) {
+    var d = Dex.types.get(defName);
+    var m = d && d.damageTaken;
+    if (!m) return { ok:false, why:'dexRow?' };
+    var code = (m[atkId] !== undefined) ? m[atkId]
+             : (m[atkName] !== undefined) ? m[atkName]
+             : undefined;
+    return (code === undefined) ? { ok:false, why:'dexKey?' } : { ok:true, code:code };
+  }
+
+  for (var i2 = 0; i2 < foeTypes.length; i2++) {
+    var defName = foeTypes[i2];               // e.g. 'Water'
+    var tag = defName ? defName[0] : '?';     // compact letter on the button
+    var res = readCodeFromChart(defName);
+    if (!res.ok) {
+      // show why the chart failed (row? key? chart?)
+      // then try Dex fallback
+      var dex = readCodeFromDex(defName);
+      if (!dex.ok) {
+        parts.push(tag + ':' + res.why + '|' + dex.why);
         continue;
-      }
-
-      // Try Name first (how your chart is authored), then ID as a last resort
-      var code = row.damageTaken[atkName];
-      if (code === undefined) code = row.damageTaken[atkId];
-
-      if (code === undefined) {
-        parts.push(defName[0] + ':' + 'key?');      // row exists but no entry for this attack key
       } else {
-        parts.push(defName[0] + ':' + String(code)); // 0/1/2/3
+        res = dex; // use Dex code
+        parts.push(tag + ':' + String(res.code) + ' (dex)');
       }
+    } else {
+      parts.push(tag + ':' + String(res.code));
     }
 
-    var txt = parts.join(' ');
-    effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
+    // apply code to multiplier if we got one
+    if (res.ok) {
+      sawAnyCode = true;
+      if (res.code === 3) { mult = 0; break; }
+      if (res.code === 2) mult *= 2;
+      else if (res.code === 1) mult *= 0.5;
+    }
   }
+
+  // 5) show result number if we found any codes; else show specific failure
+  var txt;
+  if (!foeTypes.length) {
+    txt = 'A:' + atkName + ' T:?'; // no types present
+  } else if (!window._EFF_CHART) {
+    txt = 'Chart Error';           // chart missing entirely
+  } else if (!sawAnyCode) {
+    txt = parts.join(' ') + ' = Math Error'; // had types, but neither chart nor Dex yielded a code
+  } else {
+    // print the raw number so you can see the math outcome
+    mult = Math.round(mult * 1000) / 1000;
+    txt = parts.join(' ') + ' = ' + mult;
+  }
+
+  effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
 } catch (e) {
-  effHtml = '<small class="eff-tag eff-debug">Math Error</small> ';
+  effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: on-button debug of chart keys/codes ---
+// --- End: hardened on-button debug with Dex fallback ---
+
 
 
 
