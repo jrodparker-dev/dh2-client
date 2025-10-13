@@ -27,44 +27,17 @@
   };
 })();
 // ===== End: Embedded Type Chart =====
-// === Normalize your embedded chart so lookups "just work" ===
-(function initEffChartIndex(){
-  if (!window._EFF_CHART || window._EFF_CHART_INDEX) return;
-
-  const idx = Object.create(null);
-
-  // Map defender rows by multiple keys: raw, trimmed-lower, Dex id
-  Object.keys(window._EFF_CHART).forEach(k => {
-    const row = window._EFF_CHART[k];
-    const raw = String(k);
-    const low = raw.toLowerCase().trim();
-
-    idx[raw] = row;
-    idx[low] = row;
-
-    const dx = Dex.types.get(raw);
-    if (dx && dx.id) idx[dx.id] = row;                 // e.g. 'water'
-    if (dx && dx.name) idx[dx.name] = row;             // e.g. 'Water'
+// Put this ONCE somewhere that runs before the move buttons render.
+// If your chart is already on window._EFF_CHART with lowercase keys,
+// this builds a quick lowercase index we’ll use in the loop.
+if (window._EFF_CHART && !window._EFF_DEFROWS) {
+  var _idx = Object.create(null);
+  Object.keys(window._EFF_CHART).forEach(function (k) {
+    _idx[k.toLowerCase()] = window._EFF_CHART[k];
   });
+  window._EFF_DEFROWS = _idx; // defender rows by lowercase key
+}
 
-  // Normalize attack keys inside each row’s damageTaken:
-  // ensure both Name and id are present as synonyms for whatever the row had.
-  Object.values(idx).forEach(row => {
-    const dt = row && row.damageTaken;
-    if (!dt) return;
-    Object.keys(dt).forEach(k => {
-      const val = dt[k];
-      const dx = Dex.types.get(k);
-      if (dx && dx.name && dt[dx.name] === undefined) dt[dx.name] = val;   // 'Steel'
-      if (dx && dx.id && dt[dx.id] === undefined) dt[dx.id] = val;         // 'steel'
-      // also add a trimmed-lower alias for safety
-      const low = String(k).toLowerCase().trim();
-      if (dt[low] === undefined) dt[low] = val;
-    });
-  });
-
-  window._EFF_CHART_INDEX = idx;
-})();
 
 
 (function ($) {
@@ -742,7 +715,7 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: effectiveness as a number using normalized chart index ---
+					// --- Start: effectiveness with lowercase defender index ---
 var effHtml = '';
 try {
   // Active foe slot 0
@@ -752,12 +725,12 @@ try {
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // Foe types → ['Water','Psychic'] (drop undefined)
+  // Resolve foe types (drop undefined)
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) foeTypes = foe.types.slice();
     else if (typeof foe.getTypes === 'function') {
-      var _t = foe.getTypes(); foeTypes = Array.isArray(_t) ? _t.slice() : [];
+      var t = foe.getTypes(); foeTypes = Array.isArray(t) ? t.slice() : [];
     } else {
       var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
       var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
@@ -765,45 +738,32 @@ try {
   }
   foeTypes = foeTypes.filter(Boolean);
 
-  // Guard: chart and index must exist
-  if (!window._EFF_CHART || !window._EFF_CHART_INDEX) {
+  if (!window._EFF_CHART || !window._EFF_DEFROWS) {
     effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
   } else {
-    // Attacking keys: use Dex so we match your chart synonyms
-    var atk = Dex.types.get(moveType);
-    var aName = (atk && atk.name) ? atk.name : String(moveType);
-    var aId   = (atk && atk.id)   ? atk.id   : aName.toLowerCase();
+    // Attack key must be TitleCase to match your chart’s damageTaken keys
+    var atkObj  = Dex.types.get(moveType);
+    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // e.g. "Steel"
 
-    var mult = 1, saw = false, missing = [];
-
+    var mult = 1, saw = false, miss = [];
     for (var i2 = 0; i2 < foeTypes.length; i2++) {
       var defName = foeTypes[i2];
-      // look up defender row in the normalized index using multiple candidates
-      var row = window._EFF_CHART_INDEX[defName] ||
-                window._EFF_CHART_INDEX[String(defName).toLowerCase().trim()] ||
-                window._EFF_CHART_INDEX[(Dex.types.get(defName)||{}).id || ''];
+      var row = window._EFF_DEFROWS[String(defName).toLowerCase()];
+      if (!row || !row.damageTaken) { miss.push(defName); continue; }
 
-      if (!row || !row.damageTaken) { missing.push(defName); continue; }
-
-      // prefer Name, fallback id, then lower alias (index normalization provides all)
-      var code = row.damageTaken[aName];
-      if (code === undefined) code = row.damageTaken[aId];
-      if (code === undefined) code = row.damageTaken[String(aName).toLowerCase()];
-
-      if (code === undefined) { missing.push(defName); continue; }
+      var code = row.damageTaken[atkName]; // expect 0/1/2/3
+      if (code === undefined) { miss.push(defName); continue; }
 
       saw = true;
       if (code === 3) { mult = 0; break; }
       if (code === 2) mult *= 2;
       else if (code === 1) mult *= 0.5;
-      // 0 -> neutral
     }
 
     if (!foeTypes.length) {
       effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
     } else if (!saw) {
-      // still no codes after normalization ⇒ show which defs missed
-      effHtml = '<small class="eff-tag eff-debug">Math Error: ' + BattleLog.escapeHTML(missing.join(',')) + '</small> ';
+      effHtml = '<small class="eff-tag eff-debug">Math Error: ' + BattleLog.escapeHTML(miss.join(',')) + '</small> ';
     } else {
       mult = Math.round(mult * 1000) / 1000;
       effHtml = '<small class="eff-tag eff-debug">' + mult + '</small> ';
@@ -812,8 +772,7 @@ try {
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: effectiveness as a number using normalized chart index ---
-
+// --- End: effectiveness with lowercase defender index ---
 
 
 
