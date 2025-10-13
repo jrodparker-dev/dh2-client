@@ -26,43 +26,6 @@
     gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
   };
 })();
-// ===== Normalize your custom chart once (no Dex needed) =====
-(function normalizeCustomChart() {
-  if (!window._EFF_CHART || window._EFF_NORM) return;
-
-  // to-id: letters+digits only, lowercase
-  function idify(s) {
-    return String(s || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '');
-  }
-
-  // Collect all defender type ids from your chart's top-level keys
-  var typeSet = Object.create(null);
-  Object.keys(window._EFF_CHART).forEach(function (defK) {
-    typeSet[idify(defK)] = true;
-  });
-
-  // Build normalized chart: norm[defId][atkId] = code (0/1/2/3)
-  var norm = Object.create(null);
-  Object.keys(window._EFF_CHART).forEach(function (defK) {
-    var defId = idify(defK);
-    var row = window._EFF_CHART[defK] || {};
-    var dt = row.damageTaken || {};
-    var out = Object.create(null);
-
-    // copy only keys that are actual type ids (ignore psn/brn/etc)
-    Object.keys(dt).forEach(function (atkK) {
-      var atkId = idify(atkK);
-      if (typeSet[atkId]) out[atkId] = dt[atkK];
-    });
-
-    norm[defId] = out;
-  });
-
-  window._EFF_NORM = norm;      // normalized lowercase-lowercase map
-  window._EFF_TYPES = typeSet;  // set of valid type ids
-})();
 
 
 
@@ -726,176 +689,71 @@
 				var moveMenu = '';
 				var movebuttons = '';
 
-				// ===== Helpers (no Dex) =====
-				// -------- Robust chart helpers (paste with your other helpers) --------
 
-// TitleCase helper for attacker names inside damageTaken (e.g., "Steel")
+// TitleCase for attacker keys: "steel" -> "Steel"
 function toTitle(s) {
   s = String(s || '');
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s;
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
 }
 
-// Force (re)build the normalized chart from window._EFF_CHART
-function rebuildNormFromRawChart() {
-  var RAW = window._EFF_CHART;
-  if (!RAW) return;
-
-  function idify(s) {
-    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-  }
-
-  // collect valid type ids from top-level keys
-  var typeSet = Object.create(null);
-  Object.keys(RAW).forEach(function (k) { typeSet[idify(k)] = true; });
-
-  var norm = Object.create(null);
-  Object.keys(RAW).forEach(function (defK) {
-    var defId = idify(defK);
-    var row = RAW[defK] && RAW[defK].damageTaken ? RAW[defK].damageTaken : {};
-    var out = Object.create(null);
-
-    Object.keys(row).forEach(function (atkK) {
-      var atkId = idify(atkK);
-      if (typeSet[atkId]) out[atkId] = row[atkK]; // only keep real types
-    });
-
-    norm[defId] = out;
-  });
-
-  window._EFF_NORM  = norm;
-  window._EFF_TYPES = typeSet;
-}
-
-// Try to get the effectiveness code for (defId, atkId) with many fallbacks.
-// 1) normalized map (lowercase->lowercase)
-// 2) raw chart row using lots of key shapes on both sides
-function getCode(defId, atkId) {
-  defId = String(defId || '');
-  atkId = String(atkId || '');
-
-  var RAW  = window._EFF_CHART || null;
-  var NORM = window._EFF_NORM  || null;
-
-  // quick win: normalized map (lowercase ids)
-  var defL = defId.toLowerCase(), atkL = atkId.toLowerCase();
-  if (NORM && NORM[defL] && NORM[defL].hasOwnProperty(atkL)) {
-    return NORM[defL][atkL];
-  }
-
-  // fall back to RAW with multiple shapes
-  if (!RAW) return undefined;
-
-  var defShapes = [
-    defId, defId.toLowerCase(), defId.toUpperCase(), toTitle(defId)
-  ];
-  var atkShapes = [
-    atkId, atkId.toLowerCase(), atkId.toUpperCase(), toTitle(atkId)
-  ];
-
-  // search defender row first
-  var defRow = null;
-  for (var i = 0; i < defShapes.length && !defRow; i++) {
-    var k = defShapes[i];
-    if (RAW[k] && RAW[k].damageTaken) defRow = RAW[k].damageTaken;
-  }
-  if (!defRow) return undefined;
-
-  // search attacker column within that row
-  for (var j = 0; j < atkShapes.length; j++) {
-    var a = atkShapes[j];
-    if (defRow.hasOwnProperty(a)) return defRow[a];
-  }
-
-  return undefined;
-}
-
-// Combined label from two defender types
-function labelFromTypes(atkId, defIds) {
-  if (!window._EFF_CHART) return 'Chart Error';
-  if (!defIds || !defIds.length) return 'Types?';
-  if (!atkId) return 'Key?';
-
-  var mult = 1;
-  for (var i = 0; i < defIds.length; i++) {
-    var code = getCode(defIds[i], atkId);
-    if (code === undefined) return 'Key?';  // still couldn’t find that matchup
-    if (code === 3) { mult = 0; break; }    // immune
-    if (code === 2) mult *= 2;              // SE
-    else if (code === 1) mult *= 0.5;       // NVE
-  }
-
-  if (mult === 0) return 'Immune';
-  if (mult > 1)   return 'SE';
-  if (mult < 1)   return 'NVE';
-  return ''; // neutral
-}
-
-function idify(s) {
-  return String(s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '');
-}
-
-// Get the active foe (slot 0 only) and their normalized type ids (max 2)
-function getFoeTypeIdsSafe(battle) {
+// Get active foe (slot 0) and return their defender keys as lowercase ids
+function getFoeDefenderKeys(battle) {
   var foe =
     (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
     (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
     (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
     null;
 
-  var types = [];
-  if (foe && !foe.fainted) {
-    if (Array.isArray(foe.types) && foe.types.length) {
-      types = foe.types.slice();
-    } else if (typeof foe.getTypes === 'function') {
-      var t = foe.getTypes();
-      types = Array.isArray(t) ? t.slice() : [];
-    } else {
-      // last-ditch: species fields if present
-      var key = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      // we don’t consult Dex; if this path is hit and types weren’t on the mon,
-      // we’ll just return [] and show "Types?"
-      types = [];
-    }
-  }
-  // Normalize and dedupe
   var out = [];
-  var seen = Object.create(null);
-  for (var i = 0; i < types.length && out.length < 2; i++) {
-    var id = idify(types[i]);
-    if (id && !seen[id]) { seen[id] = true; out.push(id); }
+  if (!foe || foe.fainted) return out;
+
+  // Prefer foe.types / foe.getTypes(). We only need up to two.
+  var raw = Array.isArray(foe.types) ? foe.types
+          : (typeof foe.getTypes === 'function' ? foe.getTypes() : []);
+  raw = Array.isArray(raw) ? raw.slice(0, 2) : [];
+
+  for (var i = 0; i < raw.length; i++) {
+    var t = raw[i];
+    // Turn whatever we got into a lowercase id the same way Dex would
+    var ty = Dex.types.get(t);
+    var id = (ty && ty.id) ? ty.id : String(t || '').toLowerCase();
+    if (id && out.indexOf(id) === -1) out.push(id);
   }
-  return out;
+  return out; // e.g. ["water","psychic"]
 }
 
-// Compute combined effectiveness using normalized chart
-function combinedEffectLabel(atkId, defIds, normChart, typeSet) {
-  if (!normChart) return 'Chart Error';
-  if (!defIds || !defIds.length) return 'Types?';
-  if (!atkId) return 'Key?';
+// Compute SE/NVE/Immune/Neutral using your _EFF_CHART
+function labelFromChart(moveType, defKeys) {
+  var chart = window._EFF_CHART;
+  if (!chart || !chart.water || !chart.water.damageTaken) return ''; // chart not present
+
+  // Attacker column name must be TitleCase (e.g., "Steel")
+  var atkKey = toTitle(moveType); // moveType can be id or name; this normalizes to chart's keys
+  if (!atkKey) return '';
+
+  if (!defKeys || !defKeys.length) return ''; // no types to check
 
   var mult = 1;
-  for (var i = 0; i < defIds.length; i++) {
-    var d = defIds[i];
-    var row = normChart[d];
-    if (!row) return 'Key?'; // defender row missing from chart
+  for (var i = 0; i < defKeys.length; i++) {
+    var defKey = defKeys[i];                 // e.g., "water"
+    var row = chart[defKey];                 // chart uses lowercase defender keys
+    if (!row || !row.damageTaken) return ''; // defender not in chart
 
-    var code = row[atkId];
-    if (code === undefined) return 'Key?'; // attacker column missing
+    // chart rows use attacker Name keys (TitleCase), e.g., row.damageTaken["Steel"]
+    var code = row.damageTaken[atkKey];
+    if (code === undefined) return '';       // attacker column not found
 
-    if (code === 3) { mult = 0; break; }     // immune trumps
-    if (code === 2) mult *= 2;               // super effective
-    else if (code === 1) mult *= 0.5;        // resist
-    // 0/undefined → neutral (already 1x)
+    if (code === 3) { mult = 0; break; }     // Immune
+    if (code === 2) mult *= 2;               // SE
+    else if (code === 1) mult *= 0.5;        // NVE
+    // 0 or undefined → neutral (no change)
   }
 
   if (mult === 0) return 'Immune';
   if (mult > 1)   return 'SE';
   if (mult < 1)   return 'NVE';
-  return ''; // neutral → blank
+  return 'Neutral';
 }
-
 
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
@@ -913,47 +771,27 @@ function combinedEffectLabel(atkId, defIds, normChart, typeSet) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// ===== Custom-chart effectiveness (robust, with fallbacks) =====
+					// --- Start: simple effectiveness label using your _EFF_CHART ---
 var effHtml = '';
 try {
-  // make sure normalized map exists (and self-heal if it looks empty)
-  if (!window._EFF_NORM || !Object.keys(window._EFF_NORM).length) {
-    rebuildNormFromRawChart();
+  // 1) Move's displayed type (PS gives you this already)
+  var moveTypeNameOrId = moveType;            // e.g., "Steel" or "steel"
+
+  // 2) Defender keys exactly as your chart expects (lowercase ids)
+  var defKeys = getFoeDefenderKeys(this.battle); // e.g., ["water","psychic"]
+
+  // 3) Turn that into a label
+  var eff = labelFromChart(moveTypeNameOrId, defKeys); // "SE" | "NVE" | "Immune" | "Neutral" | ""
+
+  // 4) Render (blank on failure/neutral to keep UI clean)
+  if (eff && eff !== 'Neutral') {
+    var cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
+    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
   }
-
-  // attacker id from the move’s visible type text
-  var atkId = String(moveType || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-  // foe types -> ids (you already have a helper; here’s a tiny inline)
-  var foe = (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
-            (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
-            (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) || null;
-
-  var defIds = [];
-  if (foe && !foe.fainted) {
-    var raw = Array.isArray(foe.types) ? foe.types.slice(0, 2)
-             : (typeof foe.getTypes === 'function' ? foe.getTypes() : []);
-    for (var ii = 0; ii < (raw ? raw.length : 0) && defIds.length < 2; ii++) {
-      var d = String(raw[ii] || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-      if (d && defIds.indexOf(d) === -1) defIds.push(d);
-    }
-  }
-
-  var label = labelFromTypes(atkId, defIds);
-
-  if (label) {
-    var cls = (label === 'Immune') ? 'eff-immune'
-            : (label === 'SE')    ? 'eff-se'
-            : (label === 'NVE')   ? 'eff-nve'
-            : 'eff-debug';
-    effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
-  } else {
-    // neutral → leave blank (or show number if you prefer)
-    // effHtml = '<small class="eff-tag eff-debug">1×</small> ';
-  }
-} catch (e) {
-  effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
+} catch (_) {
+  // stay silent on error so buttons never break
 }
+// --- End: simple effectiveness label ---
 
 
 					
