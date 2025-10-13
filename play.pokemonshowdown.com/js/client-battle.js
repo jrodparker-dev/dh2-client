@@ -673,80 +673,114 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: built-in Dex-based effectiveness DEBUG (no custom chart) ---
+					// --- Start: SUPER-ROBUST built-in Dex effectiveness DEBUG ---
 var effHtml = '';
 try {
-  // 0) Active foe slot 0
+  // Active foe slot 0
   var foe =
     (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
     (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
     (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
     null;
 
-  // 1) Resolve foe types (prefer live types, then species fallback)
+  // Resolve foe types (current, then species fallback)
   var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
       foeTypes = foe.types.slice();
     } else if (typeof foe.getTypes === 'function') {
-      var _t = foe.getTypes();
-      foeTypes = Array.isArray(_t) ? _t.slice() : [];
+      var _t = foe.getTypes(); foeTypes = Array.isArray(_t) ? _t.slice() : [];
     } else {
       var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey);
-      foeTypes = (sp && sp.types) ? sp.types.slice() : [];
+      var sp = Dex.species.get(spKey); foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
   foeTypes = foeTypes.filter(Boolean);
 
-  // 2) Attacking type as a TitleCase name (Dex damageTaken uses TitleCase keys)
-  var atkName = (Dex.types.get(moveType)?.name) || String(moveType);
+  // Attacking type in several forms
+  var atkObj   = Dex.types.get(moveType);
+  var atkName  = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // TitleCase intended
+  var atkLower = atkName.toLowerCase();
+  var atkUpper = atkName.toUpperCase();
+  var atkId    = (atkObj && atkObj.id) ? atkObj.id : (Dex.types.get(atkName)?.id || Dex.types.get(atkLower)?.id || Dex.types.get(atkUpper)?.id);
 
-  // 3) Build debug parts + compute multiplier using Dex's type rows
-  var parts = ['M:' + atkName, 'T:' + (foeTypes.join('/') || '?')];
+  // Helper: generate candidate strings for a defender type and pick the first row that exists
+  function firstTypeRow(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return null;
+
+    function cap(x){ return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; }
+
+    var variants = [];
+    var seen = Object.create(null);
+
+    function add(v){ if (v && !seen[v]) { variants.push(v); seen[v] = true; } }
+
+    add(s);
+    add(s.toLowerCase());
+    add(s.toUpperCase());
+    add(cap(s));
+
+    // also try resolving via Dex to get a canonical id, then try that id in multiple forms
+    var guess = Dex.types.get(s);
+    var gid = guess && guess.id;
+    if (gid) {
+      add(gid);               // id (lowercase)
+      add(gid.toUpperCase());
+      add(cap(gid));
+    }
+
+    for (var i = 0; i < variants.length; i++) {
+      var cand = variants[i];
+      var obj = Dex.types.get(cand);
+      if (obj && obj.damageTaken) return obj;
+    }
+    return null;
+  }
+
   var mult = 1, sawAny = false;
+  // // If you want the “move / types” header back, uncomment next line:
+  // var parts = ['M:' + atkName, 'T:' + (foeTypes.join('/') || '?')];
+  var parts = [];
 
   for (var i2 = 0; i2 < foeTypes.length; i2++) {
-    var defRaw = foeTypes[i2];               // e.g. "Water" or "water"
-    var defObj = Dex.types.get(defRaw);      // built-in type row
+    var defRaw = foeTypes[i2];                   // e.g. "Water"
+    var defObj = firstTypeRow(defRaw);           // robust resolver
 
-    // Row missing?
-    if (!defObj || !defObj.damageTaken) { parts.push(defRaw[0] + ':row?'); continue; }
+    if (!defObj) { parts.push(defRaw[0] + ':row?'); continue; }
 
-    // Codes are under TitleCase keys in Showdown; be tolerant just in case
+    // Read damageTaken, tolerating different attacker key casings/ids
     var code = defObj.damageTaken[atkName];
-    if (code === undefined) code = defObj.damageTaken[atkName.toLowerCase()];
-    if (code === undefined) code = defObj.damageTaken[atkName.toUpperCase()];
+    if (code === undefined) code = defObj.damageTaken[atkLower];
+    if (code === undefined) code = defObj.damageTaken[atkUpper];
+    if (code === undefined && atkId) code = defObj.damageTaken[atkId];
 
-    // Key missing?
     if (code === undefined) { parts.push(defRaw[0] + ':key?'); continue; }
 
     parts.push(defRaw[0] + ':' + String(code));
     sawAny = true;
+
     // 0=neutral, 1=resist, 2=weak, 3=immune
     if (code === 3) { mult = 0; break; }
     if (code === 2) mult *= 2;
     else if (code === 1) mult *= 0.5;
   }
 
-  // 4) Final text for the middle tag
   var txt;
   if (!foeTypes.length) {
-    txt = parts.join(' ') + ' = Types?';
+    txt = 'Types?';
   } else if (!sawAny) {
     txt = parts.join(' ') + ' = Math Error';
   } else {
     mult = Math.round(mult * 1000) / 1000;
     txt = parts.join(' ') + ' = ' + mult;
   }
-  effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
 
+  effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(txt) + '</small> ';
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: built-in Dex-based effectiveness DEBUG ---
-
-
+// --- End: SUPER-ROBUST built-in Dex effectiveness DEBUG ---
 
 
 					
