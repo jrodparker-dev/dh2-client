@@ -727,6 +727,109 @@
 				var movebuttons = '';
 
 				// ===== Helpers (no Dex) =====
+				// -------- Robust chart helpers (paste with your other helpers) --------
+
+// TitleCase helper for attacker names inside damageTaken (e.g., "Steel")
+function toTitle(s) {
+  s = String(s || '');
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s;
+}
+
+// Force (re)build the normalized chart from window._EFF_CHART
+function rebuildNormFromRawChart() {
+  var RAW = window._EFF_CHART;
+  if (!RAW) return;
+
+  function idify(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  }
+
+  // collect valid type ids from top-level keys
+  var typeSet = Object.create(null);
+  Object.keys(RAW).forEach(function (k) { typeSet[idify(k)] = true; });
+
+  var norm = Object.create(null);
+  Object.keys(RAW).forEach(function (defK) {
+    var defId = idify(defK);
+    var row = RAW[defK] && RAW[defK].damageTaken ? RAW[defK].damageTaken : {};
+    var out = Object.create(null);
+
+    Object.keys(row).forEach(function (atkK) {
+      var atkId = idify(atkK);
+      if (typeSet[atkId]) out[atkId] = row[atkK]; // only keep real types
+    });
+
+    norm[defId] = out;
+  });
+
+  window._EFF_NORM  = norm;
+  window._EFF_TYPES = typeSet;
+}
+
+// Try to get the effectiveness code for (defId, atkId) with many fallbacks.
+// 1) normalized map (lowercase->lowercase)
+// 2) raw chart row using lots of key shapes on both sides
+function getCode(defId, atkId) {
+  defId = String(defId || '');
+  atkId = String(atkId || '');
+
+  var RAW  = window._EFF_CHART || null;
+  var NORM = window._EFF_NORM  || null;
+
+  // quick win: normalized map (lowercase ids)
+  var defL = defId.toLowerCase(), atkL = atkId.toLowerCase();
+  if (NORM && NORM[defL] && NORM[defL].hasOwnProperty(atkL)) {
+    return NORM[defL][atkL];
+  }
+
+  // fall back to RAW with multiple shapes
+  if (!RAW) return undefined;
+
+  var defShapes = [
+    defId, defId.toLowerCase(), defId.toUpperCase(), toTitle(defId)
+  ];
+  var atkShapes = [
+    atkId, atkId.toLowerCase(), atkId.toUpperCase(), toTitle(atkId)
+  ];
+
+  // search defender row first
+  var defRow = null;
+  for (var i = 0; i < defShapes.length && !defRow; i++) {
+    var k = defShapes[i];
+    if (RAW[k] && RAW[k].damageTaken) defRow = RAW[k].damageTaken;
+  }
+  if (!defRow) return undefined;
+
+  // search attacker column within that row
+  for (var j = 0; j < atkShapes.length; j++) {
+    var a = atkShapes[j];
+    if (defRow.hasOwnProperty(a)) return defRow[a];
+  }
+
+  return undefined;
+}
+
+// Combined label from two defender types
+function labelFromTypes(atkId, defIds) {
+  if (!window._EFF_CHART) return 'Chart Error';
+  if (!defIds || !defIds.length) return 'Types?';
+  if (!atkId) return 'Key?';
+
+  var mult = 1;
+  for (var i = 0; i < defIds.length; i++) {
+    var code = getCode(defIds[i], atkId);
+    if (code === undefined) return 'Key?';  // still couldn’t find that matchup
+    if (code === 3) { mult = 0; break; }    // immune
+    if (code === 2) mult *= 2;              // SE
+    else if (code === 1) mult *= 0.5;       // NVE
+  }
+
+  if (mult === 0) return 'Immune';
+  if (mult > 1)   return 'SE';
+  if (mult < 1)   return 'NVE';
+  return ''; // neutral
+}
+
 function idify(s) {
   return String(s || '')
     .toLowerCase()
@@ -810,34 +913,48 @@ function combinedEffectLabel(atkId, defIds, normChart, typeSet) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// ===== Custom-chart effectiveness (bulletproof, no Dex) =====
+					// ===== Custom-chart effectiveness (robust, with fallbacks) =====
 var effHtml = '';
 try {
-  // 1) Ensure normalized chart exists
-  var norm = window._EFF_NORM;
-  var typeSet = window._EFF_TYPES;
-
-  // 2) Get attacker type id from moveType (raw string → id)
-  var atkId = idify(moveType);
-  if (typeSet && !typeSet[atkId]) {
-    // If your move types sometimes include formatting (e.g. "??"), idify handles it;
-    // if still not in set, we’ll let label() return "Key?"
+  // make sure normalized map exists (and self-heal if it looks empty)
+  if (!window._EFF_NORM || !Object.keys(window._EFF_NORM).length) {
+    rebuildNormFromRawChart();
   }
 
-  // 3) Get foe’s two type ids
-  var defIds = getFoeTypeIdsSafe(this.battle); // e.g., ["water","psychic"]
+  // attacker id from the move’s visible type text
+  var atkId = String(moveType || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 
-  // 4) Compute label
-  var label = combinedEffectLabel(atkId, defIds, norm, typeSet);
+  // foe types -> ids (you already have a helper; here’s a tiny inline)
+  var foe = (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
+            (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
+            (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) || null;
 
-  // 5) Emit HTML
+  var defIds = [];
+  if (foe && !foe.fainted) {
+    var raw = Array.isArray(foe.types) ? foe.types.slice(0, 2)
+             : (typeof foe.getTypes === 'function' ? foe.getTypes() : []);
+    for (var ii = 0; ii < (raw ? raw.length : 0) && defIds.length < 2; ii++) {
+      var d = String(raw[ii] || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if (d && defIds.indexOf(d) === -1) defIds.push(d);
+    }
+  }
+
+  var label = labelFromTypes(atkId, defIds);
+
   if (label) {
-    var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : (label === 'NVE') ? 'eff-nve' : 'eff-debug';
+    var cls = (label === 'Immune') ? 'eff-immune'
+            : (label === 'SE')    ? 'eff-se'
+            : (label === 'NVE')   ? 'eff-nve'
+            : 'eff-debug';
     effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+  } else {
+    // neutral → leave blank (or show number if you prefer)
+    // effHtml = '<small class="eff-tag eff-debug">1×</small> ';
   }
 } catch (e) {
   effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
+
 
 					
 					if (moveData.disabled) {
