@@ -2,41 +2,32 @@
 (function initEffChart(){
   if (window._EFF_CHART) return;
   window._EFF_CHART = {
-    Bug: {damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-    Dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
-    Dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
-    Electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-    Fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
-    Fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
-    Fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
-    Flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
-    Ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
-    Grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
-    Ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
-    Ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
-    Normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
-    Poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
-    Psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
-    Rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
-    Steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
-    Stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
-    Water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
-    Blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
-    Light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
-    Gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
+    bug: {damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    dark:{damageTaken:{prankster:3,Bug:1,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:3,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    dragon:{damageTaken:{Bug:0,Dark:0,Dragon:1,Electric:2,Fairy:1,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:0,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:2,Light:1,Gamma:1}},
+    electric:{damageTaken:{par:3,Bug:0,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:0,Flying:2,Ghost:0,Grass:0,Ground:1,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    fairy:{damageTaken:{Bug:2,Dark:2,Dragon:3,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    fighting:{damageTaken:{Bug:2,Dark:2,Dragon:0,Electric:0,Fairy:1,Fighting:0,Fire:0,Flying:1,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:1,Rock:2,Steel:0,Stellar:0,Water:0,Blood:0,Light:1,Gamma:1}},
+    fire:{damageTaken:{brn:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:2,Stellar:0,Water:1,Blood:2,Light:0,Gamma:1}},
+    flying:{damageTaken:{Bug:2,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:3,Ice:1,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:1}},
+    ghost:{damageTaken:{trapped:3,Bug:2,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:3,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:3,Poison:2,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:3,Light:1,Gamma:1}},
+    grass:{damageTaken:{powder:3,Bug:1,Dark:0,Dragon:0,Electric:2,Fairy:0,Fighting:0,Fire:1,Flying:1,Ghost:0,Grass:2,Ground:2,Ice:1,Normal:0,Poison:1,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:2,Blood:0,Light:0,Gamma:1}},
+    ground:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:3,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:1,Normal:0,Poison:2,Psychic:0,Rock:2,Steel:0,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    ice:{damageTaken:{hail:3,frz:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:1,Steel:1,Stellar:0,Water:0,Blood:2,Light:0,Gamma:1}},
+    normal:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:0,Flying:0,Ghost:3,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:0,Gamma:1}},
+    poison:{damageTaken:{psn:3,tox:3,Bug:2,Dark:0,Dragon:0,Electric:0,Fairy:2,Fighting:2,Fire:0,Flying:0,Ghost:0,Grass:2,Ground:1,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:1,Gamma:1}},
+    psychic:{damageTaken:{Bug:1,Dark:1,Dragon:0,Electric:0,Fairy:0,Fighting:2,Fire:0,Flying:0,Ghost:1,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:2,Rock:0,Steel:0,Stellar:0,Water:0,Blood:1,Light:2,Gamma:1}},
+    rock:{damageTaken:{sandstorm:3,Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:1,Fire:2,Flying:2,Ghost:0,Grass:1,Ground:1,Ice:0,Normal:2,Poison:2,Psychic:0,Rock:0,Steel:1,Stellar:0,Water:1,Blood:0,Light:0,Gamma:1}},
+    steel:{damageTaken:{psn:3,tox:3,sandstorm:3,Bug:2,Dark:0,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:1,Flying:2,Ghost:0,Grass:2,Ground:1,Ice:2,Normal:2,Poison:3,Psychic:2,Rock:2,Steel:2,Stellar:0,Water:0,Blood:3,Light:2,Gamma:1}},
+    stellar:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:0,Fairy:0,Fighting:0,Fire:0,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:0,Stellar:0,Water:0,Blood:0,Light:0,Gamma:0}},
+    water:{damageTaken:{Bug:0,Dark:0,Dragon:0,Electric:1,Fairy:0,Fighting:0,Fire:2,Flying:0,Ghost:0,Grass:1,Ground:0,Ice:2,Normal:0,Poison:0,Psychic:0,Rock:0,Steel:2,Stellar:0,Water:2,Blood:1,Light:0,Gamma:1}},
+    blood:{damageTaken:{Bug:1,Dark:0,Dragon:0,Electric:1,Fairy:2,Fighting:0,Fire:1,Flying:0,Ghost:0,Grass:0,Ground:0,Ice:0,Normal:0,Poison:1,Psychic:2,Rock:0,Steel:1,Stellar:0,Water:3,Light:1,Blood:0,Gamma:1}},
+    light:{damageTaken:{Bug:0,Dark:1,Dragon:2,Electric:0,Fairy:2,Fighting:1,Fire:0,Flying:0,Ghost:2,Grass:0,Ground:0,Ice:0,Normal:0,Poison:2,Psychic:1,Rock:0,Steel:0,Stellar:0,Water:0,Blood:2,Light:2,Gamma:1}},
+    gamma:{damageTaken:{Bug:1,Dark:1,Dragon:1,Electric:1,Fairy:1,Fighting:1,Fire:1,Flying:1,Ghost:1,Grass:1,Ground:1,Ice:1,Normal:1,Poison:1,Psychic:1,Rock:1,Steel:1,Stellar:1,Water:1,Blood:1,Light:1,Gamma:2}},
   };
 })();
 // ===== End: Embedded Type Chart =====
-// Put this ONCE somewhere that runs before the move buttons render.
-// If your chart is already on window._EFF_CHART with lowercase keys,
-// this builds a quick lowercase index we’ll use in the loop.
-if (window._EFF_CHART && !window._EFF_DEFROWS) {
-  var _idx = Object.create(null);
-  Object.keys(window._EFF_CHART).forEach(function (k) {
-    _idx[k.toLowerCase()] = window._EFF_CHART[k];
-  });
-  window._EFF_DEFROWS = _idx; // defender rows by lowercase key
-}
+
 
 (function ($) {
 
@@ -697,6 +688,74 @@ if (window._EFF_CHART && !window._EFF_DEFROWS) {
 				var hasMoves = false;
 				var moveMenu = '';
 				var movebuttons = '';
+
+				// --- Start Helper Functions: Final Robust Manual Calculation ---
+
+// 1. Pick ONLY the current active foe in slot 0 (1v1 safety)
+function findFoe(battle) {
+  if (!battle) return null;
+  var p = (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
+          (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
+          (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
+          null;
+  if (p && !p.fainted) return p;
+  return null;
+}
+
+// 2. Get defender type IDs (lowercase) using the most reliable fallbacks
+function getDefTypeIds(p) {
+  if (!p) return [];
+  var types = (Array.isArray(p.types) && p.types.length) ? p.types
+           : (typeof p.getTypes === 'function' ? p.getTypes() : null);
+  if (!types || !types.length) {
+    var key = p.speciesForme || p.species || p.baseSpecies || p.name;
+    var sp = key ? Dex.species.get(key) : null;
+    types = (sp && sp.types) ? sp.types : [];
+  }
+  // Convert all types to their canonical lowercase ID (e.g., 'water')
+  return types.map(function (t) {
+    var ty = Dex.types.get(t);
+    return ty && ty.id ? ty.id : '';
+  }).filter(Boolean);
+}
+
+// 3. Compute effectiveness against the chart, checking both ID and Name keys for safety.
+function getEff(attackingTypeId, defenderTypeIds, chart) {
+  if (!attackingTypeId || !defenderTypeIds || !defenderTypeIds.length || !chart) return 0;
+  var mult = 1;
+  
+  // Precompute the Name form (e.g., 'Fire') for fallback in chart lookup
+  var atkName = (function () {
+    var ty = Dex.types.get(attackingTypeId);
+    return ty && ty.name ? ty.name : '';
+  })();
+
+  for (var i = 0; i < defenderTypeIds.length; i++) {
+    var defId = defenderTypeIds[i]; // This is guaranteed lowercase, e.g., 'water'
+
+    // Look up the row in the custom chart using the lowercase ID (e.g., chart['water'])
+    var defObj = chart[defId];
+    var map = defObj && defObj.damageTaken ? defObj.damageTaken : null;
+    if (!map) continue;
+
+    // Check map for the capitalized Attacker Name (e.g., map['Steel'])
+    // This assumes your custom chart uses capitalized attacker names as keys.
+    var dt = (atkName && map[atkName] !== undefined) ? map[atkName] : undefined;
+
+    // Codes: 0=neutral, 1=resist, 2=weak, 3=immune
+    if (dt === 3) return -Infinity; // Immune trumps everything
+    if (dt === 2) mult *= 2;        // Super-effective
+    else if (dt === 1) mult *= 0.5; // Not very effective
+  }
+
+  // Convert final multiplier to required integer output
+  if (mult > 1) return 1;
+  if (mult < 1) return -1;
+  return 0;
+}
+
+// --- End Helper Functions ---
+
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
@@ -713,103 +772,48 @@ if (window._EFF_CHART && !window._EFF_DEFROWS) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: Effectiveness DEBUG (row? vs key?) ---
+					// --- Start Effectiveness Label Execution (Inside the 'for' loop) ---
 var effHtml = '';
 try {
-  // 0) Active foe slot 0
-  var foe =
-    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
-    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
-    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
-    null;
+  // Get move type ID (e.g., 'fire')
+  var atkType = moveType || (move && move.type) || '';
+  var atkTypeId = Dex.types.get(atkType) ? Dex.types.get(atkType).id : '';
 
-  // 1) Resolve foe types
-  var foeTypes = [];
-  if (foe && !foe.fainted) {
-    if (Array.isArray(foe.types) && foe.types.length) {
-      foeTypes = foe.types.slice();
-    } else if (typeof foe.getTypes === 'function') {
-      var t = foe.getTypes();
-      foeTypes = Array.isArray(t) ? t.slice() : [];
-    } else {
-      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp = Dex.species.get(spKey);
-      foeTypes = (sp && sp.types) ? sp.types.slice() : [];
+  var foe = findFoe(this.battle);
+  var eff = '';
+  
+  // Use the globally defined chart variable
+  var chart = window._EFF_CHART;
+
+  if (foe && atkTypeId && chart) {
+    // Get array of foe type IDs (e.g., ['water', 'psychic'])
+    var defTypeIds = getDefTypeIds(foe);
+    
+    if (defTypeIds.length) {
+      // Get integer modifier: 1=SE, -1=NVE, 0=neutral, -Infinity=Immune
+      var v = getEff(atkTypeId, defTypeIds, chart);
+      
+      if (v === -Infinity) eff = 'Immune';
+      else if (v > 0)      eff = 'SE';
+      else if (v < 0)      eff = 'NVE';
+      else                 eff = ''; // neutral = blank
     }
   }
-  foeTypes = foeTypes.filter(Boolean);
 
-  // 2) Ensure lowercase defender index exists (self-heal if load order changed)
-  if (window._EFF_CHART && !window._EFF_DEFROWS) {
-    var _idx = Object.create(null);
-    Object.keys(window._EFF_CHART).forEach(function (k) {
-      _idx[k.toLowerCase()] = window._EFF_CHART[k];
-    });
-    window._EFF_DEFROWS = _idx;
+  // Final HTML generation
+  if (eff) {
+    var cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
+    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
   }
 
-  // 3) Guard rails
-  if (!window._EFF_CHART || !window._EFF_DEFROWS) {
-    effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
-  } else if (!foeTypes.length) {
-    effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
-  } else {
-    // 4) Attack name (TitleCase) to match damageTaken keys
-    var atkObj  = Dex.types.get(moveType);
-    var atkName = (atkObj && atkObj.name) ? atkObj.name : String(moveType); // e.g. "Steel"
-
-    // 5) Helper to normalize defender name to a canonical id
-    function normId(s) {
-      return (typeof toID === 'function') ? toID(s) : String(s).trim().toLowerCase();
-    }
-
-    var mult = 1;
-    var sawAny = false;
-    var parts = ['M:' + atkName];
-
-    for (var i2 = 0; i2 < foeTypes.length; i2++) {
-      var defRaw = foeTypes[i2];           // e.g. "Water"
-      var defKey = normId(defRaw);         // "water"
-
-      // Try indexed row first, then raw chart by id
-      var row = (window._EFF_DEFROWS && window._EFF_DEFROWS[defKey]) ||
-                (window._EFF_CHART && window._EFF_CHART[defKey]);
-
-      if (!row || !row.damageTaken) { parts.push(defRaw[0] + ':row?'); continue; }
-
-      // Prefer TitleCase attack key; be tolerant to casing if chart entries vary
-      var code = (row.damageTaken[atkName] !== undefined)
-        ? row.damageTaken[atkName]
-        : (row.damageTaken[atkName.toLowerCase()] !== undefined)
-          ? row.damageTaken[atkName.toLowerCase()]
-          : row.damageTaken[atkName.toUpperCase()];
-
-      if (code === undefined) { parts.push(defRaw[0] + ':key?'); continue; }
-
-      sawAny = true;
-      parts.push(defRaw[0] + ':' + code);
-
-      // 0=neutral, 1=resist, 2=weak, 3=immune
-      if (code === 3) { mult = 0; break; }
-      if (code === 2) mult *= 2;
-      else if (code === 1) mult *= 0.5;
-    }
-
-    if (!sawAny) {
-      effHtml = '<small class="eff-tag eff-debug">' +
-        BattleLog.escapeHTML(parts.join(' ')) + '</small> ';
-    } else {
-      mult = Math.round(mult * 1000) / 1000;
-      effHtml = '<small class="eff-tag eff-debug">' +
-        BattleLog.escapeHTML(parts.join(' ') + ' = ' + mult) + '</small> ';
-    }
+  if (window.SHOW_EFF_DEBUG) {
+    console.debug('[EFF FINAL]', { move: name, atkTypeId, foe: foe && foe.name, defTypeIds, eff });
   }
 } catch (e) {
-  effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF FINAL ERROR]', e);
+  effHtml = '';
 }
-// --- End: Effectiveness DEBUG ---
-
-
+// --- End Effectiveness Label Execution ---
 
 
 					
