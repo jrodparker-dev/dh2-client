@@ -673,56 +673,76 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start Foe Primary Type Display (simple diagnostic) ---
+					// --- Start Effectiveness Label (built on the working foe-type read) ---
+// We already have `foe` from the simple diagnostic block above.
 var effHtml = '';
 try {
-  // Identify the active foe in slot 0 — same logic as before, but simple
-  var foe =
-    (this.battle.farSide?.active?.[0]) ||
-    (this.battle.foeSide?.active?.[0]) ||
-    (this.battle.sides?.[1]?.active?.[0]) ||
-    null;
-
-  if (foe && !foe.fainted) {
-    // Get the foe's primary type (index 0)
-    var foeType = '';
+  // 1) Resolve full defender types (both slots), using your proven fallbacks
+  var foeTypesArr = [];
+  if (foe) {
     if (Array.isArray(foe.types) && foe.types.length) {
-      foeType = foe.types[0];
+      foeTypesArr = foe.types.slice();
     } else if (typeof foe.getTypes === 'function') {
-      const t = foe.getTypes();
-      foeType = (Array.isArray(t) && t.length) ? t[0] : '';
+      var _t = foe.getTypes();
+      foeTypesArr = Array.isArray(_t) ? _t.slice() : [];
     } else {
-      // fallback to species data
-      const spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      const sp = Dex.species.get(spKey);
-      foeType = (sp && sp.types && sp.types.length) ? sp.types[0] : '';
+      var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      var sp = Dex.species.get(spKey);
+      foeTypesArr = (sp && sp.types) ? sp.types.slice() : [];
     }
+  }
 
-    // If we found a type, show it in the middle
-    if (foeType) {
-      effHtml = '<small class="eff-tag eff-se">' + foeType + '</small> ';
-    } else {
-      effHtml = '<small class="eff-tag eff-nve">Unknown</small> ';
-    }
+  // 2) Normalize attacker type from tooltip/base move
+  var atkTypeName = (function () {
+    var base = moveType || (move && move.type) || '';
+    var ty = Dex.types.get(base);
+    return ty && ty.exists ? ty.name : ''; // canonical Name (e.g., "Fire")
+  })();
+  var atkTypeId = (function () {
+    var ty = Dex.types.get(atkTypeName);
+    return ty && ty.id ? ty.id : '';      // id (e.g., "fire")
+  })();
 
-    if (window.SHOW_EFF_DEBUG) {
-      console.debug('[FOE TYPE CHECK]', {
-        foeName: foe.name,
-        foeTypes: foe.types,
-        foePrimary: foeType
-      });
+  // 3) Compute multiplier using damageTaken, probing by id first, then Name
+  function effectivenessLabel(attId, attName, defNames) {
+    if (!attId && !attName) return '';
+    if (!defNames || !defNames.length) return '';
+    var mult = 1;
+    for (var i = 0; i < defNames.length; i++) {
+      var defObj = Dex.types.get(defNames[i]);
+      if (!defObj || !defObj.damageTaken) continue;
+      var dtMap = defObj.damageTaken;
+      var dt = (dtMap[attId] !== undefined) ? dtMap[attId]
+             : (attName && dtMap[attName] !== undefined) ? dtMap[attName]
+             : undefined;
+      // 0=neutral, 1=resist, 2=weak, 3=immune
+      if (dt === 3) return 'Immune'; // trumps everything
+      if (dt === 2) mult *= 2;
+      else if (dt === 1) mult *= 0.5;
     }
+    if (mult > 1) return 'SE';
+    if (mult < 1) return 'NVE';
+    return ''; // neutral => blank
+  }
+
+  var label = effectivenessLabel(atkTypeId, atkTypeName, foeTypesArr);
+  if (label) {
+    var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
+    effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
   } else {
-    // No foe found (e.g., preview screen or fainted)
-    effHtml = '<small class="eff-tag eff-nve">NoFoe</small> ';
+    effHtml = ''; // neutral
+  }
+
+  if (window.SHOW_EFF_DEBUG) {
+    console.debug('[EFF SIMPLE]', {
+      move: name, atkTypeName, atkTypeId, foeName: foe && foe.name, foeTypesArr, label
+    });
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[FOE TYPE ERROR]', e);
-  effHtml = '<small class="eff-tag eff-nve">ERR</small> ';
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE ERROR]', e);
+  effHtml = '';
 }
-// --- End Foe Primary Type Display ---
-
-
+// --- End Effectiveness Label ---
 
 					
 					if (moveData.disabled) {
