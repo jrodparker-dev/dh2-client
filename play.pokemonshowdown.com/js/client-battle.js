@@ -688,73 +688,6 @@
 				var hasMoves = false;
 				var moveMenu = '';
 				var movebuttons = '';
-
-
-// TitleCase for attacker keys: "steel" -> "Steel"
-function toTitle(s) {
-  s = String(s || '');
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
-}
-
-// Get active foe (slot 0) and return their defender keys as lowercase ids
-function getFoeDefenderKeys(battle) {
-  var foe =
-    (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
-    (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
-    (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
-    null;
-
-  var out = [];
-  if (!foe || foe.fainted) return out;
-
-  // Prefer foe.types / foe.getTypes(). We only need up to two.
-  var raw = Array.isArray(foe.types) ? foe.types
-          : (typeof foe.getTypes === 'function' ? foe.getTypes() : []);
-  raw = Array.isArray(raw) ? raw.slice(0, 2) : [];
-
-  for (var i = 0; i < raw.length; i++) {
-    var t = raw[i];
-    // Turn whatever we got into a lowercase id the same way Dex would
-    var ty = Dex.types.get(t);
-    var id = (ty && ty.id) ? ty.id : String(t || '').toLowerCase();
-    if (id && out.indexOf(id) === -1) out.push(id);
-  }
-  return out; // e.g. ["water","psychic"]
-}
-
-// Compute SE/NVE/Immune/Neutral using your _EFF_CHART
-function labelFromChart(moveType, defKeys) {
-  var chart = window._EFF_CHART;
-  if (!chart || !chart.water || !chart.water.damageTaken) return ''; // chart not present
-
-  // Attacker column name must be TitleCase (e.g., "Steel")
-  var atkKey = toTitle(moveType); // moveType can be id or name; this normalizes to chart's keys
-  if (!atkKey) return '';
-
-  if (!defKeys || !defKeys.length) return ''; // no types to check
-
-  var mult = 1;
-  for (var i = 0; i < defKeys.length; i++) {
-    var defKey = defKeys[i];                 // e.g., "water"
-    var row = chart[defKey];                 // chart uses lowercase defender keys
-    if (!row || !row.damageTaken) return ''; // defender not in chart
-
-    // chart rows use attacker Name keys (TitleCase), e.g., row.damageTaken["Steel"]
-    var code = row.damageTaken[atkKey];
-    if (code === undefined) return '';       // attacker column not found
-
-    if (code === 3) { mult = 0; break; }     // Immune
-    if (code === 2) mult *= 2;               // SE
-    else if (code === 1) mult *= 0.5;        // NVE
-    // 0 or undefined → neutral (no change)
-  }
-
-  if (mult === 0) return 'Immune';
-  if (mult > 1)   return 'SE';
-  if (mult < 1)   return 'NVE';
-  return 'Neutral';
-}
-
 				var activePos = this.battle.mySide.n > 1 ? pos + this.battle.pokemonControlled : pos;
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
@@ -771,28 +704,94 @@ function labelFromChart(moveType, defKeys) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: simple effectiveness label using your _EFF_CHART ---
+					// --- Start: compact custom-chart effectiveness (TitleCase vs lowercase) ---
 var effHtml = '';
 try {
-  // 1) Move's displayed type (PS gives you this already)
-  var moveTypeNameOrId = moveType;            // e.g., "Steel" or "steel"
+  // 0) Require chart
+  var CHART = window._EFF_CHART;
+  if (!CHART) {
+    effHtml = '<small class="eff-tag eff-debug">Chart Error</small> ';
+  } else {
+    // 1) Attacker type as TitleCase (to match your damageTaken keys)
+    function toTitleCaseOne(s) {
+      s = String(s || '').trim();
+      if (!s) return '';
+      return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    }
+    var atkName = toTitleCaseOne((Dex.types.get(moveType)?.name) || moveType); // e.g. "Steel"
+    if (!atkName) {
+      effHtml = '<small class="eff-tag eff-debug">Key? atk</small> ';
+    } else {
+      // 2) Active foe’s types → lowercase defender ids (to match your chart rows)
+      function normDefIdsFromFoe(battle) {
+        var foe =
+          (battle.farSide?.active?.[0]) ||
+          (battle.foeSide?.active?.[0]) ||
+          (battle.sides?.[1]?.active?.[0]) ||
+          null;
 
-  // 2) Defender keys exactly as your chart expects (lowercase ids)
-  var defKeys = getFoeDefenderKeys(this.battle); // e.g., ["water","psychic"]
+        var raw = [];
+        if (foe && !foe.fainted) {
+          if (Array.isArray(foe.types) && foe.types.length) raw = foe.types.slice();
+          else if (typeof foe.getTypes === 'function') {
+            var t = foe.getTypes();
+            if (Array.isArray(t)) raw = t.slice();
+          } else {
+            // If we can’t read types off the mon, bail to Types?
+            raw = [];
+          }
+        }
+        // normalize to lowercase ids; dedupe; max 2
+        var out = [], seen = Object.create(null);
+        for (var i = 0; i < raw.length && out.length < 2; i++) {
+          var id = String(raw[i] || '').toLowerCase().trim();
+          if (id && !seen[id]) { seen[id] = true; out.push(id); }
+        }
+        return out;
+      }
 
-  // 3) Turn that into a label
-  var eff = labelFromChart(moveTypeNameOrId, defKeys); // "SE" | "NVE" | "Immune" | "Neutral" | ""
+      var defIds = normDefIdsFromFoe(this.battle); // e.g. ["water","psychic"]
 
-  // 4) Render (blank on failure/neutral to keep UI clean)
-  if (eff && eff !== 'Neutral') {
-    var cls = (eff === 'Immune') ? 'eff-immune' : (eff === 'SE') ? 'eff-se' : 'eff-nve';
-    effHtml = '<small class="eff-tag ' + cls + '">' + eff + '</small> ';
+      if (!defIds.length) {
+        effHtml = '<small class="eff-tag eff-debug">Types?</small> ';
+      } else {
+        // 3) Compute combined multiplier using your chart
+        var mult = 1, saw = false, debugs = [];
+        for (var di = 0; di < defIds.length; di++) {
+          var defId = defIds[di];          // e.g. "water"
+          var row   = CHART[defId];        // expect object
+          if (!row || !row.damageTaken) { debugs.push(defId + ':row?'); continue; }
+
+          // IMPORTANT: your columns are TitleCase attacker names
+          var code = row.damageTaken[atkName];
+          if (code === undefined) { debugs.push(defId + ':key?'); continue; }
+
+          saw = true;
+          if (code === 3) { mult = 0; break; } // immune trumps
+          if (code === 2) mult *= 2;           // super effective
+          else if (code === 1) mult *= 0.5;    // resisted
+          // 0 → neutral, do nothing
+        }
+
+        if (!saw) {
+          // Show exactly which part failed (row? or key?) for which defender id
+          effHtml = '<small class="eff-tag eff-debug">' + BattleLog.escapeHTML(debugs.join(' ')) + ' = Math Error</small> ';
+        } else {
+          var label = (mult === 0) ? 'Immune' : (mult > 1 ? 'SE' : (mult < 1 ? 'NVE' : ''));
+          if (label) {
+            var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
+            effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+          } else {
+            effHtml = ''; // neutral → blank
+          }
+        }
+      }
+    }
   }
-} catch (_) {
-  // stay silent on error so buttons never break
+} catch (e) {
+  effHtml = '<small class="eff-tag eff-debug">ERR</small> ';
 }
-// --- End: simple effectiveness label ---
-
+// --- End: compact custom-chart effectiveness ---
 
 					
 					if (moveData.disabled) {
