@@ -673,107 +673,79 @@
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start: Foe primary type + effectiveness label ---
+					// --- Start: Foe types + simple effectiveness from moveType vs foeTypes ---
 var effHtml = '';
 try {
-  // a) Locate active foe in slot 0 (no concatenation, no "varies")
+  // 1) Get active foe slot 0
   var foe =
-    (this.battle.farSide && this.battle.farSide.active && this.battle.farSide.active[0]) ||
-    (this.battle.foeSide && this.battle.foeSide.active && this.battle.foeSide.active[0]) ||
-    (this.battle.sides && this.battle.sides[1] && this.battle.sides[1].active && this.battle.sides[1].active[0]) ||
+    (this.battle.farSide?.active?.[0]) ||
+    (this.battle.foeSide?.active?.[0]) ||
+    (this.battle.sides?.[1]?.active?.[0]) ||
     null;
 
-  // b) Resolve foe primary type (for visibility)
-  var foePrimary = '';
+  // 2) Resolve foeTypes array (["Water","Psychic"] etc.), using your proven fallbacks
+  var foeTypes = [];
   if (foe && !foe.fainted) {
     if (Array.isArray(foe.types) && foe.types.length) {
-      foePrimary = foe.types[0];
+      foeTypes = foe.types.slice();
     } else if (typeof foe.getTypes === 'function') {
-      var _t = foe.getTypes();
-      foePrimary = (Array.isArray(_t) && _t.length) ? _t[0] : '';
+      var t = foe.getTypes();
+      foeTypes = Array.isArray(t) ? t.slice() : [];
     } else {
       var spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
       var sp = Dex.species.get(spKey);
-      foePrimary = (sp && sp.types && sp.types.length) ? sp.types[0] : '';
-    }
-  }
-  var foePrimaryHtml = foePrimary
-    ? ('<small class="eff-tag eff-type">' + foePrimary + '</small> ')
-    : (foe ? '<small class="eff-tag eff-nve">Unknown</small> ' : '<small class="eff-tag eff-nve">NoFoe</small> ');
-
-  // c) Build full defender type array (for effectiveness calc)
-  var foeTypesArr = [];
-  if (foe) {
-    if (Array.isArray(foe.types) && foe.types.length) {
-      foeTypesArr = foe.types.slice();
-    } else if (typeof foe.getTypes === 'function') {
-      var _gt = foe.getTypes();
-      foeTypesArr = Array.isArray(_gt) ? _gt.slice() : [];
-    } else {
-      var spKey2 = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
-      var sp2 = Dex.species.get(spKey2);
-      foeTypesArr = (sp2 && sp2.types) ? sp2.types.slice() : [];
+      foeTypes = (sp && sp.types) ? sp.types.slice() : [];
     }
   }
 
-  // d) Attacking type (tooltip/base move), as Name and id
-  var atkTypeName = (function () {
-    var base = moveType || (move && move.type) || '';
-    var ty = Dex.types.get(base);
-    return (ty && ty.exists) ? ty.name : '';
-  })();
-  var atkTypeId = (function () {
-    var ty = Dex.types.get(atkTypeName);
-    return (ty && ty.id) ? ty.id : '';
-  })();
+  // 3) Minimal effectiveness: ONLY moveType vs foeTypes
+  function effectivenessLabelSimple(_moveType, _foeTypes) {
+    if (!_moveType || !_foeTypes || !_foeTypes.length) return '';
+    // normalize attacking type (both id + Name for robustness)
+    var att = Dex.types.get(_moveType);
+    if (!att || !att.exists) return '';
+    var attId = att.id;       // e.g. 'fire'
+    var attName = att.name;   // e.g. 'Fire'
 
-  // e) Effectiveness label using client chart (probe id first, then Name)
-  function effectivenessLabel(attId, attName, defNames) {
-    if ((!attId && !attName) || !defNames || !defNames.length) return '';
     var mult = 1;
-    for (var i = 0; i < defNames.length; i++) {
-      var defObj = Dex.types.get(defNames[i]);
-      if (!defObj || !defObj.damageTaken) continue;
-      var dtMap = defObj.damageTaken;
-      var dt = (dtMap[attId] !== undefined) ? dtMap[attId]
-               : (attName && dtMap[attName] !== undefined) ? dtMap[attName]
-               : undefined;
+    for (var i = 0; i < _foeTypes.length; i++) {
+      var def = Dex.types.get(_foeTypes[i]);
+      if (!def || !def.damageTaken) continue;
+      var map = def.damageTaken;
+      // try id first, then Name (different client builds store either)
+      var dt = (map[attId] !== undefined) ? map[attId]
+             : (map[attName] !== undefined) ? map[attName]
+             : undefined;
       // 0=neutral, 1=resist, 2=weak, 3=immune
-      if (dt === 3) return 'Immune';  // immunity trumps everything
-      if (dt === 2) mult *= 2;        // super-effective
-      else if (dt === 1) mult *= 0.5; // not very effective
+      if (dt === 3) return 'Immune';  // trumps everything
+      if (dt === 2) mult *= 2;
+      else if (dt === 1) mult *= 0.5;
+      // undefined/0 => neutral contribution
     }
+
     if (mult > 1) return 'SE';
     if (mult < 1) return 'NVE';
     return ''; // neutral => blank
   }
 
-  var label = effectivenessLabel(atkTypeId, atkTypeName, foeTypesArr);
-  var effLabelHtml = '';
+  var label = effectivenessLabelSimple(moveType, foeTypes);
+
+  // 4) Build the HTML chunk (just the label; add foe type name too if you want)
   if (label) {
     var cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
-    effLabelHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+    effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
+  } else {
+    effHtml = ''; // neutral stays blank
   }
-
-  // f) Final chunk: foe primary type (always) + effectiveness label (if any)
-  effHtml = /*foePrimaryHtml +*/ effLabelHtml;
 
   if (window.SHOW_EFF_DEBUG) {
-    console.debug('[FOE+EFF]', {
-      move: name,
-      foeName: foe && foe.name,
-      foeTypesArr, foePrimary,
-      atkTypeName, atkTypeId,
-      label, effHtml
-    });
+    console.debug('[EFF SIMPLE]', { move: name, moveType, foeName: foe && foe.name, foeTypes, label });
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[FOE+EFF ERROR]', e);
-  effHtml = '<small class="eff-tag eff-nve">ERR</small> ';
+  if (window.SHOW_EFF_DEBUG) console.debug('[EFF SIMPLE ERROR]', e);
+  effHtml = '';
 }
-// --- End: Foe primary type + effectiveness label ---
-
-
+// --- End: Foe types + simple effectiveness from moveType vs foeTypes ---
 
 
 					
