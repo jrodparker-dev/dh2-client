@@ -661,70 +661,6 @@
 				var typeValueTracker = new ModifiableValue(this.battle, this.battle.nearSide.active[activePos], this.battle.myPokemon[pos]);
 				var currentlyDynamaxed = (!canDynamax && maxMoves);
 
-				// --- Start Helper Functions (Place outside the main move loop) ---
-
-// Pick ONLY the current active foe in slot 0; no concatenation, no 'VARIES'.
-function findFoe(battle) {
-  if (!battle) return null;
-  // Prefer farSide.active[0], else foeSide.active[0], else sides[1].active[0]
-  var p = (battle.farSide && battle.farSide.active && battle.farSide.active[0]) ||
-          (battle.foeSide && battle.foeSide.active && battle.foeSide.active[0]) ||
-          (battle.sides && battle.sides[1] && battle.sides[1].active && battle.sides[1].active[0]) ||
-          null;
-  if (p && !p.fainted) return p;
-  return null;
-}
-
-// Array of defender type **ids** (lowercase), with fallbacks
-function getDefTypeIds(p) {
-  if (!p) return [];
-  var types = (Array.isArray(p.types) && p.types.length) ? p.types
-           : (typeof p.getTypes === 'function' ? p.getTypes() : null);
-  if (!types || !types.length) {
-    var key = p.speciesForme || p.species || p.baseSpecies || p.name;
-    var sp = key ? Dex.species.get(key) : null;
-    types = (sp && sp.types) ? sp.types : [];
-  }
-  return types.map(function (t) {
-    var ty = Dex.types.get(t);
-    return ty && ty.id ? ty.id : '';
-  }).filter(Boolean);
-}
-
-// Compute effectiveness; tries both id ('fire') and Name ('Fire') keys in damageTaken
-function getEff(attackingTypeId, defenderTypeIds) {
-  if (!attackingTypeId || !defenderTypeIds || !defenderTypeIds.length) return 0;
-  var mult = 1;
-  // Precompute the Name form once for fallback
-  var atkName = (function () {
-    var ty = Dex.types.get(attackingTypeId);
-    return ty && ty.name ? ty.name : '';
-  })();
-
-  for (var i = 0; i < defenderTypeIds.length; i++) {
-    var defObj = Dex.types.get(defenderTypeIds[i]);
-    var map = defObj && defObj.damageTaken ? defObj.damageTaken : null;
-    if (!map) continue;
-
-    // Prefer id-key; fallback to Name-key
-    var dt = (map[attackingTypeId] !== undefined) ? map[attackingTypeId]
-             : (atkName && map[atkName] !== undefined) ? map[atkName]
-             : undefined;
-
-    // Codes: 0=neutral, 1=resist, 2=weak, 3=immune
-    if (dt === 3) return -Infinity; // immune trumps everything
-    if (dt === 2) mult *= 2;        // super-effective
-    else if (dt === 1) mult *= 0.5; // not very effective
-    // 0/undefined => neutral, do nothing
-  }
-
-  if (mult > 1) return 1;
-  if (mult < 1) return -1;
-  return 0;
-}
-
-// --- End Helper Functions ---
-
 				for (var i = 0; i < curActive.moves.length; i++) {
 					var moveData = curActive.moves[i];
 					var move = this.battle.dex.moves.get(moveData.move);
@@ -737,123 +673,55 @@ function getEff(attackingTypeId, defenderTypeIds) {
 					var moveType = this.tooltips.getMoveType(move, typeValueTracker)[0];
 					var tooltipArgs = 'move|' + moveData.move + '|' + pos;
 
-					// --- Start Effectiveness Label Execution (diagnostic) ---
+					// --- Start Foe Primary Type Display (simple diagnostic) ---
 var effHtml = '';
 try {
-  const atkType = moveType || (move && move.type) || '';
-  const atkTypeId = Dex.types.get(atkType)?.id || '';
+  // Identify the active foe in slot 0 — same logic as before, but simple
+  var foe =
+    (this.battle.farSide?.active?.[0]) ||
+    (this.battle.foeSide?.active?.[0]) ||
+    (this.battle.sides?.[1]?.active?.[0]) ||
+    null;
 
-  const foeOrFlag = findFoe(this.battle); // <-- your original helper that returns 'VARIES'
-  let eff = '';
-
-  // helper (local) to resolve defender type IDs for a Pokémon
-  function _defTypeIds(p) {
-    if (!p) return [];
-    let types = (Array.isArray(p.types) && p.types.length) ? p.types
-             : (typeof p.getTypes === 'function' ? p.getTypes() : null);
-    if (!types || !types.length) {
-      const key = p.speciesForme || p.species || p.baseSpecies || p.name;
-      const sp = key ? Dex.species.get(key) : null;
-      types = sp?.types || [];
-    }
-    return types
-      .map(t => (Dex.types.get(t)?.id) || '')
-      .filter(Boolean);
-  }
-
-  // helper (local) to compute effectiveness from id + defender ids
-  function _getEff(attId, defIds) {
-    if (!attId || !defIds?.length) return 0;
-    let mult = 1;
-    const atkName = Dex.types.get(attId)?.name || '';
-    for (const defId of defIds) {
-      const defObj = Dex.types.get(defId);
-      const map = defObj?.damageTaken;
-      if (!map) continue;
-      const dt = (map[attId] !== undefined) ? map[attId]
-               : (atkName && map[atkName] !== undefined) ? map[atkName]
-               : undefined;
-      if (dt === 3) return -Infinity; // immune
-      if (dt === 2) mult *= 2;        // weak
-      else if (dt === 1) mult *= 0.5; // resist
-    }
-    if (mult > 1) return 1;
-    if (mult < 1) return -1;
-    return 0;
-  }
-
-  if (foeOrFlag === 'VARIES') {
-    // === DIAGNOSTIC PATH ===
-    // Rebuild the same candidate list your findFoe() was looking at
-    const allFoes = []
-      .concat(this.battle?.farSide?.active || [])
-      .concat(this.battle?.foeSide?.active || [])
-      .concat((this.battle?.sides && this.battle.sides[1]?.active) || []);
-    const alive = allFoes.filter(p => p && !p.fainted);
-
-    // Dedupe by ident
-    const seen = new Set();
-    const uniqFoes = [];
-    for (const p of alive) {
-      if (p.ident && !seen.has(p.ident)) { seen.add(p.ident); uniqFoes.push(p); }
+  if (foe && !foe.fainted) {
+    // Get the foe's primary type (index 0)
+    var foeType = '';
+    if (Array.isArray(foe.types) && foe.types.length) {
+      foeType = foe.types[0];
+    } else if (typeof foe.getTypes === 'function') {
+      const t = foe.getTypes();
+      foeType = (Array.isArray(t) && t.length) ? t[0] : '';
+    } else {
+      // fallback to species data
+      const spKey = foe.speciesForme || foe.species || foe.baseSpecies || foe.name;
+      const sp = Dex.species.get(spKey);
+      foeType = (sp && sp.types && sp.types.length) ? sp.types[0] : '';
     }
 
-    // Collect type IDs
-    const perFoeTypeIds = uniqFoes.map(_defTypeIds);         // e.g., [['water','psychic'], ...]
-    const allTypeIds = perFoeTypeIds.flat();
-    const uniqTypeIds = Array.from(new Set(allTypeIds));
+    // If we found a type, show it in the middle
+    if (foeType) {
+      effHtml = '<small class="eff-tag eff-se">' + foeType + '</small> ';
+    } else {
+      effHtml = '<small class="eff-tag eff-nve">Unknown</small> ';
+    }
 
-    // OPTION A: show how many foes it thinks are active
-    // eff = String(uniqFoes.length);
-
-    // OPTION B (default): show how many UNIQUE defender type IDs it sees
-    eff = String(uniqTypeIds.length);
-
-    // Also dump rich debug info to console
     if (window.SHOW_EFF_DEBUG) {
-      console.debug('[EFF VARIES DIAG]', {
-        allFoesLen: allFoes.length,
-        aliveLen: alive.length,
-        uniqFoesIdents: uniqFoes.map(p => p.ident),
-        perFoeTypeIds,
-        allTypeIds,
-        uniqTypeIdsLen: uniqTypeIds.length,
-        uniqTypeIds
+      console.debug('[FOE TYPE CHECK]', {
+        foeName: foe.name,
+        foeTypes: foe.types,
+        foePrimary: foeType
       });
     }
-
-    // Color it as "varies" for visibility
-    effHtml = '<small class="eff-tag eff-varies">' + eff + '</small> ';
-  } else if (foeOrFlag && atkTypeId) {
-    // === NORMAL SINGLE-FOE PATH === (kept as in your skeleton)
-    const defTypeIds = _defTypeIds(foeOrFlag);
-    if (defTypeIds.length) {
-      const v = _getEff(atkTypeId, defTypeIds);
-      let label = '';
-      if (v === -Infinity) label = 'Immune';
-      else if (v > 0)      label = 'SE';
-      else if (v < 0)      label = 'NVE';
-      else                 label = '';
-      if (label) {
-        const cls = (label === 'Immune') ? 'eff-immune' : (label === 'SE') ? 'eff-se' : 'eff-nve';
-        effHtml = '<small class="eff-tag ' + cls + '">' + label + '</small> ';
-      }
-    }
-  }
-
-  if (window.SHOW_EFF_DEBUG) {
-    console.debug('[EFF]', {
-      move: name,
-      atkTypeId,
-      foeIdent: foeOrFlag && foeOrFlag.ident,
-      html: effHtml
-    });
+  } else {
+    // No foe found (e.g., preview screen or fainted)
+    effHtml = '<small class="eff-tag eff-nve">NoFoe</small> ';
   }
 } catch (e) {
-  if (window.SHOW_EFF_DEBUG) console.debug('[EFF:ERROR]', e);
-  effHtml = '';
+  if (window.SHOW_EFF_DEBUG) console.debug('[FOE TYPE ERROR]', e);
+  effHtml = '<small class="eff-tag eff-nve">ERR</small> ';
 }
-// --- End Effectiveness Label Execution ---
+// --- End Foe Primary Type Display ---
+
 
 
 					
