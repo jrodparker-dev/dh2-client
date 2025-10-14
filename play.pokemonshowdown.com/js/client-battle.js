@@ -804,8 +804,8 @@ try {
 
           saw = true;
           if (code === 3) { mult = 0; break; } // immune trumps
-          if (code === 2) mult *= 2;           // super effective
-          else if (code === 1) mult *= 0.5;    // resisted
+          if (code === 2) mult *= 0.5;           // super effective
+          else if (code === 1) mult *= 2;    // resisted
           // 0 → neutral, do nothing
         }
 
