@@ -1038,6 +1038,8 @@ const BattleAvatarNumbers: {[k: string]: string} = {
 	291: 'wallace',
 	292: 'bellelba',
 	293: 'benga',
+	/* idk what the hell this is supposed to be doing but it's not. So i'm commenting
+			it out so I can do custom avatars my way
 	294: 'ash',
 	'#bw2elesa': 'elesa-gen5bw2',
 	'#teamrocket': 'teamrocket',
@@ -1050,8 +1052,8 @@ const BattleAvatarNumbers: {[k: string]: string} = {
 	'hilbert-dueldisk': 'hilbert-wonderlauncher',
 	'hilda-dueldisk': 'hilda-wonderlauncher',
 	'nate-dueldisk': 'nate-wonderlauncher',
-	'rosa-dueldisk': 'rosa-wonderlauncher',
-	295: 'spidergwen',
+	'rosa-dueldisk': 'rosa-wonderlauncher', */
+	294: 'spidergwen',
 
 	1001: '#1001',
 	1002: '#1002',
