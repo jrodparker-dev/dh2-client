@@ -1051,6 +1051,7 @@ const BattleAvatarNumbers: {[k: string]: string} = {
 	'hilda-dueldisk': 'hilda-wonderlauncher',
 	'nate-dueldisk': 'nate-wonderlauncher',
 	'rosa-dueldisk': 'rosa-wonderlauncher',
+	295: 'spidergwen',
 
 	1001: '#1001',
 	1002: '#1002',
