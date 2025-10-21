@@ -220,8 +220,9 @@ class PSHeader extends preact.Component<{style: {}}> {
 		return <div id="header" class="header" style={this.props.style}>
 			<img
 				class="logo"
-				src={`https://${Config.routes.client}/pokemonshowdownbeta.png`}
-				srcset={`https://${Config.routes.client}/pokemonshowdownbeta@2x.png 2x`}
+				src={`https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/pokemonshowdownbeta.png
+`}
+				srcset={`https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/pokemonshowdownbeta@2x.png`}
 				alt="Pokémon Showdown! (beta)"
 				width="146" height="44"
 			/>
