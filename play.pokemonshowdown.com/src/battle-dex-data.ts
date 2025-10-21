@@ -1054,6 +1054,8 @@ const BattleAvatarNumbers: {[k: string]: string} = {
 	'nate-dueldisk': 'nate-wonderlauncher',
 	'rosa-dueldisk': 'rosa-wonderlauncher', */
 	294: 'spidergwen',
+	295: 'cynthiacleavage',
+	296: 'albedo',
 
 	1001: '#1001',
 	1002: '#1002',
