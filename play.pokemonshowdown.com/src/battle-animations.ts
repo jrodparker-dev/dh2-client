@@ -2868,6 +2868,8 @@ export class PokemonSprite extends Sprite {
 		let status = '';
 		if (pokemon.status === 'brn') {
 			status += '<span class="brn">BRN</span> ';
+		} else if (pokemon.status === 'frb') {
+			status += '<span class="frb">FRB</span> ';
 		} else if (pokemon.status === 'psn') {
 			status += '<span class="psn">PSN</span> ';
 		} else if (pokemon.status === 'tox') {
@@ -5895,6 +5897,24 @@ export const BattleStatusAnims: AnimTable = {
 	brn: {
 		anim(scene, [attacker]) {
 			scene.showEffect('fireball', {
+				x: attacker.x - 20,
+				y: attacker.y - 15,
+				z: attacker.z,
+				scale: 0.2,
+				opacity: 0.3,
+			}, {
+				x: attacker.x + 40,
+				y: attacker.y + 15,
+				z: attacker.z,
+				scale: 1,
+				opacity: 1,
+				time: 300,
+			}, 'swing', 'fade');
+		},
+	},
+	frb: {
+		anim(scene, [attacker]) {
+			scene.showEffect('icicle', {
 				x: attacker.x - 20,
 				y: attacker.y - 15,
 				z: attacker.z,
