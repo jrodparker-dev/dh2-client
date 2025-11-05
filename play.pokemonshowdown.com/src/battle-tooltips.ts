@@ -1031,6 +1031,13 @@ class BattleTooltips {
 				}
 			}
 		}
+		// Apply Frostbite visual stat effect (halves Special Attack)
+		// @ts-expect-error custom status
+if (pokemon.status === 'frb') {
+	// skip Guts since it only ignores physical Attack drops
+	stats.spa = Math.floor(stats.spa * 0.5);
+}
+
 
 		// gen 1 doesn't support items
 		if (this.battle.gen <= 1) {
