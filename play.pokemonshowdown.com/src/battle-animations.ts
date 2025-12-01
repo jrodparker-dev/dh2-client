@@ -3225,6 +3225,10 @@ const BattleEffects: {[k: string]: SpriteData} = {
 		url: 'steamfield.png',
 		w: 100, h: 100,
 	},
+	gasoline: {
+		url: 'gasoline.png',
+		w: 80, h: 80,
+	},
 	auroraveil: {
 		rawHTML: '<div class="sidecondition-auroraveil" style="display:none;position:absolute" />',
 		w: 100, h: 50,
