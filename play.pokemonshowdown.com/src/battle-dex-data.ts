@@ -632,6 +632,19 @@ const BattlePokemonIconIndexes: {[id: string]: number} = {
 	umbraquill: 1512 + 88,
 	venomire: 1512 + 89,
 	zephyren: 1512 + 90,
+	arachniss: 1512 + 91,
+	hexameleon: 1512 + 92,
+	klumph: 1512 + 93,
+	klumphstolen: 1512 + 94,
+	frostallion: 1512 + 95,
+	grawshawg: 1512 + 96,
+	glimming: 1512 + 97,
+	trolossus: 1512 + 98,
+	obscuring: 1512 + 99,
+	majesting: 1512 + 100,
+	mjolnislash: 1512 + 101,
+	dragrism: 1512 + 102,
+	valkyrien: 1512 + 103,
 };
 
 const BattlePokemonIconIndexesLeft: {[id: string]: number} = {
