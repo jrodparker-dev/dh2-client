@@ -1666,15 +1666,6 @@ if (pokemon.status === 'frb') {
 				value.modify(1.1, "Victory Star");
 			}
 		}
-				// Scales of Ruin (custom pseudoWeather) – accuracy x0.85 for everyone except the holder
-		// Note: we key off pseudoWeather because tooltips are client-side predictions.
-		if ((this.battle.hasPseudoWeather('Scales of Ruin') || this.battle.hasPseudoWeather('scalesofruin')) &&
-			!value.tryAbility('Scales of Ruin')) {
-			// 0.85 * 4096 = 3481.6 -> round to nearest like other modifiers
-			accuracyModifiers.push(3482);
-			value.modify(0.85, "Scales of Ruin");
-		}
-
 
 		if (value.tryAbility('Hustle') && move.category === 'Physical') {
 			accuracyModifiers.push(3277);
@@ -1683,6 +1674,40 @@ if (pokemon.status === 'frb') {
 			accuracyModifiers.push(5325);
 			value.abilityModify(1.3, "Compound Eyes");
 		}
+		// --- Scales of Ruin (tooltip only, brute force) ---
+{
+	let scalesApplies = false;
+
+	const hasScales = (p: any) => {
+		if (!p || p.fainted) return false;
+		if (typeof p.hasAbility === 'function') return p.hasAbility('scalesofruin');
+		if (typeof p.ability === 'string') return p.ability === 'scalesofruin';
+		if (typeof p.baseAbility === 'string') return p.baseAbility === 'scalesofruin';
+		return false;
+	};
+
+	// 1) If tooltip knows the explicit target, check that first
+	if (target && hasScales(target)) {
+		scalesApplies = true;
+	}
+
+	// 2) If no explicit target (spread / hover), check all opposing actives
+	if (!scalesApplies && pokemon?.side?.foe?.active?.length) {
+		for (const foe of pokemon.side.foe.active) {
+			if (hasScales(foe)) {
+				scalesApplies = true;
+				break;
+			}
+		}
+	}
+
+	if (scalesApplies) {
+		accuracyModifiers.push(1); // dummy entry so it shows as modified
+		value.modify(0.01, "Scales of Ruin");
+	}
+}
+// --- end Scales of Ruin tooltip ---
+
 
 		if (value.tryItem('Wide Lens')) {
 			accuracyModifiers.push(4505);
