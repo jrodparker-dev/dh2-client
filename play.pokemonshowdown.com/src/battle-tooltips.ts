@@ -1666,6 +1666,15 @@ if (pokemon.status === 'frb') {
 				value.modify(1.1, "Victory Star");
 			}
 		}
+				// Scales of Ruin (custom pseudoWeather) – accuracy x0.85 for everyone except the holder
+		// Note: we key off pseudoWeather because tooltips are client-side predictions.
+		if ((this.battle.hasPseudoWeather('Scales of Ruin') || this.battle.hasPseudoWeather('scalesofruin')) &&
+			!value.tryAbility('Scales of Ruin')) {
+			// 0.85 * 4096 = 3481.6 -> round to nearest like other modifiers
+			accuracyModifiers.push(3482);
+			value.modify(0.85, "Scales of Ruin");
+		}
+
 
 		if (value.tryAbility('Hustle') && move.category === 'Physical') {
 			accuracyModifiers.push(3277);
