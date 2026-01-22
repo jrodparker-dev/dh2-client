@@ -86,6 +86,7 @@ interface BattleMoveChoice {
 	max: boolean;
 	z: boolean;
 	tera: boolean;
+	echo: boolean;
 }
 interface BattleShiftChoice {
 	choiceType: 'shift';
@@ -118,6 +119,7 @@ class BattleChoiceBuilder {
 		z: false,
 		max: false,
 		tera: false,
+		echo: false,
 	};
 	alreadySwitchingIn: number[] = [];
 	alreadyMega = false;
@@ -191,6 +193,7 @@ class BattleChoiceBuilder {
 					this.current.z = choice.z;
 					this.current.max = choice.max;
 					this.current.tera = choice.tera;
+					this.current.echo = choice.echo;
 					return null;
 				}
 			}
@@ -204,6 +207,7 @@ class BattleChoiceBuilder {
 			this.current.z = false;
 			this.current.max = false;
 			this.current.tera = false;
+			this.current.echo = false;
 		} else if (choice.choiceType === 'switch' || choice.choiceType === 'team') {
 			if (this.alreadySwitchingIn.includes(choice.targetPokemon)) {
 				if (choice.choiceType === 'switch') {
@@ -289,6 +293,7 @@ class BattleChoiceBuilder {
 				z: false,
 				max: false,
 				tera: false,
+				echo: false,
 			};
 			while (true) {
 				// If data ends with a number, treat it as a target location.
@@ -320,9 +325,13 @@ class BattleChoiceBuilder {
 				} else if (choice.endsWith(' terastal')) {
 					current.tera = true;
 					choice = choice.slice(0, -9);
+				} else if (choice.endsWith(' echo')) {
+					current.echo = true;
+					choice = choice.slice(0, -5);
 				} else {
 					break;
 				}
+
 			}
 
 			if (/^[0-9]+$/.test(choice)) {
@@ -430,7 +439,7 @@ class BattleChoiceBuilder {
 		switch (choice.choiceType) {
 		case 'move':
 			const target = choice.targetLoc ? ` ${choice.targetLoc > 0 ? '+' : ''}${choice.targetLoc}` : ``;
-			const boost = `${choice.max ? ' max' : ''}${choice.mega ? ' mega' : ''}${choice.z ? ' zmove' : ''}${choice.tera ? ' terastallize' : ''}`;
+			const boost = `${choice.max ? ' max' : ''}${choice.mega ? ' mega' : ''}${choice.z ? ' zmove' : ''}${choice.tera ? ' terastallize' : ''}${choice.echo ? 'echo' : ''}`;
 			return `move ${choice.move}${boost}${target}`;
 		case 'switch':
 		case 'team':
