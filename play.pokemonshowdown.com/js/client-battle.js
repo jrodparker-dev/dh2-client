@@ -596,6 +596,7 @@
 			var maxMoves = curActive.maxMoves || switchables[pos].maxMoves;
 			var gigantamax = curActive.gigantamax;
 			var canTerastallize = curActive.canTerastallize || switchables[pos].canTerastallize;
+			var canEcho = curActive.canEcho || switchables[pos].canEcho;
 			if (canZMove && typeof canZMove[0] === 'string') {
 				canZMove = _.map(canZMove, function (move) {
 					return {move: move, target: Dex.moves.get(move).target};
@@ -890,6 +891,8 @@ try {
 					moveMenu += '<br /><label class="megaevo"><input type="checkbox" name="ultraburst" />&nbsp;Ultra Burst</label>';
 				} else if (canDynamax) {
 					moveMenu += '<br /><label class="megaevo"><input type="checkbox" name="dynamax" />&nbsp;Dynamax</label>';
+				} else if (canEcho) {
+					moveMenu += '<br /><label class="megaevo"><input type="checkbox" name="echo" />&nbsp;Echo</label>';
 				} else if (canTerastallize) {
 					moveMenu += '<br /><label class="megaevo"><input type="checkbox" name="terastallize" />&nbsp;Terastallize<br />' + Dex.getTypeIcon(canTerastallize) + '</label>';
 				}
@@ -1159,6 +1162,11 @@ try {
 								buf += 'Dynamax, then ';
 								targetPos = parts[3];
 							}
+							if (targetPos === 'echo') {
+								buf += 'Echo, then ';
+								targetPos = parts[3];
+							}
+
 							if (targetPos === 'terastallize') {
 								buf += 'Terastallize, then ';
 								targetPos = parts[3];
@@ -1399,11 +1407,13 @@ try {
 				var isUltraBurst = !!(this.$('input[name=ultraburst]')[0] || '').checked;
 				var isDynamax = !!(this.$('input[name=dynamax]')[0] || '').checked;
 				var isTerastal = !!(this.$('input[name=terastallize]')[0] || '').checked;
+				var isEcho = !!(this.$('input[name=echo]')[0] || '').checked;
+
 
 				var target = e.getAttribute('data-target');
 				var choosableTargets = {normal: 1, any: 1, adjacentAlly: 1, adjacentAllyOrSelf: 1, anyAlly: 1, adjacentFoe: 1};
 
-				this.choice.choices.push('move ' + pos + (isMega ? ' mega' : '') + (isZMove ? ' zmove' : '') + (isUltraBurst ? ' ultra' : '') + (isDynamax ? ' dynamax' : '') + (isTerastal ? ' terastallize' : ''));
+				this.choice.choices.push('move ' + pos + (isMega ? ' mega' : '') + (isZMove ? ' zmove' : '') + (isUltraBurst ? ' ultra' : '') + (isDynamax ? ' dynamax' : '') + (isEcho ? ' echo' : '') + (isTerastal ? ' terastallize' : ''));
 				if (nearActive.length > 1 && target in choosableTargets) {
 					this.choice.type = 'movetarget';
 					this.choice.moveTarget = target;
