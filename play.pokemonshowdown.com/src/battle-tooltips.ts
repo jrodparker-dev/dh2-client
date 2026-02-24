@@ -1674,41 +1674,7 @@ if (pokemon.status === 'frb') {
 			accuracyModifiers.push(5325);
 			value.abilityModify(1.3, "Compound Eyes");
 		}
-		// --- Scales of Ruin (tooltip only, brute force) ---
-{
-	let scalesApplies = false;
-
-	const hasScales = (p: any) => {
-		if (!p || p.fainted) return false;
-		if (typeof p.hasAbility === 'function') return p.hasAbility('scalesofruin');
-		if (typeof p.ability === 'string') return p.ability === 'scalesofruin';
-		if (typeof p.baseAbility === 'string') return p.baseAbility === 'scalesofruin';
-		return false;
-	};
-
-	// 1) If tooltip knows the explicit target, check that first
-	if (target && hasScales(target)) {
-		scalesApplies = true;
-	}
-
-	// 2) If no explicit target (spread / hover), check all opposing actives
-	if (!scalesApplies && pokemon?.side?.foe?.active?.length) {
-		for (const foe of pokemon.side.foe.active) {
-			if (hasScales(foe)) {
-				scalesApplies = true;
-				break;
-			}
-		}
-	}
-
-	if (scalesApplies) {
-		accuracyModifiers.push(1); // dummy entry so it shows as modified
-		value.modify(0.01, "Scales of Ruin");
-	}
-}
-// --- end Scales of Ruin tooltip ---
-
-
+		
 		if (value.tryItem('Wide Lens')) {
 			accuracyModifiers.push(4505);
 			value.itemModify(1.1, "Wide Lens");
