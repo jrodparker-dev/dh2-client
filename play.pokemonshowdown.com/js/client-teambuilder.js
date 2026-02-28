@@ -1275,7 +1275,7 @@
 				buf += '</li>';
 				return buf;
 			}
-			buf += '<div class="setmenu"><button name="copySet"><i class="fa fa-files-o"></i>Copy</button> <button name="importSet"><i class="fa fa-upload"></i>Import/Export</button> <button name="moveSet"><i class="fa fa-arrows"></i>Move</button> <button name="deleteSet"><i class="fa fa-trash"></i>Delete</button></div>';
+			buf += '<div class="setmenu"><button name="copySet"><i class="fa fa-files-o"></i>Copy</button> <button name="importSet"><i class="fa fa-upload"></i>Import/Export</button> <button name="randomizeSet"><i class="fa fa-random"></i>Randomize</button> <button name="moveSet"><i class="fa fa-arrows"></i>Move</button> <button name="deleteSet"><i class="fa fa-trash"></i>Delete</button></div>';
 			buf += '<div class="setchart-nickname">';
 			buf += '<label>Nickname</label><input type="text" name="nickname" class="textbox" value="' + BattleLog.escapeHTML(set.name || '') + '" placeholder="' + BattleLog.escapeHTML(species.baseSpecies) + '" />';
 			buf += '</div>';
@@ -2128,6 +2128,146 @@
 			if (!this.curSet) this.selectPokemon($(button).closest('li').val());
 			this.curChartName = 'details';
 			this.curChartType = 'details';
+			this.updateChart();
+		},
+		randomLegalChoice: function (type, set, cur) {
+			this.search.engine.setType(type, this.curTeam.format || 'gen9', set);
+			if (!this.search.engine.find('')) return null;
+			var resultSet = this.search.engine.results;
+			var legal = [];
+			for (var i = 0; i < resultSet.length; i++) {
+				var row = resultSet[i];
+				if (!row || row[0] !== type) continue;
+				if (cur && cur[row[1]]) continue;
+				if (this.search.engine.illegalLabel(row[1])) continue;
+				if (type === 'item' && !this.canUseRandomItem(row[1], set)) continue;
+				legal.push(row[1]);
+			}
+			if (!legal.length) return null;
+			return legal[Math.floor(Math.random() * legal.length)];
+		},
+		randomItemBlacklist: {
+			blueflute: 1,
+			yellowflute: 1,
+			redflute: 1,
+			blackflute: 1,
+			whiteflute: 1,
+			nugget: 1,
+			bignugget: 1,
+			pearl: 1,
+			bigpearl: 1,
+			pearlstring: 1,
+			stardust: 1,
+			starpiece: 1,
+			cometshard: 1,
+			reliccopper: 1,
+			relicsilver: 1,
+			relicgold: 1,
+			relicvase: 1,
+			relicband: 1,
+			relicstatue: 1,
+			reliccrown: 1,
+			balmmushroom: 1,
+			bigmushroom: 1,
+			tinymushroom: 1,
+			shoalshell: 1,
+			shoalsalt: 1,
+			redscarf: 1,
+			bluescarf: 1,
+			pinkscarf: 1,
+			greenscarf: 1,
+			yellowscarf: 1,
+			protector: 1,
+			electirizer: 1,
+			magmarizer: 1,
+			reapercloth: 1,
+			dubiousdisc: 1,
+			upgrade: 1,
+			prismscale: 1,
+			sachet: 1,
+			whippeddream: 1,
+		},
+		canUseRandomItem: function (itemid, set) {
+			var item = this.curTeam.dex.items.get(itemid);
+			if (!item.exists) return false;
+			if (item.isPokeball) return false;
+			if (this.randomItemBlacklist[item.id]) return false;
+
+			if (!item.megaStone) return true;
+
+			var species = this.curTeam.dex.species.get(set.species);
+			if (!species.exists) return false;
+			var baseSpecies = species.baseSpecies || species.name;
+			return item.megaEvolves === baseSpecies;
+		},
+		randomizeEVs: function (set) {
+			set.evs = {};
+			var statOrder = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+			var supportsEVs = !this.curTeam.format.includes('letsgo');
+			if (!supportsEVs) {
+				for (var i = 0; i < statOrder.length; i++) {
+					set.evs[statOrder[i]] = Math.floor(Math.random() * 201);
+				}
+				return;
+			}
+
+			var remaining = (this.curTeam.gen > 2 && !this.ignoreEVLimits) ? 508 : 1512;
+			for (var i = 0; i < statOrder.length; i++) {
+				var stat = statOrder[i];
+				var statsLeft = statOrder.length - i;
+				var minReserved = Math.max(0, (statsLeft - 1) * 0);
+				var maxAllowed = Math.min(252, remaining - minReserved);
+				if (maxAllowed < 0) maxAllowed = 0;
+				var randEV = 4 * Math.floor(Math.random() * (Math.floor(maxAllowed / 4) + 1));
+				set.evs[stat] = randEV;
+				remaining -= randEV;
+			}
+		},
+		randomizeSet: function () {
+			var set = this.curSet;
+			if (!set || !set.species) return;
+			var species = this.curTeam.dex.species.get(set.species);
+
+			var abilityID = this.randomLegalChoice('ability', set);
+			if (abilityID) set.ability = this.curTeam.dex.abilities.get(abilityID).name;
+
+			set.moves = [];
+			var moveIDs = {};
+			for (var i = 0; i < 4; i++) {
+				var moveID = this.randomLegalChoice('move', set, moveIDs);
+				if (!moveID) break;
+				moveIDs[moveID] = 1;
+				set.moves.push(this.curTeam.dex.moves.get(moveID).name);
+			}
+
+			var itemID = this.randomLegalChoice('item', set);
+			if (itemID) set.item = this.curTeam.dex.items.get(itemID).name;
+
+			if (!species.forceTeraType && this.curTeam.gen === 9) {
+				var teraID = this.randomLegalChoice('type', set);
+				if (teraID) set.teraType = this.curTeam.dex.types.get(teraID).name;
+			}
+
+			set.happiness = 1 + Math.floor(Math.random() * 255);
+			set.level = 80 + Math.floor(Math.random() * 21);
+			this.randomizeEVs(set);
+
+			set.ivs = set.ivs || {};
+			for (var stat in BattleStatNames) {
+				set.ivs[stat] = Math.floor(Math.random() * 32);
+			}
+
+			var natures = Object.keys(BattleNatures);
+			set.nature = natures[Math.floor(Math.random() * natures.length)];
+			if (Math.random() < 0.5) {
+				set.shiny = true;
+			} else {
+				delete set.shiny;
+			}
+
+			this.save();
+			this.updateSetTop();
+			this.updatePokemonSprite();
 			this.updateChart();
 		},
 
