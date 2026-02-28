@@ -1887,7 +1887,8 @@
 		updateSetView: function () {
 			// pokemon
 			var buf = '<div class="pad">';
-			buf += '<button name="back" class="button"><i class="fa fa-chevron-left"></i> Team</button></div>';
+			buf += '<button name="back" class="button"><i class="fa fa-chevron-left"></i> Team</button> ';
+			buf += '<button name="randomizeSet" class="button"><i class="fa fa-random"></i> Randomize Set</button></div>';
 			buf += '<div class="teambar">';
 			buf += this.renderTeambar();
 			buf += '</div>';
