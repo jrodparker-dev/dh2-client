@@ -2141,10 +2141,65 @@
 				if (!row || row[0] !== type) continue;
 				if (cur && cur[row[1]]) continue;
 				if (this.search.engine.illegalLabel(row[1])) continue;
+				if (type === 'item' && !this.canUseRandomItem(row[1], set)) continue;
 				legal.push(row[1]);
 			}
 			if (!legal.length) return null;
 			return legal[Math.floor(Math.random() * legal.length)];
+		},
+		randomItemBlacklist: {
+			blueflute: 1,
+			yellowflute: 1,
+			redflute: 1,
+			blackflute: 1,
+			whiteflute: 1,
+			nugget: 1,
+			bignugget: 1,
+			pearl: 1,
+			bigpearl: 1,
+			pearlstring: 1,
+			stardust: 1,
+			starpiece: 1,
+			cometshard: 1,
+			reliccopper: 1,
+			relicsilver: 1,
+			relicgold: 1,
+			relicvase: 1,
+			relicband: 1,
+			relicstatue: 1,
+			reliccrown: 1,
+			balmmushroom: 1,
+			bigmushroom: 1,
+			tinymushroom: 1,
+			shoalshell: 1,
+			shoalsalt: 1,
+			redscarf: 1,
+			bluescarf: 1,
+			pinkscarf: 1,
+			greenscarf: 1,
+			yellowscarf: 1,
+			protector: 1,
+			electirizer: 1,
+			magmarizer: 1,
+			reapercloth: 1,
+			dubiousdisc: 1,
+			upgrade: 1,
+			prismscale: 1,
+			sachet: 1,
+			whippeddream: 1,
+		},
+		canUseRandomItem: function (itemid, set) {
+			var item = this.curTeam.dex.items.get(itemid);
+			if (!item.exists) return false;
+			if (item.isPokeball) return false;
+			if (this.randomItemBlacklist[item.id]) return false;
+
+			if (!item.megaStone) return true;
+
+			var species = this.curTeam.dex.species.get(set.species);
+			if (!species.exists) return false;
+			var baseSpecies = species.baseSpecies || species.name;
+			return item.megaEvolves === baseSpecies;
 		},
 		randomizeEVs: function (set) {
 			set.evs = {};
