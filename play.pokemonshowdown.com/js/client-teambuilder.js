@@ -1891,7 +1891,6 @@
 			// pokemon
 			var buf = '<div class="pad">';
 			buf += '<button name="back" class="button"><i class="fa fa-chevron-left"></i> Team</button> ';
-			buf += '<button name="randomizeSet" class="button"><i class="fa fa-random"></i> Randomize Set</button></div>';
 			buf += '<div class="teambar">';
 			buf += this.renderTeambar();
 			buf += '</div>';
@@ -2410,10 +2409,12 @@
 
 			buf += '<div><label>Speed</label></div></div>';
 
-			buf += '<div class="col basestatscol"><div><em>Base</em><br /><button class="button" name="resetBaseStats">Reset</button></div>';
+			buf += '<div class="col basestatscol"><div><em>Base</em><br /></div>';
 			for (var i in stats) {
-				buf += '<div><button type="button" class="basestatvalue button" data-stat="' + i + '">' + baseStats[i] + '</button></div>';
-			}
+  buf += '<div><button type="button" class="basestatvalue button" data-stat="' + i + '">' + baseStats[i] + '</button>';
+  if (i === 'spe') buf += '<br /><button class="button" name="resetBaseStats">Reset</button>';
+  buf += '</div>';
+}
 			buf += '</div>';
 
 			buf += '<div class="col graphcol"><div></div>';
