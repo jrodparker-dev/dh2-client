@@ -2410,7 +2410,7 @@
 
 			buf += '<div><label>Speed</label></div></div>';
 
-			buf += '<div class="col basestatscol"><div><em>Base</em></div>';
+			buf += '<div class="col basestatscol"><div><em>Base</em><br /><button class="button" name="resetBaseStats">Reset</button></div>';
 			for (var i in stats) {
 				buf += '<div><button type="button" class="basestatvalue button" data-stat="' + i + '">' + baseStats[i] + '</button></div>';
 			}
@@ -2899,6 +2899,15 @@
 		baseStatInputBlur: function (e) {
 			var stat = e.currentTarget.name.substr(9);
 			this.setBaseStatOverride(stat, e.currentTarget.value);
+		},
+		resetBaseStats: function () {
+			var set = this.curSet;
+			if (!set || !set.baseStats) return;
+			delete set.baseStats;
+			this.save();
+			this.updateStatGraph();
+			this.updateStatForm();
+			this.updateSetTop();
 		},
 
 		/*********************************************************
