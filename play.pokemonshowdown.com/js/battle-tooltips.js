@@ -1340,28 +1340,38 @@ return stats;
 parseStatSource=function parseStatSource(statSource){
 var parsedStats={};
 if(!statSource)return parsedStats;
-if(typeof statSource==='string'){for(var _i30=0,_statSource$split2=
-statSource.split(/[\s,|/]+/);_i30<_statSource$split2.length;_i30++){var statEntry=_statSource$split2[_i30];
-var _statEntry$split=statEntry.split(':'),rawStatName=_statEntry$split[0],rawStatValue=_statEntry$split[1];
-if(!rawStatName||!rawStatValue)continue;
-var statName=toID(rawStatName);
-if(!Dex.statNames.includes(statName))continue;
-var statValue=Number(rawStatValue);
+if(typeof statSource==='string'){
+var packedValues=statSource.split('/').map(function(value){return Number(value);});
+if(packedValues.length===Dex.statNames.length&&packedValues.some(function(value){return!isNaN(value);})){
+for(var i=0;i<Dex.statNames.length;i++){
+var statName=Dex.statNames[i];
+var statValue=packedValues[i];
 if(!isNaN(statValue)&&statValue>0)parsedStats[statName]=statValue;
 }
 return parsedStats;
-}for(var _i32=0,_Dex$statNames2=
-Dex.statNames;_i32<_Dex$statNames2.length;_i32++){var _statName3=_Dex$statNames2[_i32];
-var _statValue=Number(statSource[_statName3]);
+}for(var _i30=0,_statSource$split2=
+statSource.split(/[\s,|/]+/);_i30<_statSource$split2.length;_i30++){var statEntry=_statSource$split2[_i30];
+var _statEntry$split=statEntry.split(':'),rawStatName=_statEntry$split[0],rawStatValue=_statEntry$split[1];
+if(!rawStatName||!rawStatValue)continue;
+var _statName3=toID(rawStatName);
+if(!Dex.statNames.includes(_statName3))continue;
+var _statValue=Number(rawStatValue);
 if(!isNaN(_statValue)&&_statValue>0)parsedStats[_statName3]=_statValue;
+}
+return parsedStats;
+}for(var _i32=0,_Dex$statNames2=
+Dex.statNames;_i32<_Dex$statNames2.length;_i32++){var _statName4=_Dex$statNames2[_i32];
+var _statValue2=Number(statSource[_statName4]);
+if(!isNaN(_statValue2)&&_statValue2>0)parsedStats[_statName4]=_statValue2;
 }
 return parsedStats;
 };_proto2.
 
-getPokemonStatTable=function getPokemonStatTable(clientPokemon,serverPokemon){
+
+getPokemonStatTable=function getPokemonStatTable(clientPokemon,serverPokemon){var _set,_set2;
 var fallbackStats=(serverPokemon==null?void 0:serverPokemon.stats)||{atk:0,def:0,spa:0,spd:0,spe:0};
-var parsedClientStats=this.parseStatSource(clientPokemon==null?void 0:clientPokemon.stats);
-var parsedServerStats=this.parseStatSource(serverPokemon==null?void 0:serverPokemon.stats);
+var parsedClientStats=this.parseStatSource((clientPokemon==null?void 0:clientPokemon.stats)||(clientPokemon==null||(_set=clientPokemon.set)==null?void 0:_set.stats));
+var parsedServerStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.stats)||(serverPokemon==null||(_set2=serverPokemon.set)==null?void 0:_set2.stats));
 var stats=Object.assign({},fallbackStats);for(var _i34=0,_Dex$statNamesExceptH8=
 Dex.statNamesExceptHP;_i34<_Dex$statNamesExceptH8.length;_i34++){var statName=_Dex$statNamesExceptH8[_i34];
 var customStat=parsedClientStats[statName]||parsedServerStats[statName];
@@ -1400,17 +1410,17 @@ buf+='<p><small>(After stat modifiers:)</small></p>';
 buf+='<p>';
 }for(var _i38=0,_Dex$statNamesExceptH10=
 
-Dex.statNamesExceptHP;_i38<_Dex$statNamesExceptH10.length;_i38++){var _statName4=_Dex$statNamesExceptH10[_i38];
-if(this.battle.gen===1&&_statName4==='spd')continue;
-var _statLabel=this.battle.gen===1&&_statName4==='spa'?'spc':_statName4;
-buf+=_statName4==='atk'?'<small>':'<small> / ';
+Dex.statNamesExceptHP;_i38<_Dex$statNamesExceptH10.length;_i38++){var _statName5=_Dex$statNamesExceptH10[_i38];
+if(this.battle.gen===1&&_statName5==='spd')continue;
+var _statLabel=this.battle.gen===1&&_statName5==='spa'?'spc':_statName5;
+buf+=_statName5==='atk'?'<small>':'<small> / ';
 buf+=''+BattleText[_statLabel].statShortName+'&nbsp;</small>';
-if(modifiedStats[_statName4]===stats[_statName4]){
-buf+=''+modifiedStats[_statName4];
-}else if(modifiedStats[_statName4]<stats[_statName4]){
-buf+='<strong class="stat-lowered">'+modifiedStats[_statName4]+'</strong>';
+if(modifiedStats[_statName5]===stats[_statName5]){
+buf+=''+modifiedStats[_statName5];
+}else if(modifiedStats[_statName5]<stats[_statName5]){
+buf+='<strong class="stat-lowered">'+modifiedStats[_statName5]+'</strong>';
 }else{
-buf+='<strong class="stat-boosted">'+modifiedStats[_statName4]+'</strong>';
+buf+='<strong class="stat-boosted">'+modifiedStats[_statName5]+'</strong>';
 }
 }
 buf+='</p>';
@@ -1451,7 +1461,7 @@ return 0;
 
 
 
-getSpeedRange=function getSpeedRange(pokemon,serverPokemon){var _pokemon$volatiles$tr;
+getSpeedRange=function getSpeedRange(pokemon,serverPokemon){var _set3,_set4,_pokemon$volatiles$tr;
 var tr=Math.trunc||Math.floor;
 var stats=this.getPokemonStatTable(pokemon,serverPokemon);
 var exactSpe=Number(stats.spe);
@@ -1460,8 +1470,8 @@ return[exactSpe,exactSpe];
 }
 var species=pokemon.getSpecies(serverPokemon||undefined);
 var effectiveBaseStats=Object.assign({},species.baseStats);
-var parsedClientBaseStats=this.parseStatSource(pokemon.baseStats);
-var parsedServerBaseStats=this.parseStatSource(serverPokemon==null?void 0:serverPokemon.baseStats);for(var _i42=0,_Dex$statNames4=
+var parsedClientBaseStats=this.parseStatSource(pokemon.baseStats||((_set3=pokemon.set)==null?void 0:_set3.baseStats));
+var parsedServerBaseStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.baseStats)||(serverPokemon==null||(_set4=serverPokemon.set)==null?void 0:_set4.baseStats));for(var _i42=0,_Dex$statNames4=
 Dex.statNames;_i42<_Dex$statNames4.length;_i42++){var statName=_Dex$statNames4[_i42];
 var customValue=parsedClientBaseStats[statName]||parsedServerBaseStats[statName];
 if(customValue)effectiveBaseStats[statName]=customValue;
@@ -2310,14 +2320,19 @@ pokemon)
 
 {var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;var fallbackPokemon=arguments.length>2?arguments[2]:undefined;
 var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i56=0;_i56<
-pokemonList.length;_i56++){var currentPokemon=pokemonList[_i56];
-var customTypes=currentPokemon.newTypes||currentPokemon.types;
-var customTypeList=Array.isArray(customTypes)?customTypes:
-typeof customTypes==='string'?[customTypes]:[];
-if(!customTypeList.length)continue;
+pokemonList.length;_i56++){var _set5;var currentPokemon=pokemonList[_i56];
+var injectedTypeSources=[
+currentPokemon.newTypes,(_set5=
+currentPokemon.set)==null?void 0:_set5.newTypes,
+currentPokemon.apparentType,
+currentPokemon.types];
+
 var types=[];for(var _i58=0;_i58<
-customTypeList.length;_i58++){var typeEntry=customTypeList[_i58];for(var _i60=0,_String$split2=
-String(typeEntry).split(/[^A-Za-z?]+/);_i60<_String$split2.length;_i60++){var typeName=_String$split2[_i60];
+injectedTypeSources.length;_i58++){var source=injectedTypeSources[_i58];
+var customTypeList=Array.isArray(source)?source:
+typeof source==='string'?[source]:[];for(var _i60=0;_i60<
+customTypeList.length;_i60++){var typeEntry=customTypeList[_i60];for(var _i62=0,_String$split2=
+String(typeEntry).split(/[^A-Za-z?]+/);_i62<_String$split2.length;_i62++){var typeName=_String$split2[_i62];
 if(!typeName)continue;
 var normalizedType=Dex.types.get(typeName.trim()).name;
 if(!Dex.types.isName(normalizedType))continue;
@@ -2325,6 +2340,7 @@ var type=normalizedType;
 if(types.includes(type))continue;
 types.push(type);
 if(types.length>=2)return types;
+}
 }
 }
 if(types.length)return types;
@@ -2338,9 +2354,10 @@ return fallbackPokemon.getTypeList(undefined,preterastallized);
 
 return this.battle.dex.species.get(pokemon.speciesForme).types;
 };_proto2.
+
 pokemonHasType=function pokemonHasType(pokemon,type,types){
-if(!types)types=this.getPokemonTypes(pokemon);for(var _i62=0,_types2=
-types;_i62<_types2.length;_i62++){var curType=_types2[_i62];
+if(!types)types=this.getPokemonTypes(pokemon);for(var _i64=0,_types2=
+types;_i64<_types2.length;_i64++){var curType=_types2[_i64];
 if(curType===type)return true;
 }
 return false;

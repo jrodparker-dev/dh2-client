@@ -1341,6 +1341,15 @@ if (pokemon.status === 'frb') {
 		const parsedStats: {[stat: string]: number} = {};
 		if (!statSource) return parsedStats;
 		if (typeof statSource === 'string') {
+			const packedValues = statSource.split('/').map(value => Number(value));
+			if (packedValues.length === Dex.statNames.length && packedValues.some(value => !isNaN(value))) {
+				for (let i = 0; i < Dex.statNames.length; i++) {
+					const statName = Dex.statNames[i];
+					const statValue = packedValues[i];
+					if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+				}
+				return parsedStats;
+			}
 			for (const statEntry of statSource.split(/[\s,|/]+/)) {
 				const [rawStatName, rawStatValue] = statEntry.split(':');
 				if (!rawStatName || !rawStatValue) continue;
@@ -1358,10 +1367,11 @@ if (pokemon.status === 'frb') {
 		return parsedStats;
 	}
 
+
 	getPokemonStatTable(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
 		const fallbackStats = serverPokemon?.stats || {atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
-		const parsedClientStats = this.parseStatSource((clientPokemon as any)?.stats);
-		const parsedServerStats = this.parseStatSource((serverPokemon as any)?.stats);
+		const parsedClientStats = this.parseStatSource((clientPokemon as any)?.stats || (clientPokemon as any)?.set?.stats);
+		const parsedServerStats = this.parseStatSource((serverPokemon as any)?.stats || (serverPokemon as any)?.set?.stats);
 		const stats: {[stat: string]: number} = {...fallbackStats};
 		for (const statName of Dex.statNamesExceptHP) {
 			const customStat = parsedClientStats[statName] || parsedServerStats[statName];
@@ -1460,8 +1470,8 @@ if (pokemon.status === 'frb') {
 		}
 		const species = pokemon.getSpecies(serverPokemon || undefined);
 		const effectiveBaseStats = {...species.baseStats};
-		const parsedClientBaseStats = this.parseStatSource((pokemon as any).baseStats);
-		const parsedServerBaseStats = this.parseStatSource((serverPokemon as any)?.baseStats);
+		const parsedClientBaseStats = this.parseStatSource((pokemon as any).baseStats || (pokemon as any).set?.baseStats);
+		const parsedServerBaseStats = this.parseStatSource((serverPokemon as any)?.baseStats || (serverPokemon as any)?.set?.baseStats);
 		for (const statName of Dex.statNames) {
 			const customValue = parsedClientBaseStats[statName] || parsedServerBaseStats[statName];
 			if (customValue) effectiveBaseStats[statName] = customValue;
@@ -2311,20 +2321,26 @@ if (pokemon.status === 'frb') {
 	): ReadonlyArray<TypeName> {
 		const pokemonList = [pokemon, fallbackPokemon].filter(poke => !!poke) as (Pokemon | ServerPokemon)[];
 		for (const currentPokemon of pokemonList) {
-			const customTypes = ((currentPokemon as any).newTypes || (currentPokemon as any).types) as string[] | string | undefined;
-			const customTypeList = Array.isArray(customTypes) ? customTypes :
-				typeof customTypes === 'string' ? [customTypes] : [];
-			if (!customTypeList.length) continue;
+			const injectedTypeSources = [
+				(currentPokemon as any).newTypes,
+				(currentPokemon as any).set?.newTypes,
+				(currentPokemon as any).apparentType,
+				(currentPokemon as any).types,
+			];
 			const types: TypeName[] = [];
-			for (const typeEntry of customTypeList) {
-				for (const typeName of String(typeEntry).split(/[^A-Za-z?]+/)) {
-					if (!typeName) continue;
-					const normalizedType = Dex.types.get(typeName.trim()).name;
-					if (!Dex.types.isName(normalizedType)) continue;
-					const type = normalizedType as TypeName;
-					if (types.includes(type)) continue;
-					types.push(type);
-					if (types.length >= 2) return types;
+			for (const source of injectedTypeSources) {
+				const customTypeList = Array.isArray(source) ? source :
+					typeof source === 'string' ? [source] : [];
+				for (const typeEntry of customTypeList) {
+					for (const typeName of String(typeEntry).split(/[^A-Za-z?]+/)) {
+						if (!typeName) continue;
+						const normalizedType = Dex.types.get(typeName.trim()).name;
+						if (!Dex.types.isName(normalizedType)) continue;
+						const type = normalizedType as TypeName;
+						if (types.includes(type)) continue;
+						types.push(type);
+						if (types.length >= 2) return types;
+					}
 				}
 			}
 			if (types.length) return types;
@@ -2338,6 +2354,7 @@ if (pokemon.status === 'frb') {
 
 		return this.battle.dex.species.get(pokemon.speciesForme).types;
 	}
+
 	pokemonHasType(pokemon: Pokemon | ServerPokemon, type: TypeName, types?: ReadonlyArray<TypeName>) {
 		if (!types) types = this.getPokemonTypes(pokemon);
 		for (const curType of types) {
