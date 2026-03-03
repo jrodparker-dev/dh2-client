@@ -1420,11 +1420,21 @@ if (pokemon.status === 'frb') {
 	getSpeedRange(pokemon: Pokemon): [number, number] {
 		const tr = Math.trunc || Math.floor;
 		const species = pokemon.getSpecies();
-		let baseSpe = species.baseStats.spe;
+		const effectiveBaseStats = {...species.baseStats};
+		const customBaseStats = (pokemon as any).baseStats as {[stat: string]: number | string} | undefined;
+		if (customBaseStats) {
+			for (const statName of Dex.statNames) {
+				const customValue = Number(customBaseStats[statName]);
+				if (!isNaN(customValue) && customValue > 0) effectiveBaseStats[statName] = customValue;
+			}
+		}
+		let baseSpe = effectiveBaseStats.spe;
 		if (this.battle.rules['Scalemons Mod']) {
-			const bstWithoutHp = species.bst - species.baseStats.hp;
-			const scale = 600 - species.baseStats.hp;
-			baseSpe = tr(baseSpe * scale / bstWithoutHp);
+			const effectiveBst = effectiveBaseStats.hp + effectiveBaseStats.atk + effectiveBaseStats.def +
+				effectiveBaseStats.spa + effectiveBaseStats.spd + effectiveBaseStats.spe;
+			const bstWithoutHp = effectiveBst - effectiveBaseStats.hp;
+			const scale = 600 - effectiveBaseStats.hp;
+			if (bstWithoutHp > 0) baseSpe = tr(baseSpe * scale / bstWithoutHp);
 			if (baseSpe < 1) baseSpe = 1;
 			if (baseSpe > 255) baseSpe = 255;
 		}
@@ -2256,6 +2266,20 @@ if (pokemon.status === 'frb') {
 		return value;
 	}
 	getPokemonTypes(pokemon: Pokemon | ServerPokemon, preterastallized = false): ReadonlyArray<TypeName> {
+		const customTypes = ((pokemon as any).newTypes || (pokemon as any).types) as string[] | undefined;
+		if (Array.isArray(customTypes) && customTypes.length) {
+			const types: TypeName[] = [];
+			for (const typeEntry of customTypes) {
+				for (const typeName of String(typeEntry).split(/[\/,]/)) {
+					const normalizedType = Dex.types.get(typeName.trim()).name;
+					if (!normalizedType) continue;
+					if (types.includes(normalizedType)) continue;
+					types.push(normalizedType);
+					if (types.length >= 2) return types;
+				}
+			}
+			if (types.length) return types;
+		}
 		if (!(pokemon as Pokemon).getTypes) {
 			return this.battle.dex.species.get(pokemon.speciesForme).types;
 		}

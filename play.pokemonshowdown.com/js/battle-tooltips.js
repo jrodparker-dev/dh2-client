@@ -1420,11 +1420,21 @@ return 0;
 getSpeedRange=function getSpeedRange(pokemon){var _pokemon$volatiles$tr;
 var tr=Math.trunc||Math.floor;
 var species=pokemon.getSpecies();
-var baseSpe=species.baseStats.spe;
+var effectiveBaseStats=Object.assign({},species.baseStats);
+var customBaseStats=pokemon.baseStats;
+if(customBaseStats){for(var _i36=0,_Dex$statNames2=
+Dex.statNames;_i36<_Dex$statNames2.length;_i36++){var statName=_Dex$statNames2[_i36];
+var customValue=Number(customBaseStats[statName]);
+if(!isNaN(customValue)&&customValue>0)effectiveBaseStats[statName]=customValue;
+}
+}
+var baseSpe=effectiveBaseStats.spe;
 if(this.battle.rules['Scalemons Mod']){
-var bstWithoutHp=species.bst-species.baseStats.hp;
-var scale=600-species.baseStats.hp;
-baseSpe=tr(baseSpe*scale/bstWithoutHp);
+var effectiveBst=effectiveBaseStats.hp+effectiveBaseStats.atk+effectiveBaseStats.def+
+effectiveBaseStats.spa+effectiveBaseStats.spd+effectiveBaseStats.spe;
+var bstWithoutHp=effectiveBst-effectiveBaseStats.hp;
+var scale=600-effectiveBaseStats.hp;
+if(bstWithoutHp>0)baseSpe=tr(baseSpe*scale/bstWithoutHp);
 if(baseSpe<1)baseSpe=1;
 if(baseSpe>255)baseSpe=255;
 }
@@ -1656,9 +1666,9 @@ var accuracyModifiers=[];
 if(this.battle.hasPseudoWeather('Gravity')){
 accuracyModifiers.push(6840);
 value.modify(5/3,"Gravity");
-}for(var _i36=0,_pokemon$side$active2=
+}for(var _i38=0,_pokemon$side$active2=
 
-pokemon.side.active;_i36<_pokemon$side$active2.length;_i36++){var active=_pokemon$side$active2[_i36];
+pokemon.side.active;_i38<_pokemon$side$active2.length;_i38++){var active=_pokemon$side$active2[_i38];
 if(!active||active.fainted)continue;
 var ability=this.getAllyAbility(active);
 if(ability==='Victory Star'){
@@ -1681,8 +1691,8 @@ value.itemModify(1.1,"Wide Lens");
 }
 
 
-var chain=4096;for(var _i38=0;_i38<
-accuracyModifiers.length;_i38++){var mod=accuracyModifiers[_i38];
+var chain=4096;for(var _i40=0;_i40<
+accuracyModifiers.length;_i40++){var mod=accuracyModifiers[_i40];
 if(mod!==4096){
 chain=chain*mod+2048>>12;
 }
@@ -1785,8 +1795,8 @@ if(move.id==='lastrespects'){
 value.set(Math.min(50+50*pokemon.side.faintCounter));
 }
 if(move.id==='punishment'&&target){
-var boostCount=0;for(var _i40=0,_Object$values2=
-Object.values(target.boosts);_i40<_Object$values2.length;_i40++){var boost=_Object$values2[_i40];
+var boostCount=0;for(var _i42=0,_Object$values2=
+Object.values(target.boosts);_i42<_Object$values2.length;_i42++){var boost=_Object$values2[_i42];
 if(boost>0)boostCount+=boost;
 }
 value.set(Math.min(60+20*boostCount,200));
@@ -1797,8 +1807,8 @@ value.modify(2,'Smelling Salts + Paralysis');
 }
 }
 if(['storedpower','powertrip'].includes(move.id)&&target){
-var _boostCount=0;for(var _i42=0,_Object$values4=
-Object.values(pokemon.boosts);_i42<_Object$values4.length;_i42++){var _boost=_Object$values4[_i42];
+var _boostCount=0;for(var _i44=0,_Object$values4=
+Object.values(pokemon.boosts);_i44<_Object$values4.length;_i44++){var _boost=_Object$values4[_i44];
 if(_boost>0)_boostCount+=_boost;
 }
 value.set(20+20*_boostCount);
@@ -2011,8 +2021,8 @@ value.abilityModify(1.2,'Reckless');
 
 if(move.category!=='Status'){
 var auraBoosted='';
-var auraBroken=false;for(var _i44=0,_pokemon$side$active4=
-pokemon.side.active;_i44<_pokemon$side$active4.length;_i44++){var ally=_pokemon$side$active4[_i44];
+var auraBroken=false;for(var _i46=0,_pokemon$side$active4=
+pokemon.side.active;_i46<_pokemon$side$active4.length;_i46++){var ally=_pokemon$side$active4[_i46];
 if(!ally||ally.fainted)continue;
 var allyAbility=this.getAllyAbility(ally);
 if(moveType==='Fairy'&&allyAbility==='Fairy Aura'){
@@ -2032,8 +2042,8 @@ value.modify(2,'Steely Spirit');
 value.modify(1.5,'Steely Spirit');
 }
 }
-}for(var _i46=0,_pokemon$side$foe$act2=
-pokemon.side.foe.active;_i46<_pokemon$side$foe$act2.length;_i46++){var foe=_pokemon$side$foe$act2[_i46];
+}for(var _i48=0,_pokemon$side$foe$act2=
+pokemon.side.foe.active;_i48<_pokemon$side$foe$act2.length;_i48++){var foe=_pokemon$side$foe$act2[_i48];
 if(!foe||foe.fainted)continue;
 if(foe.ability==='Fairy Aura'&&moveType==='Fairy'){
 auraBoosted='Fairy Aura';
@@ -2256,6 +2266,20 @@ value.itemModify(2);
 return value;
 };_proto2.
 getPokemonTypes=function getPokemonTypes(pokemon){var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;
+var customTypes=pokemon.newTypes||pokemon.types;
+if(Array.isArray(customTypes)&&customTypes.length){
+var types=[];for(var _i50=0;_i50<
+customTypes.length;_i50++){var typeEntry=customTypes[_i50];for(var _i52=0,_String$split2=
+String(typeEntry).split(/[\/,]/);_i52<_String$split2.length;_i52++){var typeName=_String$split2[_i52];
+var normalizedType=Dex.types.get(typeName.trim()).name;
+if(!normalizedType)continue;
+if(types.includes(normalizedType))continue;
+types.push(normalizedType);
+if(types.length>=2)return types;
+}
+}
+if(types.length)return types;
+}
 if(!pokemon.getTypes){
 return this.battle.dex.species.get(pokemon.speciesForme).types;
 }
@@ -2263,8 +2287,8 @@ return this.battle.dex.species.get(pokemon.speciesForme).types;
 return pokemon.getTypeList(undefined,preterastallized);
 };_proto2.
 pokemonHasType=function pokemonHasType(pokemon,type,types){
-if(!types)types=this.getPokemonTypes(pokemon);for(var _i48=0,_types2=
-types;_i48<_types2.length;_i48++){var curType=_types2[_i48];
+if(!types)types=this.getPokemonTypes(pokemon);for(var _i54=0,_types2=
+types;_i54<_types2.length;_i54++){var curType=_types2[_i54];
 if(curType===type)return true;
 }
 return false;
@@ -2406,8 +2430,8 @@ guess=function guess(set){
 var role=this.guessRole(set);
 var comboEVs=this.guessEVs(set,role);
 var evs={hp:0,atk:0,def:0,spa:0,spd:0,spe:0};
-for(var stat in evs){
-evs[stat]=comboEVs[stat]||0;
+for(var _stat in evs){
+evs[_stat]=comboEVs[_stat]||0;
 }
 var plusStat=comboEVs.plusStat||'';
 var minusStat=comboEVs.minusStat||'';
@@ -2793,17 +2817,17 @@ if(!statChart[role])return{};
 var evTotal=0;
 
 var primaryStat=statChart[role][0];
-var stat=this.getStat(primaryStat,set,252,plusStat===primaryStat?1.1:1.0);
+var _stat2=this.getStat(primaryStat,set,252,plusStat===primaryStat?1.1:1.0);
 var ev=252;
-while(ev>0&&stat<=this.getStat(primaryStat,set,ev-4,plusStat===primaryStat?1.1:1.0))ev-=4;
+while(ev>0&&_stat2<=this.getStat(primaryStat,set,ev-4,plusStat===primaryStat?1.1:1.0))ev-=4;
 evs[primaryStat]=ev;
 evTotal+=ev;
 
 var secondaryStat=statChart[role][1];
 if(secondaryStat==='hp'&&set.level&&set.level<20)secondaryStat='spd';
-stat=this.getStat(secondaryStat,set,252,plusStat===secondaryStat?1.1:1.0);
+_stat2=this.getStat(secondaryStat,set,252,plusStat===secondaryStat?1.1:1.0);
 ev=252;
-while(ev>0&&stat<=this.getStat(secondaryStat,set,ev-4,plusStat===secondaryStat?1.1:1.0))ev-=4;
+while(ev>0&&_stat2<=this.getStat(secondaryStat,set,ev-4,plusStat===secondaryStat?1.1:1.0))ev-=4;
 evs[secondaryStat]=ev;
 evTotal+=ev;
 
@@ -2825,8 +2849,8 @@ SRweak--;
 var hpDivisibility=0;
 var hpShouldBeDivisible=false;
 var hp=evs['hp']||0;
-stat=this.getStat('hp',set,hp,1);
-if((set.item==='Leftovers'||set.item==='Black Sludge')&&hasMove['substitute']&&stat!==404){
+_stat2=this.getStat('hp',set,hp,1);
+if((set.item==='Leftovers'||set.item==='Black Sludge')&&hasMove['substitute']&&_stat2!==404){
 hpDivisibility=4;
 }else if(set.item==='Leftovers'||set.item==='Black Sludge'){
 hpDivisibility=0;
@@ -2845,17 +2869,17 @@ hpDivisibility=8;
 }
 
 if(hpDivisibility){
-while(hp<252&&evTotal<508&&!(stat%hpDivisibility)!==hpShouldBeDivisible){
+while(hp<252&&evTotal<508&&!(_stat2%hpDivisibility)!==hpShouldBeDivisible){
 hp+=4;
-stat=this.getStat('hp',set,hp,1);
+_stat2=this.getStat('hp',set,hp,1);
 evTotal+=4;
 }
-while(hp>0&&!(stat%hpDivisibility)!==hpShouldBeDivisible){
+while(hp>0&&!(_stat2%hpDivisibility)!==hpShouldBeDivisible){
 hp-=4;
-stat=this.getStat('hp',set,hp,1);
+_stat2=this.getStat('hp',set,hp,1);
 evTotal-=4;
 }
-while(hp>0&&stat===this.getStat('hp',set,hp-4,1)){
+while(hp>0&&_stat2===this.getStat('hp',set,hp-4,1)){
 hp-=4;
 evTotal-=4;
 }
@@ -2897,15 +2921,15 @@ secondaryStat='def';
 }
 if(secondaryStat){
 ev=remaining;
-stat=this.getStat(secondaryStat,set,ev);
-while(ev>0&&stat===this.getStat(secondaryStat,set,ev-4))ev-=4;
+_stat2=this.getStat(secondaryStat,set,ev);
+while(ev>0&&_stat2===this.getStat(secondaryStat,set,ev-4))ev-=4;
 if(ev)evs[secondaryStat]=ev;
 remaining-=ev;
 }
 if(remaining&&!evs['spe']){
 ev=remaining;
-stat=this.getStat('spe',set,ev);
-while(ev>0&&stat===this.getStat('spe',set,ev-4))ev-=4;
+_stat2=this.getStat('spe',set,ev);
+while(ev>0&&_stat2===this.getStat('spe',set,ev-4))ev-=4;
 if(ev)evs['spe']=ev;
 }
 }
