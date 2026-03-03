@@ -2272,9 +2272,10 @@ var types=[];for(var _i50=0;_i50<
 customTypes.length;_i50++){var typeEntry=customTypes[_i50];for(var _i52=0,_String$split2=
 String(typeEntry).split(/[\/,]/);_i52<_String$split2.length;_i52++){var typeName=_String$split2[_i52];
 var normalizedType=Dex.types.get(typeName.trim()).name;
-if(!normalizedType)continue;
-if(types.includes(normalizedType))continue;
-types.push(normalizedType);
+if(!Dex.types.isName(normalizedType))continue;
+var type=normalizedType;
+if(types.includes(type))continue;
+types.push(type);
 if(types.length>=2)return types;
 }
 }

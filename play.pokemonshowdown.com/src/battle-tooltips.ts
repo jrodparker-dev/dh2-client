@@ -2272,9 +2272,10 @@ if (pokemon.status === 'frb') {
 			for (const typeEntry of customTypes) {
 				for (const typeName of String(typeEntry).split(/[\/,]/)) {
 					const normalizedType = Dex.types.get(typeName.trim()).name;
-					if (!normalizedType) continue;
-					if (types.includes(normalizedType)) continue;
-					types.push(normalizedType);
+					if (!Dex.types.isName(normalizedType)) continue;
+					const type = normalizedType as TypeName;
+					if (types.includes(type)) continue;
+					types.push(type);
 					if (types.length >= 2) return types;
 				}
 			}
