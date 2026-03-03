@@ -805,7 +805,7 @@ class BattleTooltips {
 				}
 			}
 
-			let types = serverPokemon?.terastallized ? [serverPokemon.teraType] : this.getPokemonTypes(pokemon);
+			let types = serverPokemon?.terastallized ? [serverPokemon.teraType] : this.getPokemonTypes(pokemon, false, serverPokemon);
 			let knownPokemon = serverPokemon || clientPokemon!;
 
 			if (pokemon.terastallized) {
@@ -815,7 +815,7 @@ class BattleTooltips {
 			}
 			text += `<span class="textaligned-typeicons">${types.map(type => Dex.getTypeIcon(type)).join(' ')}</span>`;
 			if (pokemon.terastallized) {
-				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getPokemonTypes(pokemon, true).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
+				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getPokemonTypes(pokemon, true, serverPokemon).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
 			} else if (knownPokemon.teraType && !this.battle.rules['Terastal Clause']) {
 				text += `&nbsp; &nbsp; <small>(Tera Type: <span class="textaligned-typeicons">${Dex.getTypeIcon(knownPokemon.teraType)}</span>)</small>`;
 			}
@@ -982,7 +982,8 @@ class BattleTooltips {
 	}
 
 	calculateModifiedStats(clientPokemon: Pokemon | null, serverPokemon: ServerPokemon, statStagesOnly?: boolean) {
-		let stats = {...serverPokemon.stats};
+		const rawStats = this.getPokemonStatTable(clientPokemon, serverPokemon);
+		let stats = {...rawStats};
 		let pokemon = clientPokemon || serverPokemon;
 		const isPowerTrick = clientPokemon?.volatiles['powertrick'];
 		for (const statName of Dex.statNamesExceptHP) {
@@ -991,7 +992,7 @@ class BattleTooltips {
 				if (statName === 'atk') sourceStatName = 'def';
 				if (statName === 'def') sourceStatName = 'atk';
 			}
-			stats[statName] = serverPokemon.stats[sourceStatName];
+			stats[statName] = rawStats[sourceStatName];
 			if (!clientPokemon) continue;
 
 			const clientStatName = clientPokemon.boosts.spc && (statName === 'spa' || statName === 'spd') ? 'spc' : statName;
@@ -1336,14 +1337,47 @@ if (pokemon.status === 'frb') {
 		return stats;
 	}
 
+	parseStatSource(statSource: unknown) {
+		const parsedStats: {[stat: string]: number} = {};
+		if (!statSource) return parsedStats;
+		if (typeof statSource === 'string') {
+			for (const statEntry of statSource.split(/[\s,|/]+/)) {
+				const [rawStatName, rawStatValue] = statEntry.split(':');
+				if (!rawStatName || !rawStatValue) continue;
+				const statName = toID(rawStatName);
+				if (!Dex.statNames.includes(statName as StatName)) continue;
+				const statValue = Number(rawStatValue);
+				if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+			}
+			return parsedStats;
+		}
+		for (const statName of Dex.statNames) {
+			const statValue = Number((statSource as {[stat: string]: number | string})[statName]);
+			if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+		}
+		return parsedStats;
+	}
+
+	getPokemonStatTable(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
+		const fallbackStats = serverPokemon?.stats || {atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
+		const parsedClientStats = this.parseStatSource((clientPokemon as any)?.stats);
+		const parsedServerStats = this.parseStatSource((serverPokemon as any)?.stats);
+		const stats: {[stat: string]: number} = {...fallbackStats};
+		for (const statName of Dex.statNamesExceptHP) {
+			const customStat = parsedClientStats[statName] || parsedServerStats[statName];
+			if (customStat) stats[statName] = customStat;
+		}
+		return stats as ServerPokemon['stats'];
+	}
+
 	renderStats(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null, short?: boolean) {
 		const isTransformed = clientPokemon?.volatiles.transform;
 		if (!serverPokemon || isTransformed) {
 			if (!clientPokemon) throw new Error('Must pass either clientPokemon or serverPokemon');
-			let [min, max] = this.getSpeedRange(clientPokemon);
+			let [min, max] = this.getSpeedRange(clientPokemon, serverPokemon);
 			return '<p><small>Spe</small> ' + min + ' to ' + max + ' <small>(before items/abilities/modifiers)</small></p>';
 		}
-		const stats = serverPokemon.stats;
+		const stats = this.getPokemonStatTable(clientPokemon, serverPokemon);
 		const modifiedStats = this.calculateModifiedStats(clientPokemon, serverPokemon);
 
 		let buf = '<p>';
@@ -1417,16 +1451,20 @@ if (pokemon.status === 'frb') {
 	/**
 	 * Calculates possible Speed stat range of an opponent
 	 */
-	getSpeedRange(pokemon: Pokemon): [number, number] {
+	getSpeedRange(pokemon: Pokemon, serverPokemon?: ServerPokemon | null): [number, number] {
 		const tr = Math.trunc || Math.floor;
-		const species = pokemon.getSpecies();
+		const stats = this.getPokemonStatTable(pokemon, serverPokemon);
+		const exactSpe = Number(stats.spe);
+		if (!isNaN(exactSpe) && exactSpe > 0) {
+			return [exactSpe, exactSpe];
+		}
+		const species = pokemon.getSpecies(serverPokemon || undefined);
 		const effectiveBaseStats = {...species.baseStats};
-		const customBaseStats = (pokemon as any).baseStats as {[stat: string]: number | string} | undefined;
-		if (customBaseStats) {
-			for (const statName of Dex.statNames) {
-				const customValue = Number(customBaseStats[statName]);
-				if (!isNaN(customValue) && customValue > 0) effectiveBaseStats[statName] = customValue;
-			}
+		const parsedClientBaseStats = this.parseStatSource((pokemon as any).baseStats);
+		const parsedServerBaseStats = this.parseStatSource((serverPokemon as any)?.baseStats);
+		for (const statName of Dex.statNames) {
+			const customValue = parsedClientBaseStats[statName] || parsedServerBaseStats[statName];
+			if (customValue) effectiveBaseStats[statName] = customValue;
 		}
 		let baseSpe = effectiveBaseStats.spe;
 		if (this.battle.rules['Scalemons Mod']) {
@@ -1464,6 +1502,7 @@ if (pokemon.status === 'frb') {
 		return [min, max];
 	}
 
+
 	/**
 	 * Gets the proper current type for moves with a variable type.
 	 */
@@ -1477,7 +1516,7 @@ if (pokemon.status === 'frb') {
 		// can happen in obscure situations
 		if (!pokemon) return [moveType, category];
 
-		let pokemonTypes = pokemon.getTypeList(serverPokemon);
+		let pokemonTypes = this.getPokemonTypes(pokemon, false, serverPokemon);
 		value.reset();
 		if (move.id === 'revelationdance') {
 			moveType = pokemonTypes[0];
@@ -2265,12 +2304,21 @@ if (pokemon.status === 'frb') {
 		}
 		return value;
 	}
-	getPokemonTypes(pokemon: Pokemon | ServerPokemon, preterastallized = false): ReadonlyArray<TypeName> {
-		const customTypes = ((pokemon as any).newTypes || (pokemon as any).types) as string[] | undefined;
-		if (Array.isArray(customTypes) && customTypes.length) {
+	getPokemonTypes(
+		pokemon: Pokemon | ServerPokemon,
+		preterastallized = false,
+		fallbackPokemon?: Pokemon | ServerPokemon | null
+	): ReadonlyArray<TypeName> {
+		const pokemonList = [pokemon, fallbackPokemon].filter(poke => !!poke) as (Pokemon | ServerPokemon)[];
+		for (const currentPokemon of pokemonList) {
+			const customTypes = ((currentPokemon as any).newTypes || (currentPokemon as any).types) as string[] | string | undefined;
+			const customTypeList = Array.isArray(customTypes) ? customTypes :
+				typeof customTypes === 'string' ? [customTypes] : [];
+			if (!customTypeList.length) continue;
 			const types: TypeName[] = [];
-			for (const typeEntry of customTypes) {
-				for (const typeName of String(typeEntry).split(/[\/,]/)) {
+			for (const typeEntry of customTypeList) {
+				for (const typeName of String(typeEntry).split(/[^A-Za-z?]+/)) {
+					if (!typeName) continue;
 					const normalizedType = Dex.types.get(typeName.trim()).name;
 					if (!Dex.types.isName(normalizedType)) continue;
 					const type = normalizedType as TypeName;
@@ -2281,11 +2329,14 @@ if (pokemon.status === 'frb') {
 			}
 			if (types.length) return types;
 		}
-		if (!(pokemon as Pokemon).getTypes) {
-			return this.battle.dex.species.get(pokemon.speciesForme).types;
+		if ('getTypeList' in pokemon) {
+			return pokemon.getTypeList(undefined, preterastallized);
+		}
+		if (fallbackPokemon && 'getTypeList' in fallbackPokemon) {
+			return fallbackPokemon.getTypeList(undefined, preterastallized);
 		}
 
-		return (pokemon as Pokemon).getTypeList(undefined, preterastallized);
+		return this.battle.dex.species.get(pokemon.speciesForme).types;
 	}
 	pokemonHasType(pokemon: Pokemon | ServerPokemon, type: TypeName, types?: ReadonlyArray<TypeName>) {
 		if (!types) types = this.getPokemonTypes(pokemon);
