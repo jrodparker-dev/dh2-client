@@ -781,6 +781,34 @@ Storage.packAllTeams = function (teams) {
 	}).join('\n');
 };
 
+Storage.packBaseStats = function (baseStats) {
+	if (!baseStats) return '';
+	var stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+	var packed = [];
+	for (var i = 0; i < stats.length; i++) {
+		var stat = stats[i];
+		if (baseStats[stat] === undefined) packed.push('');
+		else packed.push('' + baseStats[stat]);
+	}
+	if (!packed.join('')) return '';
+	return packed.join('/');
+};
+Storage.unpackBaseStats = function (packed) {
+	if (!packed) return undefined;
+	var spread = packed.split('/');
+	if (spread.length !== 6) return undefined;
+	var stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+	var baseStats = {};
+	for (var i = 0; i < 6; i++) {
+		if (!spread[i]) continue;
+		var val = parseInt(spread[i], 10);
+		if (isNaN(val)) continue;
+		baseStats[stats[i]] = val;
+	}
+	if (!Object.keys(baseStats).length) return undefined;
+	return baseStats;
+};
+
 Storage.packTeam = function (team) {
 	var buf = '';
 	if (!team) return '';
@@ -867,12 +895,14 @@ Storage.packTeam = function (team) {
 			buf += '|';
 		}
 
-		if (set.pokeball || (set.hpType && !hasHP) || set.gigantamax || (set.dynamaxLevel !== undefined && set.dynamaxLevel !== 10) || set.teraType) {
+		var packedBaseStats = Storage.packBaseStats(set.baseStats);
+		if (set.pokeball || (set.hpType && !hasHP) || set.gigantamax || (set.dynamaxLevel !== undefined && set.dynamaxLevel !== 10) || set.teraType || packedBaseStats) {
 			buf += ',' + (set.hpType || '');
 			buf += ',' + toID(set.pokeball);
 			buf += ',' + (set.gigantamax ? 'G' : '');
 			buf += ',' + (set.dynamaxLevel !== undefined && set.dynamaxLevel !== 10 ? set.dynamaxLevel : '');
 			buf += ',' + (set.teraType || '');
+			buf += ',' + packedBaseStats;
 		}
 	}
 
@@ -985,9 +1015,9 @@ Storage.fastUnpackTeam = function (buf) {
 		j = buf.indexOf(']', i);
 		var misc = undefined;
 		if (j < 0) {
-			if (i < buf.length) misc = buf.substring(i).split(',', 6);
+			if (i < buf.length) misc = buf.substring(i).split(',', 7);
 		} else {
-			if (i !== j) misc = buf.substring(i, j).split(',', 6);
+			if (i !== j) misc = buf.substring(i, j).split(',', 7);
 		}
 		if (misc) {
 			set.happiness = (misc[0] ? Number(misc[0]) : 255);
@@ -996,6 +1026,7 @@ Storage.fastUnpackTeam = function (buf) {
 			set.gigantamax = !!misc[3];
 			set.dynamaxLevel = (misc[4] ? Number(misc[4]) : 10);
 			set.teraType = misc[5];
+			set.baseStats = Storage.unpackBaseStats(misc[6]);
 		}
 		if (j < 0) break;
 		i = j + 1;
@@ -1111,9 +1142,9 @@ Storage.unpackTeam = function (buf) {
 		j = buf.indexOf(']', i);
 		var misc = undefined;
 		if (j < 0) {
-			if (i < buf.length) misc = buf.substring(i).split(',', 6);
+			if (i < buf.length) misc = buf.substring(i).split(',', 7);
 		} else {
-			if (i !== j) misc = buf.substring(i, j).split(',', 6);
+			if (i !== j) misc = buf.substring(i, j).split(',', 7);
 		}
 		if (misc) {
 			set.happiness = (misc[0] ? Number(misc[0]) : 255);
@@ -1122,6 +1153,7 @@ Storage.unpackTeam = function (buf) {
 			set.gigantamax = !!misc[3];
 			set.dynamaxLevel = (misc[4] ? Number(misc[4]) : 10);
 			set.teraType = misc[5];
+			set.baseStats = Storage.unpackBaseStats(misc[6]);
 		}
 		if (j < 0) break;
 		i = j + 1;
@@ -1339,6 +1371,20 @@ Storage.importTeam = function (buffer, teams) {
 		} else if (line.substr(0, 11) === 'Tera Type: ') {
 			line = line.substr(11);
 			curSet.teraType = line;
+		} else if (line.substr(0, 12) === 'Base Stats: ') {
+			line = line.substr(12);
+			var statLines = line.split('/');
+			curSet.baseStats = {};
+			for (var j = 0; j < statLines.length; j++) {
+				var statLine = $.trim(statLines[j]);
+				var spaceIndex = statLine.indexOf(' ');
+				if (spaceIndex === -1) continue;
+				var statid = BattleStatIDs[statLine.substr(spaceIndex + 1)];
+				var statval = parseInt(statLine.substr(0, spaceIndex), 10);
+				if (!statid || isNaN(statval)) continue;
+				curSet.baseStats[statid] = statval;
+			}
+			if (!Object.keys(curSet.baseStats).length) delete curSet.baseStats;
 		} else if (line.substr(0, 15) === 'Dynamax Level: ') {
 			line = line.substr(15);
 			curSet.dynamaxLevel = +line;
@@ -1472,6 +1518,20 @@ Storage.exportTeam = function (team, gen, hidestats) {
 		if (gen === 9) {
 			var species = Dex.species.get(curSet.species);
 			text += 'Tera Type: ' + (species.forceTeraType || curSet.teraType || species.types[0]) + "  \n";
+		}
+		if (curSet.baseStats) {
+			var firstBaseStat = true;
+			for (var j in BattleStatNames) {
+				if (curSet.baseStats[j] === undefined) continue;
+				if (firstBaseStat) {
+					text += 'Base Stats: ';
+					firstBaseStat = false;
+				} else {
+					text += ' / ';
+				}
+				text += '' + curSet.baseStats[j] + ' ' + BattleStatNames[j];
+			}
+			if (!firstBaseStat) text += "  \n";
 		}
 		if (!hidestats) {
 			var first = true;

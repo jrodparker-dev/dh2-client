@@ -65,6 +65,9 @@
 			'change select[name=ivspread]': 'ivSpreadChange',
 			'change .evslider': 'statSlided',
 			'input .evslider': 'statSlide',
+			'click .basestatvalue': 'startBaseStatEdit',
+			'keydown .basestatinput': 'baseStatInputKeydown',
+			'blur .basestatinput': 'baseStatInputBlur',
 
 			// teambuilder events
 			'click .utilichart a': 'chartClick',
@@ -2344,7 +2347,7 @@
 			var set = this.curSet;
 			var species = this.curTeam.dex.species.get(this.curSet.species);
 			if (this.curTeam.mod) species = this.curTeam.dex.species.get(this.curSet.species,undefined, "from updateStatForm 2"); 
-			var baseStats = species.baseStats;
+			var baseStats = this.getBaseStats(set, species);
 
 			buf += '<div class="resultheader"><h3>EVs</h3></div>';
 			buf += '<div class="statform">';
@@ -2409,7 +2412,7 @@
 
 			buf += '<div class="col basestatscol"><div><em>Base</em></div>';
 			for (var i in stats) {
-				buf += '<div><b>' + baseStats[i] + '</b></div>';
+				buf += '<div><button type="button" class="basestatvalue button" data-stat="' + i + '">' + baseStats[i] + '</button></div>';
 			}
 			buf += '</div>';
 
@@ -2855,6 +2858,47 @@
 
 			this.save();
 			this.updateStatGraph();
+		},
+		startBaseStatEdit: function (e) {
+			e.preventDefault();
+			var button = e.currentTarget;
+			var stat = button.dataset.stat;
+			if (!stat) return;
+			var currentVal = parseInt(button.textContent, 10) || 1;
+			$(button).replaceWith('<input type="number" class="textbox inputform numform basestatinput" name="basestat-' + stat + '" min="1" max="255" step="1" value="' + currentVal + '" />');
+			var $input = this.$chart.find('input[name=basestat-' + stat + ']');
+			$input.focus().select();
+		},
+		setBaseStatOverride: function (stat, rawVal) {
+			var set = this.curSet;
+			if (!set) return false;
+			var species = this.curTeam.dex.species.get(set.species);
+			if (!species.exists || !(stat in species.baseStats)) return false;
+			var val = parseInt(rawVal, 10);
+			if (isNaN(val)) return false;
+			if (val < 1) val = 1;
+			if (val > 255) val = 255;
+
+			if (!set.baseStats) set.baseStats = {};
+			set.baseStats[stat] = val;
+			if (set.baseStats[stat] === species.baseStats[stat]) delete set.baseStats[stat];
+			if (!Object.keys(set.baseStats).length) delete set.baseStats;
+
+			this.save();
+			this.updateStatGraph();
+			this.updateStatForm();
+			this.updateSetTop();
+			return true;
+		},
+		baseStatInputKeydown: function (e) {
+			if (e.key !== 'Enter') return;
+			e.preventDefault();
+			var stat = e.currentTarget.name.substr(9);
+			this.setBaseStatOverride(stat, e.currentTarget.value);
+		},
+		baseStatInputBlur: function (e) {
+			var stat = e.currentTarget.name.substr(9);
+			this.setBaseStatOverride(stat, e.currentTarget.value);
 		},
 
 		/*********************************************************
@@ -3576,6 +3620,7 @@
 			if (set.dynamaxLevel) delete set.dynamaxLevel;
 			if (set.gigantamax) delete set.gigantamax;
 			if (set.teraType) delete set.teraType;
+			if (set.baseStats) delete set.baseStats;
 			if (!(this.curTeam.format.includes('hackmons') || this.curTeam.format.endsWith('bh')) && species.requiredItems.length === 1) {
 				set.item = species.requiredItems[0] || '';
 			} else {
@@ -3595,6 +3640,28 @@
 		 *********************************************************/
 
 		// Stat calculator
+
+		getBaseStats: function (set, species) {
+			if (!set) set = this.curSet;
+			if (!set) return {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
+			if (!species) species = this.curTeam.dex.species.get(set.species);
+			if (!species || !species.exists) return {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
+			var stats = $.extend({}, species.baseStats);
+			if (set.baseStats) {
+				for (var stat in stats) {
+					if (set.baseStats[stat] === undefined) continue;
+					var val = parseInt(set.baseStats[stat], 10);
+					if (isNaN(val)) continue;
+					if (val < 1) val = 1;
+					if (val > 255) val = 255;
+					stats[stat] = val;
+				}
+			}
+			return stats;
+		},
+		getBaseStat: function (stat, set, species) {
+			return this.getBaseStats(set, species)[stat];
+		},
 
 		getStat: function (stat, set, evOverride, natureOverride) {
 			var supportsEVs = !this.curTeam.format.includes('letsgo');
@@ -3622,7 +3689,7 @@
 			if (!set.level) set.level = 100;
 			if (typeof set.ivs[stat] === 'undefined') set.ivs[stat] = 31;
 
-			var baseStat = species.baseStats[stat];
+			var baseStat = this.getBaseStat(stat, set, species);
 			var iv = (set.ivs[stat] || 0);
 			if (this.curTeam.gen <= 2) iv &= 30;
 			var ev = set.evs[stat];
