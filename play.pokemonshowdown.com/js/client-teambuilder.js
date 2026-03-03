@@ -1332,6 +1332,9 @@
 				if (this.curTeam.gen === 9) {
 					buf += '<span class="detailcell"><label>Tera Type</label>' + (species.forceTeraType || set.teraType || species.types[0]) + '</span>';
 				}
+				var detailTypes = species.types;
+				if (set.newTypes && set.newTypes[0]) detailTypes = set.newTypes;
+				buf += '<span class="detailcell"><label>New Typing</label>' + detailTypes[0] + (detailTypes[1] ? ' / ' + detailTypes[1] : '') + '</span>';
 			}
 			buf += '</button></div></div>';
 
@@ -1347,6 +1350,10 @@
 			buf += '</div>';
 			buf += '<div class="setcell setcell-typeicons">';
 			var types = species.types;
+			if (set.newTypes && set.newTypes[0]) {
+				types = [set.newTypes[0]];
+				if (set.newTypes[1]) types.push(set.newTypes[1]);
+			}
 			var table = (this.curTeam.gen < 7 ? BattleTeambuilderTable['gen' + this.curTeam.gen] : null);
 			if (
 				table && table.overrideDexInfo && species.id in table.overrideDexInfo &&
@@ -3011,6 +3018,24 @@
 				buf += '</div></div>';
 			}
 
+			buf += '<div class="formrow"><label class="formlabel" title="Override this Pok&eacute;mon\'s typing">New Typing:</label><div>';
+			var typing1 = (set.newTypes && set.newTypes[0]) || species.types[0];
+			var typing2 = (set.newTypes && set.newTypes[1] !== undefined ? set.newTypes[1] : (species.types[1] || ''));
+			buf += '<select name="newtype1" class="button">';
+			var types = Dex.types.all();
+			for (var i = 0; i < types.length; i++) {
+				buf += '<option value="' + types[i].name + '"' + (typing1 === types[i].name ? ' selected="selected"' : '') + '>' + types[i].name + '</option>';
+			}
+			buf += '</select> ';
+			buf += '<select name="newtype2" class="button">';
+			buf += '<option value=""' + (!typing2 ? ' selected="selected"' : '') + '>None</option>';
+			for (var i = 0; i < types.length; i++) {
+				buf += '<option value="' + types[i].name + '"' + (typing2 === types[i].name ? ' selected="selected"' : '') + '>' + types[i].name + '</option>';
+			}
+			buf += '</select>';
+			buf += '</div></div>';
+
+
 			buf += '</form>';
 			if (species.cosmeticFormes) {
 				buf += '<button class="altform button">Change sprite</button>';
@@ -3093,6 +3118,19 @@
 				delete set.teraType;
 			}
 
+			// New typing
+			var newType1 = this.$chart.find('select[name=newtype1]').val();
+			var newType2 = this.$chart.find('select[name=newtype2]').val();
+			if (!Dex.types.isName(newType1)) newType1 = species.types[0];
+			if (!Dex.types.isName(newType2)) newType2 = '';
+			if (newType2 && newType2 === newType1) newType2 = '';
+			if (newType1 === species.types[0] && newType2 === (species.types[1] || '')) {
+				delete set.newTypes;
+			} else {
+				set.newTypes = [newType1];
+				if (newType2) set.newTypes.push(newType2);
+			}
+
 			// update details cell
 			var buf = '';
 			var GenderChart = {
@@ -3121,6 +3159,9 @@
 				if (this.curTeam.gen === 9) {
 					buf += '<span class="detailcell"><label>Tera Type</label>' + (species.forceTeraType || set.teraType || species.types[0]) + '</span>';
 				}
+				var detailTypes = species.types;
+				if (set.newTypes && set.newTypes[0]) detailTypes = set.newTypes;
+				buf += '<span class="detailcell"><label>New Typing</label>' + detailTypes[0] + (detailTypes[1] ? ' / ' + detailTypes[1] : '') + '</span>';
 			}
 			this.$('button[name=details]').html(buf);
 
