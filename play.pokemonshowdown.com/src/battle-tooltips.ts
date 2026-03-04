@@ -1353,29 +1353,57 @@ if (pokemon.status === 'frb') {
 	parseStatSource(statSource: unknown) {
 		const parsedStats: {[stat: string]: number} = {};
 		if (!statSource) return parsedStats;
-		if (typeof statSource === 'string') {
-			const packedValues = statSource.split('/').map(value => Number(value));
-			if (packedValues.length === Dex.statNames.length && packedValues.some(value => !isNaN(value))) {
+		const addStat = (rawStatName: string, rawStatValue: unknown) => {
+			const statAlias: {[k: string]: StatName} = {spatk: 'spa', spdef: 'spd', spatk: 'spa', spdefense: 'spd'};
+			let statName = toID(rawStatName);
+			if (statAlias[statName]) statName = statAlias[statName];
+			if (!Dex.statNames.includes(statName as StatName)) return;
+			const statValue = Number(rawStatValue);
+			if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+		};
+		const addPackedNumberList = (values: unknown[]) => {
+			const packedValues = values.map(value => Number(value));
+			if (!packedValues.some(value => !isNaN(value) && value > 0)) return;
+			if (packedValues.length >= Dex.statNames.length) {
 				for (let i = 0; i < Dex.statNames.length; i++) {
-					const statName = Dex.statNames[i];
-					const statValue = packedValues[i];
-					if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+					addStat(Dex.statNames[i], packedValues[i]);
 				}
-				return parsedStats;
+				return;
 			}
+			if (packedValues.length >= Dex.statNamesExceptHP.length) {
+				for (let i = 0; i < Dex.statNamesExceptHP.length; i++) {
+					addStat(Dex.statNamesExceptHP[i], packedValues[i]);
+				}
+			}
+		};
+		if (typeof statSource === 'string') {
+			const normalizedSource = statSource.trim();
+			if (!normalizedSource) return parsedStats;
+			if (normalizedSource.startsWith('{') || normalizedSource.startsWith('[')) {
+				try {
+					return this.parseStatSource(JSON.parse(normalizedSource));
+				} catch {}
+			}
+			addPackedNumberList(normalizedSource.split(/[\/,|]/));
 			for (const statEntry of statSource.split(/[\s,|/]+/)) {
 				const [rawStatName, rawStatValue] = statEntry.split(':');
 				if (!rawStatName || !rawStatValue) continue;
-				const statName = toID(rawStatName);
-				if (!Dex.statNames.includes(statName as StatName)) continue;
-				const statValue = Number(rawStatValue);
-				if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+				addStat(rawStatName, rawStatValue);
+			}
+			for (const match of normalizedSource.matchAll(/(hp|atk|def|spa|spd|spe|sp\.?a(?:tk)?|sp\.?d(?:ef)?|specialattack|specialdefense)\s*[:= ]\s*(-?\d+(?:\.\d+)?)/gi)) {
+				addStat(match[1], match[2]);
 			}
 			return parsedStats;
 		}
+		if (Array.isArray(statSource)) {
+			addPackedNumberList(statSource);
+			return parsedStats;
+		}
 		for (const statName of Dex.statNames) {
-			const statValue = Number((statSource as {[stat: string]: number | string})[statName]);
-			if (!isNaN(statValue) && statValue > 0) parsedStats[statName] = statValue;
+			addStat(statName, (statSource as {[stat: string]: number | string})[statName]);
+		}
+		for (const [rawStatName, rawStatValue] of Object.entries(statSource as {[k: string]: number | string})) {
+			addStat(rawStatName, rawStatValue);
 		}
 		return parsedStats;
 	}
@@ -2356,31 +2384,46 @@ if (pokemon.status === 'frb') {
 		pokemon: Pokemon | ServerPokemon,
 		fallbackPokemon?: Pokemon | ServerPokemon | null,
 	): {types: TypeName[], error: string} {
+		const parseTypeSource = (source: unknown): TypeName[] => {
+			if (!source) return [];
+			const values = Array.isArray(source) ? source :
+				typeof source === 'string' ? [source] :
+				typeof source === 'object' ? Object.values(source as {[k: string]: unknown}) : [];
+			const types: TypeName[] = [];
+			for (const value of values) {
+				for (const rawToken of String(value).split(/[^A-Za-z?]+/)) {
+					if (!rawToken) continue;
+					const normalizedType = Dex.types.get(rawToken.trim()).name;
+					if (!Dex.types.isName(normalizedType)) continue;
+					const type = normalizedType as TypeName;
+					if (types.includes(type)) continue;
+					types.push(type);
+					if (types.length >= 2) return types;
+				}
+			}
+			return types;
+		};
 		const pokemonList = [pokemon, fallbackPokemon].filter(poke => !!poke) as (Pokemon | ServerPokemon)[];
 		for (const currentPokemon of pokemonList) {
 			const injectedTypeSources = [
 				(currentPokemon as any).newTypes,
 				(currentPokemon as any).set?.newTypes,
 				(currentPokemon as any).apparentType,
+				(currentPokemon as any).types,
+				(currentPokemon as any).set?.types,
 			];
 			const types: TypeName[] = [];
 			let hasCustomTypeSource = false;
 			for (const source of injectedTypeSources) {
 				const customTypeList = Array.isArray(source) ? source :
-					typeof source === 'string' ? [source] : [];
+					typeof source === 'string' ? [source] :
+					typeof source === 'object' ? Object.values(source as {[k: string]: unknown}) : [];
 				if (customTypeList.length) hasCustomTypeSource = true;
-				for (const typeEntry of customTypeList) {
-					for (const typeName of String(typeEntry).split(/[^A-Za-z?]+/)) {
-						if (!typeName) continue;
-						const normalizedType = Dex.types.get(typeName.trim()).name;
-						if (!Dex.types.isName(normalizedType)) continue;
-						const type = normalizedType as TypeName;
-						if (types.includes(type)) continue;
-						types.push(type);
-						if (types.length >= 2) {
-							return {types, error: ''};
-						}
-					}
+				const sourceTypes = parseTypeSource(source);
+				for (const type of sourceTypes) {
+					if (types.includes(type)) continue;
+					types.push(type);
+					if (types.length >= 2) return {types, error: ''};
 				}
 			}
 			if (types.length) return {types, error: ''};

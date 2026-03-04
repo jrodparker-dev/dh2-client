@@ -1353,29 +1353,57 @@ return stats;
 parseStatSource=function parseStatSource(statSource){
 var parsedStats={};
 if(!statSource)return parsedStats;
-if(typeof statSource==='string'){
-var packedValues=statSource.split('/').map(function(value){return Number(value);});
-if(packedValues.length===Dex.statNames.length&&packedValues.some(function(value){return!isNaN(value);})){
-for(var i=0;i<Dex.statNames.length;i++){
-var statName=Dex.statNames[i];
-var statValue=packedValues[i];
+var addStat=function(rawStatName,rawStatValue){
+var statAlias={spatk:'spa',spdef:'spd',spatk:'spa',spdefense:'spd'};
+var statName=toID(rawStatName);
+if(statAlias[statName])statName=statAlias[statName];
+if(!Dex.statNames.includes(statName))return;
+var statValue=Number(rawStatValue);
 if(!isNaN(statValue)&&statValue>0)parsedStats[statName]=statValue;
+};
+var addPackedNumberList=function(values){
+var packedValues=values.map(function(value){return Number(value);});
+if(!packedValues.some(function(value){return!isNaN(value)&&value>0;}))return;
+if(packedValues.length>=Dex.statNames.length){
+for(var i=0;i<Dex.statNames.length;i++){
+addStat(Dex.statNames[i],packedValues[i]);
 }
-return parsedStats;
-}for(var _i30=0,_statSource$split2=
-statSource.split(/[\s,|/]+/);_i30<_statSource$split2.length;_i30++){var statEntry=_statSource$split2[_i30];
+return;
+}
+if(packedValues.length>=Dex.statNamesExceptHP.length){
+for(var _i29=0;_i29<Dex.statNamesExceptHP.length;_i29++){
+addStat(Dex.statNamesExceptHP[_i29],packedValues[_i29]);
+}
+}
+};
+if(typeof statSource==='string'){
+var normalizedSource=statSource.trim();
+if(!normalizedSource)return parsedStats;
+if(normalizedSource.startsWith('{')||normalizedSource.startsWith('[')){
+try{
+return this.parseStatSource(JSON.parse(normalizedSource));
+}catch(_unused){}
+}
+addPackedNumberList(normalizedSource.split(/[\/,|]/));for(var _i31=0,_statSource$split2=
+statSource.split(/[\s,|/]+/);_i31<_statSource$split2.length;_i31++){var statEntry=_statSource$split2[_i31];
 var _statEntry$split=statEntry.split(':'),rawStatName=_statEntry$split[0],rawStatValue=_statEntry$split[1];
 if(!rawStatName||!rawStatValue)continue;
-var _statName3=toID(rawStatName);
-if(!Dex.statNames.includes(_statName3))continue;
-var _statValue=Number(rawStatValue);
-if(!isNaN(_statValue)&&_statValue>0)parsedStats[_statName3]=_statValue;
+addStat(rawStatName,rawStatValue);
+}for(var _i33=0,_normalizedSource$mat2=
+normalizedSource.matchAll(/(hp|atk|def|spa|spd|spe|sp\.?a(?:tk)?|sp\.?d(?:ef)?|specialattack|specialdefense)\s*[:= ]\s*(-?\d+(?:\.\d+)?)/gi);_i33<_normalizedSource$mat2.length;_i33++){var match=_normalizedSource$mat2[_i33];
+addStat(match[1],match[2]);
 }
 return parsedStats;
-}for(var _i32=0,_Dex$statNames2=
-Dex.statNames;_i32<_Dex$statNames2.length;_i32++){var _statName4=_Dex$statNames2[_i32];
-var _statValue2=Number(statSource[_statName4]);
-if(!isNaN(_statValue2)&&_statValue2>0)parsedStats[_statName4]=_statValue2;
+}
+if(Array.isArray(statSource)){
+addPackedNumberList(statSource);
+return parsedStats;
+}for(var _i35=0,_Dex$statNames2=
+Dex.statNames;_i35<_Dex$statNames2.length;_i35++){var statName=_Dex$statNames2[_i35];
+addStat(statName,statSource[statName]);
+}for(var _i37=0,_Object$entries2=
+Object.entries(statSource);_i37<_Object$entries2.length;_i37++){var _ref2=_Object$entries2[_i37];var _rawStatName=_ref2[0];var _rawStatValue=_ref2[1];
+addStat(_rawStatName,_rawStatValue);
 }
 return parsedStats;
 };_proto2.
@@ -1387,8 +1415,8 @@ return BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX+" ["+reasonCode+"]: "+details;
 getPackedStatTable=function getPackedStatTable(clientPokemon,serverPokemon){var _set,_set2;
 var parsedClientStats=this.parseStatSource((clientPokemon==null?void 0:clientPokemon.stats)||(clientPokemon==null||(_set=clientPokemon.set)==null?void 0:_set.stats));
 var parsedServerStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.stats)||(serverPokemon==null||(_set2=serverPokemon.set)==null?void 0:_set2.stats));
-var stats={};for(var _i34=0,_Dex$statNamesExceptH8=
-Dex.statNamesExceptHP;_i34<_Dex$statNamesExceptH8.length;_i34++){var statName=_Dex$statNamesExceptH8[_i34];
+var stats={};for(var _i39=0,_Dex$statNamesExceptH8=
+Dex.statNamesExceptHP;_i39<_Dex$statNamesExceptH8.length;_i39++){var statName=_Dex$statNamesExceptH8[_i39];
 var customStat=parsedClientStats[statName]||parsedServerStats[statName];
 if(customStat)stats[statName]=customStat;
 }
@@ -1429,8 +1457,8 @@ var modifiedStats=this.calculateModifiedStats(clientPokemon,serverPokemon);
 var buf='<p>';
 
 if(!short){
-var hasModifiedStat=false;for(var _i36=0,_Dex$statNamesExceptH0=
-Dex.statNamesExceptHP;_i36<_Dex$statNamesExceptH0.length;_i36++){var statName=_Dex$statNamesExceptH0[_i36];
+var hasModifiedStat=false;for(var _i41=0,_Dex$statNamesExceptH0=
+Dex.statNamesExceptHP;_i41<_Dex$statNamesExceptH0.length;_i41++){var statName=_Dex$statNamesExceptH0[_i41];
 if(this.battle.gen===1&&statName==='spd')continue;
 var statLabel=this.battle.gen===1&&statName==='spa'?'spc':statName;
 buf+=statName==='atk'?'<small>':'<small> / ';
@@ -1444,19 +1472,19 @@ if(!hasModifiedStat)return buf;
 
 buf+='<p><small>(After stat modifiers:)</small></p>';
 buf+='<p>';
-}for(var _i38=0,_Dex$statNamesExceptH10=
+}for(var _i43=0,_Dex$statNamesExceptH10=
 
-Dex.statNamesExceptHP;_i38<_Dex$statNamesExceptH10.length;_i38++){var _statName5=_Dex$statNamesExceptH10[_i38];
-if(this.battle.gen===1&&_statName5==='spd')continue;
-var _statLabel=this.battle.gen===1&&_statName5==='spa'?'spc':_statName5;
-buf+=_statName5==='atk'?'<small>':'<small> / ';
+Dex.statNamesExceptHP;_i43<_Dex$statNamesExceptH10.length;_i43++){var _statName3=_Dex$statNamesExceptH10[_i43];
+if(this.battle.gen===1&&_statName3==='spd')continue;
+var _statLabel=this.battle.gen===1&&_statName3==='spa'?'spc':_statName3;
+buf+=_statName3==='atk'?'<small>':'<small> / ';
 buf+=''+BattleText[_statLabel].statShortName+'&nbsp;</small>';
-if(modifiedStats[_statName5]===stats[_statName5]){
-buf+=''+modifiedStats[_statName5];
-}else if(modifiedStats[_statName5]<stats[_statName5]){
-buf+='<strong class="stat-lowered">'+modifiedStats[_statName5]+'</strong>';
+if(modifiedStats[_statName3]===stats[_statName3]){
+buf+=''+modifiedStats[_statName3];
+}else if(modifiedStats[_statName3]<stats[_statName3]){
+buf+='<strong class="stat-lowered">'+modifiedStats[_statName3]+'</strong>';
 }else{
-buf+='<strong class="stat-boosted">'+modifiedStats[_statName5]+'</strong>';
+buf+='<strong class="stat-boosted">'+modifiedStats[_statName3]+'</strong>';
 }
 }
 buf+='</p>';
@@ -1486,8 +1514,8 @@ return bullet+" "+move.name+" <small>("+(maxpp-ppUsed)+"/"+maxpp+")</small>";
 return bullet+" "+move.name+" "+(showKnown?' <small>(revealed)</small>':'');
 };_proto2.
 
-ppUsed=function ppUsed(move,pokemon){for(var _i40=0,_pokemon$moveTrack2=
-pokemon.moveTrack;_i40<_pokemon$moveTrack2.length;_i40++){var _ref2=_pokemon$moveTrack2[_i40];var moveName=_ref2[0];var _ppUsed=_ref2[1];
+ppUsed=function ppUsed(move,pokemon){for(var _i45=0,_pokemon$moveTrack2=
+pokemon.moveTrack;_i45<_pokemon$moveTrack2.length;_i45++){var _ref3=_pokemon$moveTrack2[_i45];var moveName=_ref3[0];var _ppUsed=_ref3[1];
 if(moveName.charAt(0)==='*')moveName=moveName.substr(1);
 if(move.name===moveName)return _ppUsed;
 }
@@ -1508,8 +1536,8 @@ return[exactSpe,exactSpe];
 var species=pokemon.getSpecies(serverPokemon||undefined);
 var effectiveBaseStats=Object.assign({},species.baseStats);
 var parsedClientBaseStats=this.parseStatSource(pokemon.baseStats||((_set3=pokemon.set)==null?void 0:_set3.baseStats));
-var parsedServerBaseStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.baseStats)||(serverPokemon==null||(_set4=serverPokemon.set)==null?void 0:_set4.baseStats));for(var _i42=0,_Dex$statNames4=
-Dex.statNames;_i42<_Dex$statNames4.length;_i42++){var statName=_Dex$statNames4[_i42];
+var parsedServerBaseStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.baseStats)||(serverPokemon==null||(_set4=serverPokemon.set)==null?void 0:_set4.baseStats));for(var _i47=0,_Dex$statNames4=
+Dex.statNames;_i47<_Dex$statNames4.length;_i47++){var statName=_Dex$statNames4[_i47];
 var customValue=parsedClientBaseStats[statName]||parsedServerBaseStats[statName];
 if(customValue)effectiveBaseStats[statName]=customValue;
 }
@@ -1752,9 +1780,9 @@ var accuracyModifiers=[];
 if(this.battle.hasPseudoWeather('Gravity')){
 accuracyModifiers.push(6840);
 value.modify(5/3,"Gravity");
-}for(var _i44=0,_pokemon$side$active2=
+}for(var _i49=0,_pokemon$side$active2=
 
-pokemon.side.active;_i44<_pokemon$side$active2.length;_i44++){var active=_pokemon$side$active2[_i44];
+pokemon.side.active;_i49<_pokemon$side$active2.length;_i49++){var active=_pokemon$side$active2[_i49];
 if(!active||active.fainted)continue;
 var ability=this.getAllyAbility(active);
 if(ability==='Victory Star'){
@@ -1777,8 +1805,8 @@ value.itemModify(1.1,"Wide Lens");
 }
 
 
-var chain=4096;for(var _i46=0;_i46<
-accuracyModifiers.length;_i46++){var mod=accuracyModifiers[_i46];
+var chain=4096;for(var _i51=0;_i51<
+accuracyModifiers.length;_i51++){var mod=accuracyModifiers[_i51];
 if(mod!==4096){
 chain=chain*mod+2048>>12;
 }
@@ -1881,8 +1909,8 @@ if(move.id==='lastrespects'){
 value.set(Math.min(50+50*pokemon.side.faintCounter));
 }
 if(move.id==='punishment'&&target){
-var boostCount=0;for(var _i48=0,_Object$values2=
-Object.values(target.boosts);_i48<_Object$values2.length;_i48++){var boost=_Object$values2[_i48];
+var boostCount=0;for(var _i53=0,_Object$values2=
+Object.values(target.boosts);_i53<_Object$values2.length;_i53++){var boost=_Object$values2[_i53];
 if(boost>0)boostCount+=boost;
 }
 value.set(Math.min(60+20*boostCount,200));
@@ -1893,8 +1921,8 @@ value.modify(2,'Smelling Salts + Paralysis');
 }
 }
 if(['storedpower','powertrip'].includes(move.id)&&target){
-var _boostCount=0;for(var _i50=0,_Object$values4=
-Object.values(pokemon.boosts);_i50<_Object$values4.length;_i50++){var _boost=_Object$values4[_i50];
+var _boostCount=0;for(var _i55=0,_Object$values4=
+Object.values(pokemon.boosts);_i55<_Object$values4.length;_i55++){var _boost=_Object$values4[_i55];
 if(_boost>0)_boostCount+=_boost;
 }
 value.set(20+20*_boostCount);
@@ -2107,8 +2135,8 @@ value.abilityModify(1.2,'Reckless');
 
 if(move.category!=='Status'){
 var auraBoosted='';
-var auraBroken=false;for(var _i52=0,_pokemon$side$active4=
-pokemon.side.active;_i52<_pokemon$side$active4.length;_i52++){var ally=_pokemon$side$active4[_i52];
+var auraBroken=false;for(var _i57=0,_pokemon$side$active4=
+pokemon.side.active;_i57<_pokemon$side$active4.length;_i57++){var ally=_pokemon$side$active4[_i57];
 if(!ally||ally.fainted)continue;
 var allyAbility=this.getAllyAbility(ally);
 if(moveType==='Fairy'&&allyAbility==='Fairy Aura'){
@@ -2128,8 +2156,8 @@ value.modify(2,'Steely Spirit');
 value.modify(1.5,'Steely Spirit');
 }
 }
-}for(var _i54=0,_pokemon$side$foe$act2=
-pokemon.side.foe.active;_i54<_pokemon$side$foe$act2.length;_i54++){var foe=_pokemon$side$foe$act2[_i54];
+}for(var _i59=0,_pokemon$side$foe$act2=
+pokemon.side.foe.active;_i59<_pokemon$side$foe$act2.length;_i59++){var foe=_pokemon$side$foe$act2[_i59];
 if(!foe||foe.fainted)continue;
 if(foe.ability==='Fairy Aura'&&moveType==='Fairy'){
 auraBoosted='Fairy Aura';
@@ -2356,21 +2384,88 @@ getPackedTypes=function getPackedTypes(
 pokemon,
 fallbackPokemon)
 {
-var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i56=0;_i56<
-pokemonList.length;_i56++){var _set5;var currentPokemon=pokemonList[_i56];
+var parseTypeSource=function(source){
+if(!source)return[];
+var values=Array.isArray(source)?source:
+typeof source==='string'?[source]:
+typeof source==='object'?Object.values(source):[];
+var types=[];for(var _i61=0;_i61<
+values.length;_i61++){var value=values[_i61];for(var _i63=0,_String$split2=
+String(value).split(/[^A-Za-z?]+/);_i63<_String$split2.length;_i63++){var rawToken=_String$split2[_i63];
+if(!rawToken)continue;
+var normalizedType=Dex.types.get(rawToken.trim()).name;
+if(!Dex.types.isName(normalizedType))continue;
+var type=normalizedType;
+if(types.includes(type))continue;
+types.push(type);
+if(types.length>=2)return types;
+}
+}
+return types;
+};
+var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i65=0;_i65<
+pokemonList.length;_i65++){var _set5,_set6;var currentPokemon=pokemonList[_i65];
 var injectedTypeSources=[
 currentPokemon.newTypes,(_set5=
 currentPokemon.set)==null?void 0:_set5.newTypes,
-currentPokemon.apparentType];
+currentPokemon.apparentType,
+currentPokemon.types,(_set6=
+currentPokemon.set)==null?void 0:_set6.types];
 
 var types=[];
-var hasCustomTypeSource=false;for(var _i58=0;_i58<
-injectedTypeSources.length;_i58++){var source=injectedTypeSources[_i58];
+var hasCustomTypeSource=false;for(var _i67=0;_i67<
+injectedTypeSources.length;_i67++){var source=injectedTypeSources[_i67];
 var customTypeList=Array.isArray(source)?source:
-typeof source==='string'?[source]:[];
-if(customTypeList.length)hasCustomTypeSource=true;for(var _i60=0;_i60<
-customTypeList.length;_i60++){var typeEntry=customTypeList[_i60];for(var _i62=0,_String$split2=
-String(typeEntry).split(/[^A-Za-z?]+/);_i62<_String$split2.length;_i62++){var typeName=_String$split2[_i62];
+typeof source==='string'?[source]:
+typeof source==='object'?Object.values(source):[];
+if(customTypeList.length)hasCustomTypeSource=true;
+var sourceTypes=parseTypeSource(source);for(var _i69=0;_i69<
+sourceTypes.length;_i69++){var type=sourceTypes[_i69];
+if(types.includes(type))continue;
+types.push(type);
+if(types.length>=2)return{types:types,error:''};
+}
+}
+if(types.length)return{types:types,error:''};
+if(hasCustomTypeSource){
+return{
+types:[],
+error:this.getPackedTooltipError(
+'INVALID_CUSTOM_TYPING',(
+currentPokemon.name||currentPokemon.speciesForme||'Unknown Pokemon')+" has packed typing data, but no valid types were parsed."
+)
+};
+}
+}
+return{
+types:[],
+error:this.getPackedTooltipError(
+'MISSING_CUSTOM_TYPING',(
+pokemon.name||pokemon.speciesForme||'Unknown Pokemon')+" has no packed custom typing data (newTypes/apparentType)."
+)
+};
+};_proto2.
+
+getPokemonTypes=function getPokemonTypes(
+pokemon)
+
+
+
+{var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;var fallbackPokemon=arguments.length>2?arguments[2]:undefined;var strictCustomData=arguments.length>3&&arguments[3]!==undefined?arguments[3]:false;
+var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i71=0;_i71<
+pokemonList.length;_i71++){var _set7;var currentPokemon=pokemonList[_i71];
+var injectedTypeSources=[
+currentPokemon.newTypes,(_set7=
+currentPokemon.set)==null?void 0:_set7.newTypes,
+currentPokemon.apparentType,
+currentPokemon.types];
+
+var types=[];for(var _i73=0;_i73<
+injectedTypeSources.length;_i73++){var source=injectedTypeSources[_i73];
+var customTypeList=Array.isArray(source)?source:
+typeof source==='string'?[source]:[];for(var _i75=0;_i75<
+customTypeList.length;_i75++){var typeEntry=customTypeList[_i75];for(var _i77=0,_String$split4=
+String(typeEntry).split(/[^A-Za-z?]+/);_i77<_String$split4.length;_i77++){var typeName=_String$split4[_i77];
 if(!typeName)continue;
 var normalizedType=Dex.types.get(typeName.trim()).name;
 if(!Dex.types.isName(normalizedType))continue;
@@ -2447,8 +2542,8 @@ return this.battle.dex.species.get(pokemon.speciesForme).types;
 };_proto2.
 
 pokemonHasType=function pokemonHasType(pokemon,type,types){
-if(!types)types=this.getPokemonTypes(pokemon);for(var _i72=0,_types2=
-types;_i72<_types2.length;_i72++){var curType=_types2[_i72];
+if(!types)types=this.getPokemonTypes(pokemon);for(var _i79=0,_types2=
+types;_i79<_types2.length;_i79++){var curType=_types2[_i79];
 if(curType===type)return true;
 }
 return false;
