@@ -2472,6 +2472,58 @@ if(!Dex.types.isName(normalizedType))continue;
 var type=normalizedType;
 if(types.includes(type))continue;
 types.push(type);
+if(types.length>=2){
+return{types:types,error:''};
+}
+}
+}
+}
+if(types.length)return{types:types,error:''};
+if(hasCustomTypeSource){
+return{
+types:[],
+error:this.getPackedTooltipError(
+'INVALID_CUSTOM_TYPING',(
+currentPokemon.name||currentPokemon.speciesForme||'Unknown Pokemon')+" has packed typing data, but no valid types were parsed."
+)
+};
+}
+}
+return{
+types:[],
+error:this.getPackedTooltipError(
+'MISSING_CUSTOM_TYPING',(
+pokemon.name||pokemon.speciesForme||'Unknown Pokemon')+" has no packed custom typing data (newTypes/apparentType)."
+)
+};
+};_proto2.
+
+getPokemonTypes=function getPokemonTypes(
+pokemon)
+
+
+
+{var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;var fallbackPokemon=arguments.length>2?arguments[2]:undefined;var strictCustomData=arguments.length>3&&arguments[3]!==undefined?arguments[3]:false;
+var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i64=0;_i64<
+pokemonList.length;_i64++){var _set6;var currentPokemon=pokemonList[_i64];
+var injectedTypeSources=[
+currentPokemon.newTypes,(_set6=
+currentPokemon.set)==null?void 0:_set6.newTypes,
+currentPokemon.apparentType,
+currentPokemon.types];
+
+var types=[];for(var _i66=0;_i66<
+injectedTypeSources.length;_i66++){var source=injectedTypeSources[_i66];
+var customTypeList=Array.isArray(source)?source:
+typeof source==='string'?[source]:[];for(var _i68=0;_i68<
+customTypeList.length;_i68++){var typeEntry=customTypeList[_i68];for(var _i70=0,_String$split4=
+String(typeEntry).split(/[^A-Za-z?]+/);_i70<_String$split4.length;_i70++){var typeName=_String$split4[_i70];
+if(!typeName)continue;
+var normalizedType=Dex.types.get(typeName.trim()).name;
+if(!Dex.types.isName(normalizedType))continue;
+var type=normalizedType;
+if(types.includes(type))continue;
+types.push(type);
 if(types.length>=2)return types;
 }
 }
