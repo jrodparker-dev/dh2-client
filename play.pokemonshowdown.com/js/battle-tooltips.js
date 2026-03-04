@@ -1398,6 +1398,8 @@ addStat(rawStatName,rawStatValue);
 normalizedSource.matchAll(/(hp|atk|def|spa|spd|spe|sp\.?a(?:tk)?|sp\.?d(?:ef)?|specialattack|specialdefense)\s*[:= ]\s*(-?\d+(?:\.\d+)?)/gi);_i33<_normalizedSource$mat2.length;_i33++){var match=_normalizedSource$mat2[_i33];
 addStat(match[1],match[2]);
 }
+if(Array.isArray(statSource)){
+addPackedNumberList(statSource);
 return parsedStats;
 }
 if(Array.isArray(statSource)){
