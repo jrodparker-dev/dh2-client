@@ -807,8 +807,9 @@ text+="<small>(Changed forme: "+clientPokemon.volatiles.formechange[1]+")</small
 }
 
 var knownPokemon=serverPokemon||clientPokemon;
-var strictPackedTypes=this.hasPackedCustomData(pokemon);
-var packedTypeData=this.getPackedTypes(pokemon,strictPackedTypes);
+var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon)||pokemon;
+var strictPackedTypes=this.hasPackedCustomData(sourcePokemon);
+var packedTypeData=this.getPackedTypes(sourcePokemon,strictPackedTypes);
 var packedTypes=packedTypeData.types;
 
 if(pokemon.terastallized){
@@ -820,9 +821,12 @@ if(!packedTypes.length&&strictPackedTypes){
 text+="<small>"+BattleLog.escapeHTML(packedTypeData.error)+"</small>";
 }else{
 var types=serverPokemon!=null&&serverPokemon.terastallized?[serverPokemon.teraType]:packedTypes;
+if(clientPokemon&&(clientPokemon.volatiles.typechange||clientPokemon.volatiles.typeadd)){
+types=clientPokemon.getTypeList(undefined,false);
+}
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
 if(pokemon.terastallized){
-var basePackedTypeData=this.getPackedTypes(pokemon,strictPackedTypes);
+var basePackedTypeData=this.getPackedTypes(sourcePokemon,strictPackedTypes);
 var basePackedTypes=basePackedTypeData.types;
 if(basePackedTypes.length||!strictPackedTypes){
 text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+basePackedTypes.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
@@ -1415,6 +1419,10 @@ getPackedTooltipError=function getPackedTooltipError(reasonCode,details){
 return BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX+" ["+reasonCode+"]: "+details;
 };_proto2.
 
+getTooltipSourcePokemon=function getTooltipSourcePokemon(clientPokemon,serverPokemon){
+return serverPokemon||clientPokemon||null;
+};_proto2.
+
 hasPackedCustomData=function hasPackedCustomData(sourcePokemon){var _set,_set2;
 if(!sourcePokemon)return false;
 if(sourcePokemon.newTypes||sourcePokemon.baseStats)return true;
@@ -1450,14 +1458,14 @@ pokemonName+" is missing packed custom stats for: "+missingStats+"."
 
 
 getPokemonStatTable=function getPokemonStatTable(clientPokemon,serverPokemon){
-var sourcePokemon=clientPokemon||serverPokemon;
+var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon);
 var strict=this.hasPackedCustomData(sourcePokemon);
 var _this$getPackedStatTa=this.getPackedStatTable(sourcePokemon,strict),stats=_this$getPackedStatTa.stats;
 return stats||{atk:0,def:0,spa:0,spd:0,spe:0};
 };_proto2.
 
 renderStats=function renderStats(clientPokemon,serverPokemon,short){
-var sourcePokemon=clientPokemon||serverPokemon;
+var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon);
 var strict=this.hasPackedCustomData(sourcePokemon);
 var packedStatTable=this.getPackedStatTable(sourcePokemon,strict);
 if(!packedStatTable.stats){
