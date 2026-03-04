@@ -807,7 +807,8 @@ class BattleTooltips {
 			}
 
 			let knownPokemon = serverPokemon || clientPokemon!;
-			const packedTypeData = this.getPackedTypes(pokemon, serverPokemon);
+			const strictPackedTypes = this.hasPackedCustomData(clientPokemon, serverPokemon);
+			const packedTypeData = this.getPackedTypes(pokemon, serverPokemon, strictPackedTypes);
 			const packedTypes = packedTypeData.types;
 
 			if (pokemon.terastallized) {
@@ -815,15 +816,15 @@ class BattleTooltips {
 			} else if (clientPokemon?.volatiles.typechange || clientPokemon?.volatiles.typeadd) {
 				text += `<small>(Type changed)</small><br />`;
 			}
-			if (!packedTypes.length) {
+			if (!packedTypes.length && strictPackedTypes) {
 				text += `<small>${BattleLog.escapeHTML(packedTypeData.error)}</small>`;
 			} else {
 				let types = serverPokemon?.terastallized ? [serverPokemon.teraType] : packedTypes;
 				text += `<span class="textaligned-typeicons">${types.map(type => Dex.getTypeIcon(type)).join(' ')}</span>`;
 				if (pokemon.terastallized) {
-					const basePackedTypeData = this.getPackedTypes(pokemon, serverPokemon);
+					const basePackedTypeData = this.getPackedTypes(pokemon, serverPokemon, strictPackedTypes);
 					const basePackedTypes = basePackedTypeData.types;
-					if (basePackedTypes.length) {
+					if (basePackedTypes.length || !strictPackedTypes) {
 						text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${basePackedTypes.map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
 					} else {
 						text += `&nbsp; &nbsp; <small>${BattleLog.escapeHTML(basePackedTypeData.error.replace('[MISSING_CUSTOM_TYPING]', '[MISSING_CUSTOM_TYPING_BASE]'))}</small>`;
@@ -1412,7 +1413,17 @@ if (pokemon.status === 'frb') {
 		return `${BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX} [${reasonCode}]: ${details}`;
 	}
 
-	getPackedStatTable(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
+	hasPackedCustomData(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
+		const sources = [clientPokemon, serverPokemon].filter(Boolean) as Array<Pokemon | ServerPokemon>;
+		for (const source of sources) {
+			if ((source as any).newTypes || (source as any).baseStats) return true;
+			if ((source as any).apparentType) return true;
+			if ((source as any).set?.newTypes || (source as any).set?.baseStats) return true;
+		}
+		return false;
+	}
+
+	getPackedStatTable(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null, strict = true) {
 		const parsedClientStats = this.parseStatSource((clientPokemon as any)?.stats || (clientPokemon as any)?.set?.stats);
 		const parsedServerStats = this.parseStatSource((serverPokemon as any)?.stats || (serverPokemon as any)?.set?.stats);
 		const stats: {[stat: string]: number} = {};
@@ -1422,6 +1433,10 @@ if (pokemon.status === 'frb') {
 		}
 		if (Dex.statNamesExceptHP.every(statName => stats[statName])) {
 			return {stats: stats as ServerPokemon['stats'], error: ''};
+		}
+		if (!strict) {
+			const fallbackStats = serverPokemon?.stats || {atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
+			return {stats: fallbackStats as ServerPokemon['stats'], error: ''};
 		}
 		const pokemonName = clientPokemon?.name || serverPokemon?.name || 'Unknown Pokemon';
 		const missingStats = Dex.statNamesExceptHP.filter(statName => !stats[statName]).join(', ');
@@ -1436,12 +1451,14 @@ if (pokemon.status === 'frb') {
 
 
 	getPokemonStatTable(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
-		const {stats} = this.getPackedStatTable(clientPokemon, serverPokemon);
+		const strict = this.hasPackedCustomData(clientPokemon, serverPokemon);
+		const {stats} = this.getPackedStatTable(clientPokemon, serverPokemon, strict);
 		return stats || {atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
 	}
 
 	renderStats(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null, short?: boolean) {
-		const packedStatTable = this.getPackedStatTable(clientPokemon, serverPokemon);
+		const strict = this.hasPackedCustomData(clientPokemon, serverPokemon);
+		const packedStatTable = this.getPackedStatTable(clientPokemon, serverPokemon, strict);
 		if (!packedStatTable.stats) {
 			return `<p class="tooltip-section"><small>${BattleLog.escapeHTML(packedStatTable.error)}</small></p>`;
 		}
@@ -1527,7 +1544,8 @@ if (pokemon.status === 'frb') {
 	 */
 	getSpeedRange(pokemon: Pokemon, serverPokemon?: ServerPokemon | null): [number, number] {
 		const tr = Math.trunc || Math.floor;
-		const packedStatTable = this.getPackedStatTable(pokemon, serverPokemon);
+		const strict = this.hasPackedCustomData(pokemon, serverPokemon);
+		const packedStatTable = this.getPackedStatTable(pokemon, serverPokemon, strict);
 		const stats = packedStatTable.stats || {atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
 		const exactSpe = Number(stats.spe);
 		if (!isNaN(exactSpe) && exactSpe > 0) {
@@ -2383,6 +2401,7 @@ if (pokemon.status === 'frb') {
 	getPackedTypes(
 		pokemon: Pokemon | ServerPokemon,
 		fallbackPokemon?: Pokemon | ServerPokemon | null,
+		strict = true,
 	): {types: TypeName[], error: string} {
 		const parseTypeSource = (source: unknown): TypeName[] => {
 			if (!source) return [];
@@ -2409,8 +2428,6 @@ if (pokemon.status === 'frb') {
 				(currentPokemon as any).newTypes,
 				(currentPokemon as any).set?.newTypes,
 				(currentPokemon as any).apparentType,
-				(currentPokemon as any).types,
-				(currentPokemon as any).set?.types,
 			];
 			const types: TypeName[] = [];
 			let hasCustomTypeSource = false;
@@ -2436,6 +2453,9 @@ if (pokemon.status === 'frb') {
 					),
 				};
 			}
+		}
+		if (!strict) {
+			return {types: this.getPokemonTypes(pokemon, false, fallbackPokemon, false) as TypeName[], error: ''};
 		}
 		return {
 			types: [],
