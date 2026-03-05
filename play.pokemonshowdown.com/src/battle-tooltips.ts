@@ -2257,6 +2257,9 @@ if (pokemon.status === 'frb') {
 	}
 	getPokemonTypes(pokemon: Pokemon | ServerPokemon, preterastallized = false): ReadonlyArray<TypeName> {
 		if (!(pokemon as Pokemon).getTypes) {
+			if ((pokemon as ServerPokemon).types?.length) {
+				return (pokemon as ServerPokemon).types as TypeName[];
+			}
 			return this.battle.dex.species.get(pokemon.speciesForme).types;
 		}
 

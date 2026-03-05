@@ -1002,6 +1002,10 @@ export interface ServerPokemon extends PokemonDetails, PokemonHealth {
 		spd: number,
 		spe: number,
 	};
+	/** Optional base stat overrides from team data. */
+	baseStats?: Partial<StatsTable>;
+	/** Optional type overrides from team data. */
+	types?: string[];
 	/** currently an ID, will revise to name */
 	moves: string[];
 	/** currently an ID, will revise to name */

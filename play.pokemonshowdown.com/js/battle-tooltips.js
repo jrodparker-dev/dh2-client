@@ -2256,15 +2256,18 @@ value.itemModify(2);
 return value;
 };_proto2.
 getPokemonTypes=function getPokemonTypes(pokemon){var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;
-if(!pokemon.getTypes){
+if(!pokemon.getTypes){var _types;
+if((_types=pokemon.types)!=null&&_types.length){
+return pokemon.types;
+}
 return this.battle.dex.species.get(pokemon.speciesForme).types;
 }
 
 return pokemon.getTypeList(undefined,preterastallized);
 };_proto2.
 pokemonHasType=function pokemonHasType(pokemon,type,types){
-if(!types)types=this.getPokemonTypes(pokemon);for(var _i48=0,_types2=
-types;_i48<_types2.length;_i48++){var curType=_types2[_i48];
+if(!types)types=this.getPokemonTypes(pokemon);for(var _i48=0,_types3=
+types;_i48<_types3.length;_i48++){var curType=_types3[_i48];
 if(curType===type)return true;
 }
 return false;
