@@ -140,7 +140,6 @@ return valueString+this.comment.join('');
 BattleTooltips=function(){
 
 
-
 function BattleTooltips(battle){var _this=this;this.battle=void 0;this.
 
 
@@ -290,29 +289,19 @@ case'pokemon':{
 
 var sideIndex=parseInt(args[1],10);
 var side=this.battle.sides[sideIndex];
-var pokemonIndex=parseInt(args[2],10);
-var pokemon=side.pokemon[pokemonIndex];
-
-var self=this;
-var getServerPokemonForSideIndex=function(idx){
-if(side===self.battle.mySide&&self.battle.myPokemon)return self.battle.myPokemon[idx]||null;
-if(side===self.battle.mySide.ally&&self.battle.myAllyPokemon)return self.battle.myAllyPokemon[idx]||null;
-return null;
-};
-
+var _pokemon2=side.pokemon[parseInt(args[2],10)];
 if(args[3]==='illusion'){
 buf='';
-var species=pokemon.getBaseSpecies().baseSpecies;
-var index=1;
-for(var i=0;i<side.pokemon.length;i++){
-var otherPokemon=side.pokemon[i];
+var species=_pokemon2.getBaseSpecies().baseSpecies;
+var index=1;for(var _i6=0,_side$pokemon2=
+side.pokemon;_i6<_side$pokemon2.length;_i6++){var otherPokemon=_side$pokemon2[_i6];
 if(otherPokemon.getBaseSpecies().baseSpecies===species){
-buf+=this.showPokemonTooltip(otherPokemon,getServerPokemonForSideIndex(i),false,index);
+buf+=this.showPokemonTooltip(otherPokemon,null,false,index);
 index++;
 }
 }
 }else{
-buf=this.showPokemonTooltip(pokemon,getServerPokemonForSideIndex(pokemonIndex));
+buf=this.showPokemonTooltip(_pokemon2);
 }
 break;
 }
@@ -341,13 +330,15 @@ break;
 }
 case'switchpokemon':{
 
+
+
 var _activeIndex=parseInt(args[1],10);
 var _pokemon4=null;
 
-if(this.battle.mySide&&this.battle.mySide.pokemon&&_activeIndex>=0&&_activeIndex<this.battle.mySide.pokemon.length){
-_pokemon4=this.battle.mySide.pokemon[_activeIndex]||null;
-}
-var _serverPokemon2=this.battle.myPokemon?this.battle.myPokemon[_activeIndex]:null;
+
+
+
+var _serverPokemon2=this.battle.myPokemon[_activeIndex];
 buf=this.showPokemonTooltip(_pokemon4,_serverPokemon2);
 break;
 }
@@ -814,36 +805,19 @@ text+="<small>(Changed forme: "+clientPokemon.volatiles.formechange[1]+")</small
 }
 }
 
+var types=serverPokemon!=null&&serverPokemon.terastallized?[serverPokemon.teraType]:this.getPokemonTypes(pokemon);
 var knownPokemon=serverPokemon||clientPokemon;
-var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon)||pokemon;
-var strictPackedTypes=this.hasPackedCustomData(sourcePokemon);
-var packedTypeData=this.getPackedTypes(sourcePokemon,strictPackedTypes);
-var packedTypes=packedTypeData.types;
 
 if(pokemon.terastallized){
 text+="<small>(Terastallized)</small><br />";
 }else if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
 text+="<small>(Type changed)</small><br />";
 }
-if(!packedTypes.length&&strictPackedTypes){
-text+="<small>"+BattleLog.escapeHTML(packedTypeData.error)+"</small>";
-}else{
-var types=serverPokemon!=null&&serverPokemon.terastallized?[serverPokemon.teraType]:packedTypes;
-if(clientPokemon&&(clientPokemon.volatiles.typechange||clientPokemon.volatiles.typeadd)){
-types=clientPokemon.getTypeList(undefined,false);
-}
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
 if(pokemon.terastallized){
-var basePackedTypeData=this.getPackedTypes(sourcePokemon,strictPackedTypes);
-var basePackedTypes=basePackedTypeData.types;
-if(basePackedTypes.length||!strictPackedTypes){
-text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+basePackedTypes.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
-}else{
-text+="&nbsp; &nbsp; <small>"+BattleLog.escapeHTML(basePackedTypeData.error.replace('[MISSING_CUSTOM_TYPING]','[MISSING_CUSTOM_TYPING_BASE]'))+"</small>";
-}
+text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getPokemonTypes(pokemon,true).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
 }else if(knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
 text+="&nbsp; &nbsp; <small>(Tera Type: <span class=\"textaligned-typeicons\">"+Dex.getTypeIcon(knownPokemon.teraType)+"</span>)</small>";
-}
 }
 text+="</h2>";
 }
@@ -1008,8 +982,7 @@ return false;
 };_proto2.
 
 calculateModifiedStats=function calculateModifiedStats(clientPokemon,serverPokemon,statStagesOnly){var _clientPokemon$effect,_clientPokemon$volati,_this$battle$dex$spec,_this4=this;
-var rawStats=this.getPokemonStatTable(clientPokemon,serverPokemon);
-var stats=Object.assign({},rawStats);
+var stats=Object.assign({},serverPokemon.stats);
 var pokemon=clientPokemon||serverPokemon;
 var isPowerTrick=clientPokemon==null?void 0:clientPokemon.volatiles['powertrick'];for(var _i18=0,_Dex$statNamesExceptH2=
 Dex.statNamesExceptHP;_i18<_Dex$statNamesExceptH2.length;_i18++){var statName=_Dex$statNamesExceptH2[_i18];
@@ -1018,7 +991,7 @@ if(isPowerTrick){
 if(statName==='atk')sourceStatName='def';
 if(statName==='def')sourceStatName='atk';
 }
-stats[statName]=rawStats[sourceStatName];
+stats[statName]=serverPokemon.stats[sourceStatName];
 if(!clientPokemon)continue;
 
 var clientStatName=clientPokemon.boosts.spc&&(statName==='spa'||statName==='spd')?'spc':statName;
@@ -1363,134 +1336,21 @@ stats.spe=Math.floor(stats.spe*0.25);
 return stats;
 };_proto2.
 
-parseStatSource=function parseStatSource(statSource){
-var parsedStats={};
-if(!statSource)return parsedStats;
-var addStat=function(rawStatName,rawStatValue){
-var statAlias={spatk:'spa',spdef:'spd',spatk:'spa',spdefense:'spd'};
-var statName=toID(rawStatName);
-if(statAlias[statName])statName=statAlias[statName];
-if(!Dex.statNames.includes(statName))return;
-var statValue=Number(rawStatValue);
-if(!isNaN(statValue)&&statValue>0)parsedStats[statName]=statValue;
-};
-var addPackedNumberList=function(values){
-var packedValues=values.map(function(value){return Number(value);});
-if(!packedValues.some(function(value){return!isNaN(value)&&value>0;}))return;
-if(packedValues.length>=Dex.statNames.length){
-for(var i=0;i<Dex.statNames.length;i++){
-addStat(Dex.statNames[i],packedValues[i]);
-}
-return;
-}
-if(packedValues.length>=Dex.statNamesExceptHP.length){
-for(var _i29=0;_i29<Dex.statNamesExceptHP.length;_i29++){
-addStat(Dex.statNamesExceptHP[_i29],packedValues[_i29]);
-}
-}
-};
-if(typeof statSource==='string'){
-var normalizedSource=statSource.trim();
-if(!normalizedSource)return parsedStats;
-if(normalizedSource.startsWith('{')||normalizedSource.startsWith('[')){
-try{
-return this.parseStatSource(JSON.parse(normalizedSource));
-}catch(_unused){}
-}
-addPackedNumberList(normalizedSource.split(/[\/,|]/));for(var _i31=0,_statSource$split2=
-statSource.split(/[\s,|/]+/);_i31<_statSource$split2.length;_i31++){var statEntry=_statSource$split2[_i31];
-var _statEntry$split=statEntry.split(':'),rawStatName=_statEntry$split[0],rawStatValue=_statEntry$split[1];
-if(!rawStatName||!rawStatValue)continue;
-addStat(rawStatName,rawStatValue);
-}for(var _i33=0,_normalizedSource$mat2=
-normalizedSource.matchAll(/(hp|atk|def|spa|spd|spe|sp\.?a(?:tk)?|sp\.?d(?:ef)?|specialattack|specialdefense)\s*[:= ]\s*(-?\d+(?:\.\d+)?)/gi);_i33<_normalizedSource$mat2.length;_i33++){var match=_normalizedSource$mat2[_i33];
-addStat(match[1],match[2]);
-}
-return parsedStats;
-}
-if(Array.isArray(statSource)){
-addPackedNumberList(statSource);
-return parsedStats;
-}for(var _i35=0,_Dex$statNames2=
-Dex.statNames;_i35<_Dex$statNames2.length;_i35++){var statName=_Dex$statNames2[_i35];
-addStat(statName,statSource[statName]);
-}for(var _i37=0,_Object$entries2=
-Object.entries(statSource);_i37<_Object$entries2.length;_i37++){var _ref2=_Object$entries2[_i37];var _rawStatName=_ref2[0];var _rawStatValue=_ref2[1];
-addStat(_rawStatName,_rawStatValue);
-}
-return parsedStats;
-};_proto2.
-
-getPackedTooltipError=function getPackedTooltipError(reasonCode,details){
-
-return'';
-};_proto2.
-
-getTooltipSourcePokemon=function getTooltipSourcePokemon(clientPokemon,serverPokemon){
-return serverPokemon||clientPokemon||null;
-};_proto2.
-
-hasPackedCustomData=function hasPackedCustomData(sourcePokemon){var _set,_set2;
-if(!sourcePokemon)return false;
-if(sourcePokemon.newTypes||sourcePokemon.baseStats)return true;
-if((_set=sourcePokemon.set)!=null&&_set.newTypes||(_set2=sourcePokemon.set)!=null&&_set2.baseStats)return true;
-return false;
-};_proto2.
-
-getPackedStatTable=function getPackedStatTable(sourcePokemon){var _set3;var strict=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;
-var parsedSourceStats=this.parseStatSource((sourcePokemon==null?void 0:sourcePokemon.stats)||(sourcePokemon==null||(_set3=sourcePokemon.set)==null?void 0:_set3.stats));
-var stats={};for(var _i39=0,_Dex$statNamesExceptH8=
-Dex.statNamesExceptHP;_i39<_Dex$statNamesExceptH8.length;_i39++){var statName=_Dex$statNamesExceptH8[_i39];
-var customStat=parsedSourceStats[statName];
-if(customStat)stats[statName]=customStat;
-}
-if(Dex.statNamesExceptHP.every(function(statName){return stats[statName];})){
-return{stats:stats,error:''};
-}
-if(!strict){
-var fallbackStats=(sourcePokemon==null?void 0:sourcePokemon.stats)||{atk:0,def:0,spa:0,spd:0,spe:0};
-return{stats:fallbackStats,error:''};
-}
-var pokemonName=(sourcePokemon==null?void 0:sourcePokemon.name)||'Unknown Pokemon';
-var missingStats=Dex.statNamesExceptHP.filter(function(statName){return!stats[statName];}).join(', ');
-return{
-stats:null,
-error:this.getPackedTooltipError(
-'MISSING_CUSTOM_STATS',
-pokemonName+" is missing packed custom stats for: "+missingStats+"."
-)
-};
-};_proto2.
-
-
-getPokemonStatTable=function getPokemonStatTable(clientPokemon,serverPokemon){
-var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon);
-var strict=this.hasPackedCustomData(sourcePokemon);
-var _this$getPackedStatTa=this.getPackedStatTable(sourcePokemon,strict),stats=_this$getPackedStatTa.stats;
-return stats||{atk:0,def:0,spa:0,spd:0,spe:0};
-};_proto2.
-
 renderStats=function renderStats(clientPokemon,serverPokemon,short){
-var sourcePokemon=this.getTooltipSourcePokemon(clientPokemon,serverPokemon);
-var strict=this.hasPackedCustomData(sourcePokemon);
-var packedStatTable=this.getPackedStatTable(sourcePokemon,strict);
-if(!packedStatTable.stats){
-return"<p class=\"tooltip-section\"><small>"+BattleLog.escapeHTML(packedStatTable.error)+"</small></p>";
-}
 var isTransformed=clientPokemon==null?void 0:clientPokemon.volatiles.transform;
 if(!serverPokemon||isTransformed){
 if(!clientPokemon)throw new Error('Must pass either clientPokemon or serverPokemon');
-var _this$getSpeedRange=this.getSpeedRange(clientPokemon,serverPokemon),min=_this$getSpeedRange[0],max=_this$getSpeedRange[1];
+var _this$getSpeedRange=this.getSpeedRange(clientPokemon),min=_this$getSpeedRange[0],max=_this$getSpeedRange[1];
 return'<p><small>Spe</small> '+min+' to '+max+' <small>(before items/abilities/modifiers)</small></p>';
 }
-var stats=packedStatTable.stats;
+var stats=serverPokemon.stats;
 var modifiedStats=this.calculateModifiedStats(clientPokemon,serverPokemon);
 
 var buf='<p>';
 
 if(!short){
-var hasModifiedStat=false;for(var _i41=0,_Dex$statNamesExceptH0=
-Dex.statNamesExceptHP;_i41<_Dex$statNamesExceptH0.length;_i41++){var statName=_Dex$statNamesExceptH0[_i41];
+var hasModifiedStat=false;for(var _i30=0,_Dex$statNamesExceptH8=
+Dex.statNamesExceptHP;_i30<_Dex$statNamesExceptH8.length;_i30++){var statName=_Dex$statNamesExceptH8[_i30];
 if(this.battle.gen===1&&statName==='spd')continue;
 var statLabel=this.battle.gen===1&&statName==='spa'?'spc':statName;
 buf+=statName==='atk'?'<small>':'<small> / ';
@@ -1504,9 +1364,9 @@ if(!hasModifiedStat)return buf;
 
 buf+='<p><small>(After stat modifiers:)</small></p>';
 buf+='<p>';
-}for(var _i43=0,_Dex$statNamesExceptH10=
+}for(var _i32=0,_Dex$statNamesExceptH0=
 
-Dex.statNamesExceptHP;_i43<_Dex$statNamesExceptH10.length;_i43++){var _statName3=_Dex$statNamesExceptH10[_i43];
+Dex.statNamesExceptHP;_i32<_Dex$statNamesExceptH0.length;_i32++){var _statName3=_Dex$statNamesExceptH0[_i32];
 if(this.battle.gen===1&&_statName3==='spd')continue;
 var _statLabel=this.battle.gen===1&&_statName3==='spa'?'spc':_statName3;
 buf+=_statName3==='atk'?'<small>':'<small> / ';
@@ -1546,8 +1406,8 @@ return bullet+" "+move.name+" <small>("+(maxpp-ppUsed)+"/"+maxpp+")</small>";
 return bullet+" "+move.name+" "+(showKnown?' <small>(revealed)</small>':'');
 };_proto2.
 
-ppUsed=function ppUsed(move,pokemon){for(var _i45=0,_pokemon$moveTrack2=
-pokemon.moveTrack;_i45<_pokemon$moveTrack2.length;_i45++){var _ref3=_pokemon$moveTrack2[_i45];var moveName=_ref3[0];var _ppUsed=_ref3[1];
+ppUsed=function ppUsed(move,pokemon){for(var _i34=0,_pokemon$moveTrack2=
+pokemon.moveTrack;_i34<_pokemon$moveTrack2.length;_i34++){var _ref2=_pokemon$moveTrack2[_i34];var moveName=_ref2[0];var _ppUsed=_ref2[1];
 if(moveName.charAt(0)==='*')moveName=moveName.substr(1);
 if(move.name===moveName)return _ppUsed;
 }
@@ -1557,30 +1417,14 @@ return 0;
 
 
 
-getSpeedRange=function getSpeedRange(pokemon,serverPokemon){var _set4,_set5,_pokemon$volatiles$tr;
+getSpeedRange=function getSpeedRange(pokemon){var _pokemon$volatiles$tr;
 var tr=Math.trunc||Math.floor;
-var strict=this.hasPackedCustomData(pokemon);
-var packedStatTable=this.getPackedStatTable(pokemon,strict);
-var stats=packedStatTable.stats||{atk:0,def:0,spa:0,spd:0,spe:0};
-var exactSpe=Number(stats.spe);
-if(!isNaN(exactSpe)&&exactSpe>0){
-return[exactSpe,exactSpe];
-}
-var species=pokemon.getSpecies(serverPokemon||undefined);
-var effectiveBaseStats=Object.assign({},species.baseStats);
-var parsedClientBaseStats=this.parseStatSource(pokemon.baseStats||((_set4=pokemon.set)==null?void 0:_set4.baseStats));
-var parsedServerBaseStats=this.parseStatSource((serverPokemon==null?void 0:serverPokemon.baseStats)||(serverPokemon==null||(_set5=serverPokemon.set)==null?void 0:_set5.baseStats));for(var _i47=0,_Dex$statNames4=
-Dex.statNames;_i47<_Dex$statNames4.length;_i47++){var statName=_Dex$statNames4[_i47];
-var customValue=parsedClientBaseStats[statName]||parsedServerBaseStats[statName];
-if(customValue)effectiveBaseStats[statName]=customValue;
-}
-var baseSpe=effectiveBaseStats.spe;
+var species=pokemon.getSpecies();
+var baseSpe=species.baseStats.spe;
 if(this.battle.rules['Scalemons Mod']){
-var effectiveBst=effectiveBaseStats.hp+effectiveBaseStats.atk+effectiveBaseStats.def+
-effectiveBaseStats.spa+effectiveBaseStats.spd+effectiveBaseStats.spe;
-var bstWithoutHp=effectiveBst-effectiveBaseStats.hp;
-var scale=600-effectiveBaseStats.hp;
-if(bstWithoutHp>0)baseSpe=tr(baseSpe*scale/bstWithoutHp);
+var bstWithoutHp=species.bst-species.baseStats.hp;
+var scale=600-species.baseStats.hp;
+baseSpe=tr(baseSpe*scale/bstWithoutHp);
 if(baseSpe<1)baseSpe=1;
 if(baseSpe>255)baseSpe=255;
 }
@@ -1613,7 +1457,6 @@ return[min,max];
 
 
 
-
 getMoveType=function getMoveType(move,value,forMaxMove){
 var pokemon=value.pokemon;
 var serverPokemon=value.serverPokemon;
@@ -1624,7 +1467,7 @@ if(category==='Status'&&forMaxMove)return['Normal','Status'];
 
 if(!pokemon)return[moveType,category];
 
-var pokemonTypes=this.getPokemonTypes(pokemon,false,serverPokemon);
+var pokemonTypes=pokemon.getTypeList(serverPokemon);
 value.reset();
 if(move.id==='revelationdance'){
 moveType=pokemonTypes[0];
@@ -1813,9 +1656,9 @@ var accuracyModifiers=[];
 if(this.battle.hasPseudoWeather('Gravity')){
 accuracyModifiers.push(6840);
 value.modify(5/3,"Gravity");
-}for(var _i49=0,_pokemon$side$active2=
+}for(var _i36=0,_pokemon$side$active2=
 
-pokemon.side.active;_i49<_pokemon$side$active2.length;_i49++){var active=_pokemon$side$active2[_i49];
+pokemon.side.active;_i36<_pokemon$side$active2.length;_i36++){var active=_pokemon$side$active2[_i36];
 if(!active||active.fainted)continue;
 var ability=this.getAllyAbility(active);
 if(ability==='Victory Star'){
@@ -1838,8 +1681,8 @@ value.itemModify(1.1,"Wide Lens");
 }
 
 
-var chain=4096;for(var _i51=0;_i51<
-accuracyModifiers.length;_i51++){var mod=accuracyModifiers[_i51];
+var chain=4096;for(var _i38=0;_i38<
+accuracyModifiers.length;_i38++){var mod=accuracyModifiers[_i38];
 if(mod!==4096){
 chain=chain*mod+2048>>12;
 }
@@ -1942,8 +1785,8 @@ if(move.id==='lastrespects'){
 value.set(Math.min(50+50*pokemon.side.faintCounter));
 }
 if(move.id==='punishment'&&target){
-var boostCount=0;for(var _i53=0,_Object$values2=
-Object.values(target.boosts);_i53<_Object$values2.length;_i53++){var boost=_Object$values2[_i53];
+var boostCount=0;for(var _i40=0,_Object$values2=
+Object.values(target.boosts);_i40<_Object$values2.length;_i40++){var boost=_Object$values2[_i40];
 if(boost>0)boostCount+=boost;
 }
 value.set(Math.min(60+20*boostCount,200));
@@ -1954,8 +1797,8 @@ value.modify(2,'Smelling Salts + Paralysis');
 }
 }
 if(['storedpower','powertrip'].includes(move.id)&&target){
-var _boostCount=0;for(var _i55=0,_Object$values4=
-Object.values(pokemon.boosts);_i55<_Object$values4.length;_i55++){var _boost=_Object$values4[_i55];
+var _boostCount=0;for(var _i42=0,_Object$values4=
+Object.values(pokemon.boosts);_i42<_Object$values4.length;_i42++){var _boost=_Object$values4[_i42];
 if(_boost>0)_boostCount+=_boost;
 }
 value.set(20+20*_boostCount);
@@ -2168,8 +2011,8 @@ value.abilityModify(1.2,'Reckless');
 
 if(move.category!=='Status'){
 var auraBoosted='';
-var auraBroken=false;for(var _i57=0,_pokemon$side$active4=
-pokemon.side.active;_i57<_pokemon$side$active4.length;_i57++){var ally=_pokemon$side$active4[_i57];
+var auraBroken=false;for(var _i44=0,_pokemon$side$active4=
+pokemon.side.active;_i44<_pokemon$side$active4.length;_i44++){var ally=_pokemon$side$active4[_i44];
 if(!ally||ally.fainted)continue;
 var allyAbility=this.getAllyAbility(ally);
 if(moveType==='Fairy'&&allyAbility==='Fairy Aura'){
@@ -2189,8 +2032,8 @@ value.modify(2,'Steely Spirit');
 value.modify(1.5,'Steely Spirit');
 }
 }
-}for(var _i59=0,_pokemon$side$foe$act2=
-pokemon.side.foe.active;_i59<_pokemon$side$foe$act2.length;_i59++){var foe=_pokemon$side$foe$act2[_i59];
+}for(var _i46=0,_pokemon$side$foe$act2=
+pokemon.side.foe.active;_i46<_pokemon$side$foe$act2.length;_i46++){var foe=_pokemon$side$foe$act2[_i46];
 if(!foe||foe.fainted)continue;
 if(foe.ability==='Fairy Aura'&&moveType==='Fairy'){
 auraBoosted='Fairy Aura';
@@ -2412,122 +2255,16 @@ value.itemModify(2);
 }
 return value;
 };_proto2.
-
-getPackedTypes=function getPackedTypes(
-sourcePokemon)
-
-{var strict=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;
-var parseTypeSource=function(source){
-if(!source)return[];
-var values=Array.isArray(source)?source:
-typeof source==='string'?[source]:
-typeof source==='object'?Object.values(source):[];
-var types=[];for(var _i61=0;_i61<
-values.length;_i61++){var value=values[_i61];for(var _i63=0,_String$split2=
-String(value).split(/[^A-Za-z?]+/);_i63<_String$split2.length;_i63++){var rawToken=_String$split2[_i63];
-if(!rawToken)continue;
-var normalizedType=Dex.types.get(rawToken.trim()).name;
-if(!Dex.types.isName(normalizedType))continue;
-var type=normalizedType;
-if(types.includes(type))continue;
-types.push(type);
-if(types.length>=2)return types;
-}
-}
-return types;
-};
-var pokemonList=[sourcePokemon];for(var _i65=0;_i65<
-pokemonList.length;_i65++){var _set6;var currentPokemon=pokemonList[_i65];
-var injectedTypeSources=[
-currentPokemon.newTypes,(_set6=
-currentPokemon.set)==null?void 0:_set6.newTypes,
-currentPokemon.types,(_set6=
-currentPokemon.set)==null?void 0:_set6.types,
-currentPokemon.apparentType];
-
-var types=[];
-var hasCustomTypeSource=false;for(var _i67=0;_i67<
-injectedTypeSources.length;_i67++){var source=injectedTypeSources[_i67];
-var customTypeList=Array.isArray(source)?source:
-typeof source==='string'?[source]:
-typeof source==='object'?Object.values(source):[];
-if(customTypeList.length)hasCustomTypeSource=true;
-var sourceTypes=parseTypeSource(source);for(var _i69=0;_i69<
-sourceTypes.length;_i69++){var type=sourceTypes[_i69];
-if(types.includes(type))continue;
-types.push(type);
-if(types.length>=2)return{types:types,error:''};
-}
-}
-if(types.length)return{types:types,error:''};
-if(hasCustomTypeSource){
-return{
-types:[],
-error:this.getPackedTooltipError(
-'INVALID_CUSTOM_TYPING',(
-currentPokemon.name||currentPokemon.speciesForme||'Unknown Pokemon')+" has packed typing data, but no valid types were parsed."
-)
-};
-}
-}
-if(!strict){
-return{types:this.getPokemonTypes(sourcePokemon,false,undefined,false),error:''};
-}
-return{
-types:[],
-error:this.getPackedTooltipError(
-'MISSING_CUSTOM_TYPING',(
-sourcePokemon.name||sourcePokemon.speciesForme||'Unknown Pokemon')+" has no packed custom typing data (newTypes/apparentType)."
-)
-};
-};_proto2.
-
-getPokemonTypes=function getPokemonTypes(
-pokemon)
-
-
-
-{var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;var fallbackPokemon=arguments.length>2?arguments[2]:undefined;var strictCustomData=arguments.length>3&&arguments[3]!==undefined?arguments[3]:false;
-var pokemonList=[pokemon,fallbackPokemon].filter(function(poke){return!!poke;});for(var _i71=0;_i71<
-pokemonList.length;_i71++){var _set7;var currentPokemon=pokemonList[_i71];
-var injectedTypeSources=[
-currentPokemon.newTypes,(_set7=
-currentPokemon.set)==null?void 0:_set7.newTypes,
-currentPokemon.apparentType,
-currentPokemon.types];
-
-var types=[];for(var _i73=0;_i73<
-injectedTypeSources.length;_i73++){var source=injectedTypeSources[_i73];
-var customTypeList=Array.isArray(source)?source:
-typeof source==='string'?[source]:[];for(var _i75=0;_i75<
-customTypeList.length;_i75++){var typeEntry=customTypeList[_i75];for(var _i77=0,_String$split4=
-String(typeEntry).split(/[^A-Za-z?]+/);_i77<_String$split4.length;_i77++){var typeName=_String$split4[_i77];
-if(!typeName)continue;
-var normalizedType=Dex.types.get(typeName.trim()).name;
-if(!Dex.types.isName(normalizedType))continue;
-var type=normalizedType;
-if(types.includes(type))continue;
-types.push(type);
-if(types.length>=2)return types;
-}
-}
-}
-if(types.length)return types;
-}
-if(strictCustomData)return[];
-if('getTypeList'in pokemon){
-return pokemon.getTypeList(undefined,preterastallized);
-}
-if(fallbackPokemon&&'getTypeList'in fallbackPokemon){
-return fallbackPokemon.getTypeList(undefined,preterastallized);
-}
-
+getPokemonTypes=function getPokemonTypes(pokemon){var preterastallized=arguments.length>1&&arguments[1]!==undefined?arguments[1]:false;
+if(!pokemon.getTypes){
 return this.battle.dex.species.get(pokemon.speciesForme).types;
-};_proto2.
+}
 
+return pokemon.getTypeList(undefined,preterastallized);
+};_proto2.
 pokemonHasType=function pokemonHasType(pokemon,type,types){
-if(!types)types=this.getPokemonTypes(pokemon);for(var _i79=0,_types2=
-types;_i79<_types2.length;_i79++){var curType=_types2[_i79];
+if(!types)types=this.getPokemonTypes(pokemon);for(var _i48=0,_types2=
+types;_i48<_types2.length;_i48++){var curType=_types2[_i48];
 if(curType===type)return true;
 }
 return false;
@@ -2598,7 +2335,7 @@ if(!text&&abilityData.possibilities.length&&!hidePossible){
 text='<small>Possible abilities:</small> '+abilityData.possibilities.join(', ');
 }
 return text;
-};return BattleTooltips;}();BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX='DH2 Tooltip Data Error';BattleTooltips.LONG_TAP_DELAY=350;BattleTooltips.longTapTimeout=0;BattleTooltips.elem=null;BattleTooltips.parentElem=null;BattleTooltips.isLocked=false;BattleTooltips.isPressed=false;BattleTooltips.zMoveEffects={'clearnegativeboost':"Restores negative stat stages to 0",'crit2':"Crit ratio +2",'heal':"Restores HP 100%",'curse':"Restores HP 100% if user is Ghost type, otherwise Attack +1",'redirect':"Redirects opposing attacks to user",'healreplacement':"Restores replacement's HP 100%"};BattleTooltips.zMoveTable={Poison:"Acid Downpour",Fighting:"All-Out Pummeling",Dark:"Black Hole Eclipse",Grass:"Bloom Doom",Normal:"Breakneck Blitz",Rock:"Continental Crush",Steel:"Corkscrew Crash",Dragon:"Devastating Drake",Electric:"Gigavolt Havoc",Water:"Hydro Vortex",Fire:"Inferno Overdrive",Ghost:"Never-Ending Nightmare",Bug:"Savage Spin-Out",Psychic:"Shattered Psyche",Ice:"Subzero Slammer",Flying:"Supersonic Skystrike",Ground:"Tectonic Rage",Fairy:"Twinkle Tackle",Stellar:"","???":""};BattleTooltips.maxMoveTable={Poison:"Max Ooze",Fighting:"Max Knuckle",Dark:"Max Darkness",Grass:"Max Overgrowth",Normal:"Max Strike",Rock:"Max Rockfall",Steel:"Max Steelspike",Dragon:"Max Wyrmwind",Electric:"Max Lightning",Water:"Max Geyser",Fire:"Max Flare",Ghost:"Max Phantasm",Bug:"Max Flutterby",Psychic:"Max Mindstorm",Ice:"Max Hailstorm",Flying:"Max Airstream",Ground:"Max Quake",Fairy:"Max Starfall",Stellar:"","???":""};BattleTooltips.incenseTypes={'Odd Incense':'Psychic','Rock Incense':'Rock','Rose Incense':'Grass','Sea Incense':'Water','Wave Incense':'Water'};BattleTooltips.itemTypes={'Black Belt':'Fighting','Black Glasses':'Dark','Charcoal':'Fire','Dragon Fang':'Dragon','Fairy Feather':'Fairy','Hard Stone':'Rock','Magnet':'Electric','Metal Coat':'Steel','Miracle Seed':'Grass','Mystic Water':'Water','Never-Melt Ice':'Ice','Poison Barb':'Poison','Sharp Beak':'Flying','Silk Scarf':'Normal','Silver Powder':'Bug','Soft Sand':'Ground','Spell Tag':'Ghost','Twisted Spoon':'Psychic'};BattleTooltips.orbUsers={'Latias':['Soul Dew'],'Latios':['Soul Dew'],'Dialga':['Adamant Crystal','Adamant Orb'],'Palkia':['Lustrous Globe','Lustrous Orb'],'Giratina':['Griseous Core','Griseous Orb'],'Venomicon':['Vile Vial']};BattleTooltips.orbTypes={'Soul Dew':['Psychic','Dragon'],'Adamant Crystal':['Steel','Dragon'],'Adamant Orb':['Steel','Dragon'],'Lustrous Globe':['Water','Dragon'],'Lustrous Orb':['Water','Dragon'],'Griseous Core':['Ghost','Dragon'],'Griseous Orb':['Ghost','Dragon'],'Vile Vial':['Poison','Flying']};BattleTooltips.noGemMoves=['Fire Pledge','Fling','Grass Pledge','Struggle','Water Pledge'];var
+};return BattleTooltips;}();BattleTooltips.LONG_TAP_DELAY=350;BattleTooltips.longTapTimeout=0;BattleTooltips.elem=null;BattleTooltips.parentElem=null;BattleTooltips.isLocked=false;BattleTooltips.isPressed=false;BattleTooltips.zMoveEffects={'clearnegativeboost':"Restores negative stat stages to 0",'crit2':"Crit ratio +2",'heal':"Restores HP 100%",'curse':"Restores HP 100% if user is Ghost type, otherwise Attack +1",'redirect':"Redirects opposing attacks to user",'healreplacement':"Restores replacement's HP 100%"};BattleTooltips.zMoveTable={Poison:"Acid Downpour",Fighting:"All-Out Pummeling",Dark:"Black Hole Eclipse",Grass:"Bloom Doom",Normal:"Breakneck Blitz",Rock:"Continental Crush",Steel:"Corkscrew Crash",Dragon:"Devastating Drake",Electric:"Gigavolt Havoc",Water:"Hydro Vortex",Fire:"Inferno Overdrive",Ghost:"Never-Ending Nightmare",Bug:"Savage Spin-Out",Psychic:"Shattered Psyche",Ice:"Subzero Slammer",Flying:"Supersonic Skystrike",Ground:"Tectonic Rage",Fairy:"Twinkle Tackle",Stellar:"","???":""};BattleTooltips.maxMoveTable={Poison:"Max Ooze",Fighting:"Max Knuckle",Dark:"Max Darkness",Grass:"Max Overgrowth",Normal:"Max Strike",Rock:"Max Rockfall",Steel:"Max Steelspike",Dragon:"Max Wyrmwind",Electric:"Max Lightning",Water:"Max Geyser",Fire:"Max Flare",Ghost:"Max Phantasm",Bug:"Max Flutterby",Psychic:"Max Mindstorm",Ice:"Max Hailstorm",Flying:"Max Airstream",Ground:"Max Quake",Fairy:"Max Starfall",Stellar:"","???":""};BattleTooltips.incenseTypes={'Odd Incense':'Psychic','Rock Incense':'Rock','Rose Incense':'Grass','Sea Incense':'Water','Wave Incense':'Water'};BattleTooltips.itemTypes={'Black Belt':'Fighting','Black Glasses':'Dark','Charcoal':'Fire','Dragon Fang':'Dragon','Fairy Feather':'Fairy','Hard Stone':'Rock','Magnet':'Electric','Metal Coat':'Steel','Miracle Seed':'Grass','Mystic Water':'Water','Never-Melt Ice':'Ice','Poison Barb':'Poison','Sharp Beak':'Flying','Silk Scarf':'Normal','Silver Powder':'Bug','Soft Sand':'Ground','Spell Tag':'Ghost','Twisted Spoon':'Psychic'};BattleTooltips.orbUsers={'Latias':['Soul Dew'],'Latios':['Soul Dew'],'Dialga':['Adamant Crystal','Adamant Orb'],'Palkia':['Lustrous Globe','Lustrous Orb'],'Giratina':['Griseous Core','Griseous Orb'],'Venomicon':['Vile Vial']};BattleTooltips.orbTypes={'Soul Dew':['Psychic','Dragon'],'Adamant Crystal':['Steel','Dragon'],'Adamant Orb':['Steel','Dragon'],'Lustrous Globe':['Water','Dragon'],'Lustrous Orb':['Water','Dragon'],'Griseous Core':['Ghost','Dragon'],'Griseous Orb':['Ghost','Dragon'],'Vile Vial':['Poison','Flying']};BattleTooltips.noGemMoves=['Fire Pledge','Fling','Grass Pledge','Struggle','Water Pledge'];var
 
 
 
@@ -2669,8 +2406,8 @@ guess=function guess(set){
 var role=this.guessRole(set);
 var comboEVs=this.guessEVs(set,role);
 var evs={hp:0,atk:0,def:0,spa:0,spd:0,spe:0};
-for(var _stat in evs){
-evs[_stat]=comboEVs[_stat]||0;
+for(var stat in evs){
+evs[stat]=comboEVs[stat]||0;
 }
 var plusStat=comboEVs.plusStat||'';
 var minusStat=comboEVs.minusStat||'';
@@ -3056,17 +2793,17 @@ if(!statChart[role])return{};
 var evTotal=0;
 
 var primaryStat=statChart[role][0];
-var _stat2=this.getStat(primaryStat,set,252,plusStat===primaryStat?1.1:1.0);
+var stat=this.getStat(primaryStat,set,252,plusStat===primaryStat?1.1:1.0);
 var ev=252;
-while(ev>0&&_stat2<=this.getStat(primaryStat,set,ev-4,plusStat===primaryStat?1.1:1.0))ev-=4;
+while(ev>0&&stat<=this.getStat(primaryStat,set,ev-4,plusStat===primaryStat?1.1:1.0))ev-=4;
 evs[primaryStat]=ev;
 evTotal+=ev;
 
 var secondaryStat=statChart[role][1];
 if(secondaryStat==='hp'&&set.level&&set.level<20)secondaryStat='spd';
-_stat2=this.getStat(secondaryStat,set,252,plusStat===secondaryStat?1.1:1.0);
+stat=this.getStat(secondaryStat,set,252,plusStat===secondaryStat?1.1:1.0);
 ev=252;
-while(ev>0&&_stat2<=this.getStat(secondaryStat,set,ev-4,plusStat===secondaryStat?1.1:1.0))ev-=4;
+while(ev>0&&stat<=this.getStat(secondaryStat,set,ev-4,plusStat===secondaryStat?1.1:1.0))ev-=4;
 evs[secondaryStat]=ev;
 evTotal+=ev;
 
@@ -3088,8 +2825,8 @@ SRweak--;
 var hpDivisibility=0;
 var hpShouldBeDivisible=false;
 var hp=evs['hp']||0;
-_stat2=this.getStat('hp',set,hp,1);
-if((set.item==='Leftovers'||set.item==='Black Sludge')&&hasMove['substitute']&&_stat2!==404){
+stat=this.getStat('hp',set,hp,1);
+if((set.item==='Leftovers'||set.item==='Black Sludge')&&hasMove['substitute']&&stat!==404){
 hpDivisibility=4;
 }else if(set.item==='Leftovers'||set.item==='Black Sludge'){
 hpDivisibility=0;
@@ -3108,17 +2845,17 @@ hpDivisibility=8;
 }
 
 if(hpDivisibility){
-while(hp<252&&evTotal<508&&!(_stat2%hpDivisibility)!==hpShouldBeDivisible){
+while(hp<252&&evTotal<508&&!(stat%hpDivisibility)!==hpShouldBeDivisible){
 hp+=4;
-_stat2=this.getStat('hp',set,hp,1);
+stat=this.getStat('hp',set,hp,1);
 evTotal+=4;
 }
-while(hp>0&&!(_stat2%hpDivisibility)!==hpShouldBeDivisible){
+while(hp>0&&!(stat%hpDivisibility)!==hpShouldBeDivisible){
 hp-=4;
-_stat2=this.getStat('hp',set,hp,1);
+stat=this.getStat('hp',set,hp,1);
 evTotal-=4;
 }
-while(hp>0&&_stat2===this.getStat('hp',set,hp-4,1)){
+while(hp>0&&stat===this.getStat('hp',set,hp-4,1)){
 hp-=4;
 evTotal-=4;
 }
@@ -3160,15 +2897,15 @@ secondaryStat='def';
 }
 if(secondaryStat){
 ev=remaining;
-_stat2=this.getStat(secondaryStat,set,ev);
-while(ev>0&&_stat2===this.getStat(secondaryStat,set,ev-4))ev-=4;
+stat=this.getStat(secondaryStat,set,ev);
+while(ev>0&&stat===this.getStat(secondaryStat,set,ev-4))ev-=4;
 if(ev)evs[secondaryStat]=ev;
 remaining-=ev;
 }
 if(remaining&&!evs['spe']){
 ev=remaining;
-_stat2=this.getStat('spe',set,ev);
-while(ev>0&&_stat2===this.getStat('spe',set,ev-4))ev-=4;
+stat=this.getStat('spe',set,ev);
+while(ev>0&&stat===this.getStat('spe',set,ev-4))ev-=4;
 if(ev)evs['spe']=ev;
 }
 }

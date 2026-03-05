@@ -248,6 +248,9 @@ break;
 case'ultra':
 choices.current.ultra=checkbox.checked;
 break;
+case'echo':
+  choices.current.echo = checkbox.checked;
+break;
 case'z':
 choices.current.z=checkbox.checked;
 break;
@@ -551,6 +554,8 @@ var moveRequest=choices.currentMoveRequest();
 var canDynamax=moveRequest.canDynamax&&!choices.alreadyMax;
 var canMegaEvo=moveRequest.canMegaEvo&&!choices.alreadyMega;
 var canZMove=moveRequest.zMoves&&!choices.alreadyZ;
+var canEcho = !!moveRequest.canEcho;
+
 
 if(choices.current.move){
 var moveName=choices.getChosenMove(choices.current,choices.index()).name;
@@ -585,11 +590,12 @@ canDynamax&&preact.h("label",{"class":"megaevo"+(choices.current.max?' cur':'')}
 preact.h("input",{type:"checkbox",name:"max",checked:choices.current.max,onChange:this.toggleBoostedMove})," ",
 moveRequest.canGigantamax?'Gigantamax':'Dynamax'
 ),
+canEcho&&preact.h("label",{"class":"megaevo"+(choices.current.echo?' cur':'')},
+  preact.h("input",{type:"checkbox",name:"echo",checked:choices.current.echo,onChange:this.toggleBoostedMove})," ","Echo Priority",
 canMegaEvo&&preact.h("label",{"class":"megaevo"+(choices.current.mega?' cur':'')},
-preact.h("input",{type:"checkbox",name:"mega",checked:choices.current.mega,onChange:this.toggleBoostedMove})," ","Mega Evolution"
+preact.h("input",{type:"checkbox",name:"mega",checked:choices.current.mega,onChange:this.toggleBoostedMove})," ","Mega Evolution"),
+moveRequest.canUltraBurst&&preact.h("label",{"class":"megaevo"+(choices.current.ultra?' cur':'')},),
 
-),
-moveRequest.canUltraBurst&&preact.h("label",{"class":"megaevo"+(choices.current.ultra?' cur':'')},
 preact.h("input",{type:"checkbox",name:"ultra",checked:choices.current.ultra,onChange:this.toggleBoostedMove})," ","Ultra Burst"
 
 ),
