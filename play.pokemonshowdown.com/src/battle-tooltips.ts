@@ -1423,7 +1423,6 @@ if (pokemon.status === 'frb') {
 	hasPackedCustomData(sourcePokemon: Pokemon | ServerPokemon | null | undefined) {
 		if (!sourcePokemon) return false;
 		if ((sourcePokemon as any).newTypes || (sourcePokemon as any).baseStats) return true;
-		if ((sourcePokemon as any).apparentType) return true;
 		if ((sourcePokemon as any).set?.newTypes || (sourcePokemon as any).set?.baseStats) return true;
 		return false;
 	}

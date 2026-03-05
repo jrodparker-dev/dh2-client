@@ -546,14 +546,25 @@ export class Pokemon implements PokemonDetails, PokemonHealth {
 	}
 	getSpecies(serverPokemon?: ServerPokemon) {
 		const species = this.side.battle.dex.species.get(this.getSpeciesForme(serverPokemon));
-		if (!serverPokemon?.baseStats && !serverPokemon?.types) return species;
+		const baseStats = {
+			...species.baseStats,
+			...(this.baseStats || {}),
+			...(serverPokemon?.baseStats || {}),
+		};
+		const localTypes = this.newTypes?.filter((type): type is string => !!type);
+		const types = localTypes?.length ? localTypes : (serverPokemon?.types || species.types);
+		if (
+			!this.baseStats &&
+			!serverPokemon?.baseStats &&
+			!this.newTypes?.[0] &&
+			!serverPokemon?.types
+		) {
+			return species;
+		}
 		return {
 			...species,
-			baseStats: {
-				...species.baseStats,
-				...(serverPokemon.baseStats || {}),
-			},
-			types: serverPokemon.types || species.types,
+			baseStats,
+			types,
 		};
 	}
 	getBaseSpecies() {
