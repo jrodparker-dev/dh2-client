@@ -1097,6 +1097,7 @@ export class Battle {
 	sides: Side[] = null!;
 	myPokemon: ServerPokemon[] | null = null;
 	myAllyPokemon: ServerPokemon[] | null = null;
+	foePokemon: ServerPokemon[] | null = null;
 	lastMove = '';
 
 	mod = '' as ID;
@@ -1296,6 +1297,7 @@ export class Battle {
 		}
 		this.myPokemon = null;
 		this.myAllyPokemon = null;
+		this.foePokemon = null;
 
 		// DOM state
 		this.scene.reset();
