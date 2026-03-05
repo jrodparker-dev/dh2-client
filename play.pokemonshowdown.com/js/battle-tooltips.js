@@ -331,15 +331,13 @@ break;
 }
 case'switchpokemon':{
 
-
-
 var _activeIndex=parseInt(args[1],10);
 var _pokemon4=null;
 
-
-
-
-var _serverPokemon2=this.battle.myPokemon[_activeIndex];
+if(this.battle.mySide&&this.battle.mySide.pokemon&&_activeIndex>=0&&_activeIndex<this.battle.mySide.pokemon.length){
+_pokemon4=this.battle.mySide.pokemon[_activeIndex]||null;
+}
+var _serverPokemon2=this.battle.myPokemon?this.battle.myPokemon[_activeIndex]:null;
 buf=this.showPokemonTooltip(_pokemon4,_serverPokemon2);
 break;
 }
@@ -1398,8 +1396,6 @@ addStat(rawStatName,rawStatValue);
 normalizedSource.matchAll(/(hp|atk|def|spa|spd|spe|sp\.?a(?:tk)?|sp\.?d(?:ef)?|specialattack|specialdefense)\s*[:= ]\s*(-?\d+(?:\.\d+)?)/gi);_i33<_normalizedSource$mat2.length;_i33++){var match=_normalizedSource$mat2[_i33];
 addStat(match[1],match[2]);
 }
-if(Array.isArray(statSource)){
-addPackedNumberList(statSource);
 return parsedStats;
 }
 if(Array.isArray(statSource)){
@@ -1416,7 +1412,8 @@ return parsedStats;
 };_proto2.
 
 getPackedTooltipError=function getPackedTooltipError(reasonCode,details){
-return BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX+" ["+reasonCode+"]: "+details;
+
+return'';
 };_proto2.
 
 getTooltipSourcePokemon=function getTooltipSourcePokemon(clientPokemon,serverPokemon){

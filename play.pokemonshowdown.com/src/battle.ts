@@ -545,7 +545,16 @@ export class Pokemon implements PokemonDetails, PokemonHealth {
 			(serverPokemon ? serverPokemon.speciesForme : this.speciesForme);
 	}
 	getSpecies(serverPokemon?: ServerPokemon) {
-		return this.side.battle.dex.species.get(this.getSpeciesForme(serverPokemon));
+		const species = this.side.battle.dex.species.get(this.getSpeciesForme(serverPokemon));
+		if (!serverPokemon?.baseStats && !serverPokemon?.types) return species;
+		return {
+			...species,
+			baseStats: {
+				...species.baseStats,
+				...(serverPokemon.baseStats || {}),
+			},
+			types: serverPokemon.types || species.types,
+		};
 	}
 	getBaseSpecies() {
 		return this.side.battle.dex.species.get(this.speciesForme);
@@ -1008,6 +1017,17 @@ export interface ServerPokemon extends PokemonDetails, PokemonHealth {
 		spd: number,
 		spe: number,
 	};
+	/** optional base stats override from team data */
+	baseStats?: Partial<{
+		hp: number,
+		atk: number,
+		def: number,
+		spa: number,
+		spd: number,
+		spe: number,
+	}>;
+	/** optional typing override from team data */
+	types?: readonly string[];
 	/** currently an ID, will revise to name */
 	moves: string[];
 	/** currently an ID, will revise to name */

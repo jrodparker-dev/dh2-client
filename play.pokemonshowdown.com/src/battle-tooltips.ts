@@ -330,16 +330,14 @@ class BattleTooltips {
 			break;
 		}
 		case 'switchpokemon': { // switchpokemon|POKEMON
-			// mouse over switchable pokemon
-			// serverPokemon definitely exists, sidePokemon maybe
-			// let side = this.battle.mySide;
-			let activeIndex = parseInt(args[1], 10);
-			let pokemon = null;
-			/* if (activeIndex < side.active.length && activeIndex < this.battle.pokemonControlled) {
-				pokemon = side.active[activeIndex];
-				if (pokemon && pokemon.side === side.ally) pokemon = null;
-			} */
-			let serverPokemon = this.battle.myPokemon![activeIndex];
+			// mouse over your team (bench) Pokemon
+			const activeIndex = parseInt(args[1], 10);
+			let pokemon: Pokemon | null = null;
+			// Prefer the client-side BattlePokemon object so injected baseStats/newTypes are visible in tooltips.
+			if (this.battle.mySide && this.battle.mySide.pokemon && activeIndex >= 0 && activeIndex < this.battle.mySide.pokemon.length) {
+				pokemon = this.battle.mySide.pokemon[activeIndex] || null;
+			}
+			const serverPokemon = this.battle.myPokemon ? this.battle.myPokemon[activeIndex] : null;
 			buf = this.showPokemonTooltip(pokemon, serverPokemon);
 			break;
 		}
@@ -1414,7 +1412,8 @@ if (pokemon.status === 'frb') {
 	}
 
 	getPackedTooltipError(reasonCode: string, details: string) {
-		return `${BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX} [${reasonCode}]: ${details}`;
+		// Suppress debug/error strings in tooltips (keep logic silent).
+		return '';
 	}
 
 	getTooltipSourcePokemon(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
