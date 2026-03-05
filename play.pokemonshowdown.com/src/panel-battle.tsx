@@ -305,7 +305,6 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 		if (request.side) {
 			room.battle.myPokemon = request.side.pokemon;
 			room.battle.setViewpoint(request.side.id);
-			this.syncCustomPokemonData(request.side.pokemon);
 			room.side = request.side;
 		}
 
@@ -542,10 +541,7 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 				{this.renderTeamList()}
 			</div>;
 		}
-		if (request.side) {
-			room.battle.myPokemon = request.side.pokemon;
-			this.syncCustomPokemonData(request.side.pokemon);
-		}
+		if (request.side) room.battle.myPokemon = request.side.pokemon;
 		switch (request.requestType) {
 		case 'move': {
 			const index = choices.index();
@@ -656,28 +652,6 @@ class BattlePanel extends PSRoomPanel<BattleRoom> {
 			</div>;
 		}}
 	}
-
-	private syncCustomPokemonData(serverTeam: readonly AnyObject[] = []) {
-		const clientSide: any = (this.props.room.battle as any).mySide;
-		if (!clientSide?.pokemon || !Array.isArray(clientSide.pokemon)) return;
-		for (let i = 0; i < serverTeam.length && i < clientSide.pokemon.length; i++) {
-			const serverPokemon: any = serverTeam[i];
-			const clientPokemon: any = clientSide.pokemon[i];
-			if (!serverPokemon || !clientPokemon) continue;
-
-			if (serverPokemon.baseStats) {
-				clientPokemon.baseStats = serverPokemon.baseStats;
-			}
-
-			if (serverPokemon.types?.length) {
-				clientPokemon.newTypes = [serverPokemon.types[0], serverPokemon.types[1]];
-				clientPokemon.apparentType = clientPokemon.newTypes.filter(Boolean).join('/');
-			}
-
-			if (serverPokemon.teraType) clientPokemon.teraType = serverPokemon.teraType;
-		}
-	}
-	
 	render() {
 		const room = this.props.room;
 

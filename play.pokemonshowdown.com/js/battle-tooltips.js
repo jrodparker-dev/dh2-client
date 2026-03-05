@@ -290,19 +290,29 @@ case'pokemon':{
 
 var sideIndex=parseInt(args[1],10);
 var side=this.battle.sides[sideIndex];
-var _pokemon2=side.pokemon[parseInt(args[2],10)];
+var pokemonIndex=parseInt(args[2],10);
+var pokemon=side.pokemon[pokemonIndex];
+
+var self=this;
+var getServerPokemonForSideIndex=function(idx){
+if(side===self.battle.mySide&&self.battle.myPokemon)return self.battle.myPokemon[idx]||null;
+if(side===self.battle.mySide.ally&&self.battle.myAllyPokemon)return self.battle.myAllyPokemon[idx]||null;
+return null;
+};
+
 if(args[3]==='illusion'){
 buf='';
-var species=_pokemon2.getBaseSpecies().baseSpecies;
-var index=1;for(var _i6=0,_side$pokemon2=
-side.pokemon;_i6<_side$pokemon2.length;_i6++){var otherPokemon=_side$pokemon2[_i6];
+var species=pokemon.getBaseSpecies().baseSpecies;
+var index=1;
+for(var i=0;i<side.pokemon.length;i++){
+var otherPokemon=side.pokemon[i];
 if(otherPokemon.getBaseSpecies().baseSpecies===species){
-buf+=this.showPokemonTooltip(otherPokemon,null,false,index);
+buf+=this.showPokemonTooltip(otherPokemon,getServerPokemonForSideIndex(i),false,index);
 index++;
 }
 }
 }else{
-buf=this.showPokemonTooltip(_pokemon2);
+buf=this.showPokemonTooltip(pokemon,getServerPokemonForSideIndex(pokemonIndex));
 }
 break;
 }
@@ -1423,7 +1433,6 @@ return serverPokemon||clientPokemon||null;
 hasPackedCustomData=function hasPackedCustomData(sourcePokemon){var _set,_set2;
 if(!sourcePokemon)return false;
 if(sourcePokemon.newTypes||sourcePokemon.baseStats)return true;
-if(sourcePokemon.apparentType)return true;
 if((_set=sourcePokemon.set)!=null&&_set.newTypes||(_set2=sourcePokemon.set)!=null&&_set2.baseStats)return true;
 return false;
 };_proto2.
@@ -2432,6 +2441,8 @@ pokemonList.length;_i65++){var _set6;var currentPokemon=pokemonList[_i65];
 var injectedTypeSources=[
 currentPokemon.newTypes,(_set6=
 currentPokemon.set)==null?void 0:_set6.newTypes,
+currentPokemon.types,(_set6=
+currentPokemon.set)==null?void 0:_set6.types,
 currentPokemon.apparentType];
 
 var types=[];

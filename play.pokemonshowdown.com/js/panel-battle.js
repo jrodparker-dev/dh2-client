@@ -305,33 +305,6 @@ BattleChoiceBuilder.fixRequest(request,room.battle);
 if(request.side){
 room.battle.myPokemon=request.side.pokemon;
 room.battle.setViewpoint(request.side.id);
-
-
-try{
-var clientSide=room.battle.mySide;
-var serverTeam=request.side.pokemon||[];
-if(clientSide&&clientSide.pokemon&&Array.isArray(clientSide.pokemon)){
-for(var i=0;i<serverTeam.length&&i<clientSide.pokemon.length;i++){
-var serverP=serverTeam[i];
-var clientP=clientSide.pokemon[i];
-if(!clientP||!serverP)continue;
-if(serverP.baseStats){
-clientP.baseStats=serverP.baseStats;
-clientP.set=clientP.set||{};
-clientP.set.baseStats=serverP.baseStats;
-}
-
-if(serverP.types&&Array.isArray(serverP.types)&&serverP.types.length){
-clientP.newTypes=[serverP.types[0],serverP.types[1]];
-clientP.set=clientP.set||{};
-clientP.set.newTypes=[serverP.types[0],serverP.types[1]];
-}
-if(serverP.teraType)clientP.teraType=serverP.teraType;
-}
-}
-}catch(_unused){
-
-}
 room.side=request.side;
 }
 
@@ -568,32 +541,7 @@ request.noCancel?null:preact.h("button",{name:"cmd",value:"/cancel","class":"but
 this.renderTeamList()
 );
 }
-if(request.side){
-room.battle.myPokemon=request.side.pokemon;
-
-try{
-var clientSide=room.battle.mySide;
-var serverTeam=request.side.pokemon||[];
-if(clientSide&&clientSide.pokemon&&Array.isArray(clientSide.pokemon)){
-for(var i=0;i<serverTeam.length&&i<clientSide.pokemon.length;i++){
-var serverP=serverTeam[i];
-var clientP=clientSide.pokemon[i];
-if(!clientP||!serverP)continue;
-if(serverP.baseStats){
-clientP.baseStats=serverP.baseStats;
-clientP.set=clientP.set||{};
-clientP.set.baseStats=serverP.baseStats;
-}
-if(serverP.types&&Array.isArray(serverP.types)&&serverP.types.length){
-clientP.newTypes=[serverP.types[0],serverP.types[1]];
-clientP.set=clientP.set||{};
-clientP.set.newTypes=[serverP.types[0],serverP.types[1]];
-}
-if(serverP.teraType)clientP.teraType=serverP.teraType;
-}
-}
-}catch(_unused2){}
-}
+if(request.side)room.battle.myPokemon=request.side.pokemon;
 switch(request.requestType){
 case'move':{
 var index=choices.index();

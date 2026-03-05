@@ -287,22 +287,31 @@ class BattleTooltips {
 
 		case 'pokemon': { // pokemon|SIDE|POKEMON
 			// mouse over sidebar pokemon
-			// pokemon definitely exists, serverPokemon always ignored
+			// pokemon definitely exists; serverPokemon is available for your own side (and ally in multi)
 			let sideIndex = parseInt(args[1], 10);
 			let side = this.battle.sides[sideIndex];
-			let pokemon = side.pokemon[parseInt(args[2], 10)];
+			let pokemonIndex = parseInt(args[2], 10);
+			let pokemon = side.pokemon[pokemonIndex];
+
+			const getServerPokemonForSideIndex = (idx: number): ServerPokemon | null => {
+				if (side === this.battle.mySide && this.battle.myPokemon) return this.battle.myPokemon[idx] || null;
+				if (side === this.battle.mySide.ally && this.battle.myAllyPokemon) return this.battle.myAllyPokemon[idx] || null;
+				return null;
+			};
+
 			if (args[3] === 'illusion') {
 				buf = '';
 				const species = pokemon.getBaseSpecies().baseSpecies;
 				let index = 1;
-				for (const otherPokemon of side.pokemon) {
+				for (let i = 0; i < side.pokemon.length; i++) {
+					const otherPokemon = side.pokemon[i];
 					if (otherPokemon.getBaseSpecies().baseSpecies === species) {
-						buf += this.showPokemonTooltip(otherPokemon, null, false, index);
+						buf += this.showPokemonTooltip(otherPokemon, getServerPokemonForSideIndex(i), false, index);
 						index++;
 					}
 				}
 			} else {
-				buf = this.showPokemonTooltip(pokemon);
+				buf = this.showPokemonTooltip(pokemon, getServerPokemonForSideIndex(pokemonIndex));
 			}
 			break;
 		}
@@ -330,14 +339,16 @@ class BattleTooltips {
 			break;
 		}
 		case 'switchpokemon': { // switchpokemon|POKEMON
-			// mouse over your team (bench) Pokemon
-			const activeIndex = parseInt(args[1], 10);
-			let pokemon: Pokemon | null = null;
-			// Prefer the client-side BattlePokemon object so injected baseStats/newTypes are visible in tooltips.
-			if (this.battle.mySide && this.battle.mySide.pokemon && activeIndex >= 0 && activeIndex < this.battle.mySide.pokemon.length) {
-				pokemon = this.battle.mySide.pokemon[activeIndex] || null;
-			}
-			const serverPokemon = this.battle.myPokemon ? this.battle.myPokemon[activeIndex] : null;
+			// mouse over switchable pokemon
+			// serverPokemon definitely exists, sidePokemon maybe
+			// let side = this.battle.mySide;
+			let activeIndex = parseInt(args[1], 10);
+			let pokemon = null;
+			/* if (activeIndex < side.active.length && activeIndex < this.battle.pokemonControlled) {
+				pokemon = side.active[activeIndex];
+				if (pokemon && pokemon.side === side.ally) pokemon = null;
+			} */
+			let serverPokemon = this.battle.myPokemon![activeIndex];
 			buf = this.showPokemonTooltip(pokemon, serverPokemon);
 			break;
 		}
@@ -1412,8 +1423,7 @@ if (pokemon.status === 'frb') {
 	}
 
 	getPackedTooltipError(reasonCode: string, details: string) {
-		// Suppress debug/error strings in tooltips (keep logic silent).
-		return '';
+		return `${BattleTooltips.DH2_TOOLTIP_ERROR_PREFIX} [${reasonCode}]: ${details}`;
 	}
 
 	getTooltipSourcePokemon(clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null) {
@@ -1423,6 +1433,7 @@ if (pokemon.status === 'frb') {
 	hasPackedCustomData(sourcePokemon: Pokemon | ServerPokemon | null | undefined) {
 		if (!sourcePokemon) return false;
 		if ((sourcePokemon as any).newTypes || (sourcePokemon as any).baseStats) return true;
+		if ((sourcePokemon as any).apparentType) return true;
 		if ((sourcePokemon as any).set?.newTypes || (sourcePokemon as any).set?.baseStats) return true;
 		return false;
 	}
@@ -2431,6 +2442,8 @@ if (pokemon.status === 'frb') {
 			const injectedTypeSources = [
 				(currentPokemon as any).newTypes,
 				(currentPokemon as any).set?.newTypes,
+				(currentPokemon as any).types,
+				(currentPokemon as any).set?.types,
 				(currentPokemon as any).apparentType,
 			];
 			const types: TypeName[] = [];
