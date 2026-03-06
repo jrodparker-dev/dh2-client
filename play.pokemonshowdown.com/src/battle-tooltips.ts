@@ -972,6 +972,19 @@ class BattleTooltips {
 				text += `${moveName}<br />`;
 			}
 			text += '</p>';
+		} else if (limitedFoeTooltip && clientPokemon?.moveTrack.length) {
+			// move list (revealed only)
+			text += `<p class="tooltip-section">`;
+			const revealedMoves = new Set<string>();
+			for (const [moveName] of clientPokemon.moveTrack) {
+				if (moveName.charAt(0) === '*') continue;
+				const move = this.battle.dex.moves.get(moveName);
+				if (move.isZ || move.isMax || move.name === 'Mimic') continue;
+				if (revealedMoves.has(move.name)) continue;
+				revealedMoves.add(move.name);
+				text += `&#8226; ${move.name}<br />`;
+			}
+			text += `</p>`;
 		} else if (!limitedFoeTooltip && !this.battle.hardcoreMode && clientPokemon?.moveTrack.length) {
 			// move list (guessed)
 			text += `<p class="tooltip-section">`;
