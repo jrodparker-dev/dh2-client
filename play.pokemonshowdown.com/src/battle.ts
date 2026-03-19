@@ -2457,7 +2457,7 @@ export class Battle {
 				simplebeam: 'Simple',
 				worryseed: 'Insomnia',
 			};
-			const overwrittenAbility = overwritingAbilities[effect.id];
+			const overwrittenAbility = overwritingAbilities[effect.id || this.lastMove];
 			if (overwrittenAbility) {
 				poke.rememberAbility(overwrittenAbility, true);
 				if (!poke.baseAbility && ability.id) poke.baseAbility = ability.name;
