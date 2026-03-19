@@ -2404,8 +2404,15 @@ export class Battle {
 		case '-ability': {
 			let poke = this.getPokemon(args[1])!;
 			let ability = Dex.abilities.get(args[2]);
+			let oldAbility = args[3];
 			let effect = Dex.getEffect(kwArgs.from);
 			let ofpoke = this.getPokemon(kwArgs.of);
+			if (oldAbility && !oldAbility.startsWith('p1') && !oldAbility.startsWith('p2') && oldAbility !== 'boost') {
+				let oldAbilityName = Dex.abilities.get(oldAbility).name;
+				if (oldAbilityName && !poke.baseAbility) {
+					poke.baseAbility = oldAbilityName;
+				}
+			}
 			poke.rememberAbility(ability.name, effect.id && !kwArgs.fail);
 
 			if (kwArgs.silent) {
