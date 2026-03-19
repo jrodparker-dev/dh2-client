@@ -2452,6 +2452,18 @@ export class Battle {
 			// and the third arg of |-ability| for Entrainment et al
 			let poke = this.getPokemon(args[1])!;
 			let ability = Dex.abilities.get(args[2]);
+			let effect = Dex.getEffect(kwArgs.from);
+			const overwritingAbilities: {[id: string]: string} = {
+				simplebeam: 'Simple',
+				worryseed: 'Insomnia',
+			};
+			const overwrittenAbility = overwritingAbilities[effect.id];
+			if (overwrittenAbility) {
+				poke.rememberAbility(overwrittenAbility, true);
+				if (!poke.baseAbility && ability.id) poke.baseAbility = ability.name;
+				this.log(args, kwArgs);
+				break;
+			}
 			poke.ability = '(suppressed)';
 
 			if (ability.id) {
