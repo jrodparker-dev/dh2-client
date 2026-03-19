@@ -839,16 +839,17 @@ text+="<small>(Changed forme: "+clientPokemon.volatiles.formechange[1]+")</small
 }
 }
 
-var types=serverPokemon!=null&&serverPokemon.terastallized?[serverPokemon.teraType]:this.getPokemonTypes(limitedFoeTooltip&&serverPokemon?serverPokemon:pokemon);
+var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
+var types=terastallizedType?[terastallizedType]:this.getPokemonTypes(clientPokemon||serverPokemon||pokemon);
 var knownPokemon=serverPokemon||clientPokemon;
 
-if(pokemon.terastallized){
+if(terastallizedType){
 text+="<small>(Terastallized)</small><br />";
 }else if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
 text+="<small>(Type changed)</small><br />";
 }
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
-if(pokemon.terastallized){
+if(terastallizedType){
 text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getPokemonTypes(pokemon,true).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
 }else if(!limitedFoeTooltip&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
 text+="&nbsp; &nbsp; <small>(Tera Type: <span class=\"textaligned-typeicons\">"+Dex.getTypeIcon(knownPokemon.teraType)+"</span>)</small>";
@@ -893,7 +894,10 @@ var supportsAbilities=this.battle.gen>2&&!this.battle.tier.includes("Let's Go");
 
 var abilityText='';
 if(supportsAbilities){
-if(limitedFoeTooltip){var _species$abilities,_species$abilities2,_species$abilities3,_species$abilities4;
+abilityText=this.getPokemonAbilityText(
+clientPokemon,limitedFoeTooltip?undefined:serverPokemon,isActive,limitedFoeTooltip&&!!illusionIndex&&illusionIndex>1
+);
+if(!abilityText&&limitedFoeTooltip){var _species$abilities,_species$abilities2,_species$abilities3,_species$abilities4;
 var species=(clientPokemon==null?void 0:clientPokemon.getSpecies(serverPokemon||undefined))||this.battle.dex.species.get(pokemon.speciesForme);
 var possibilities=[];
 if((_species$abilities=species.abilities)!=null&&_species$abilities['0'])possibilities.push(species.abilities['0']);
@@ -903,10 +907,6 @@ if((_species$abilities4=species.abilities)!=null&&_species$abilities4['S'])possi
 if(possibilities.length){
 abilityText='<small>Possible abilities:</small> '+possibilities.join(', ');
 }
-}else{
-abilityText=this.getPokemonAbilityText(
-clientPokemon,serverPokemon,isActive,!!illusionIndex&&illusionIndex>1
-);
 }
 }
 
@@ -976,22 +976,23 @@ text+='</p>';
 
 text+="<p class=\"tooltip-section\">";
 var revealedMoves=new Set();for(var _i12=0,_clientPokemon$moveTr2=
-clientPokemon.moveTrack;_i12<_clientPokemon$moveTr2.length;_i12++){var _ref=_clientPokemon$moveTr2[_i12];var _moveName=_ref[0];{
+clientPokemon.moveTrack;_i12<_clientPokemon$moveTr2.length;_i12++){var _row=_clientPokemon$moveTr2[_i12];
+var _moveName=_row[0];
 if(_moveName.charAt(0)==='*')continue;
 var _move=this.battle.dex.moves.get(_moveName);
 if(_move.isZ||_move.isMax||_move.name==='Mimic')continue;
 if(revealedMoves.has(_move.name))continue;
 revealedMoves.add(_move.name);
-text+="&#8226; "+_move.name+"<br />";
-}}
+text+=this.getPPUseText(_row,true)+"<br />";
+}
 text+="</p>";
 }else if(!limitedFoeTooltip&&!this.battle.hardcoreMode&&clientPokemon!=null&&clientPokemon.moveTrack.length){
 
 text+="<p class=\"tooltip-section\">";for(var _i14=0,_clientPokemon$moveTr4=
-clientPokemon.moveTrack;_i14<_clientPokemon$moveTr4.length;_i14++){var _row=_clientPokemon$moveTr4[_i14];
-text+=this.getPPUseText(_row)+"<br />";
+clientPokemon.moveTrack;_i14<_clientPokemon$moveTr4.length;_i14++){var _row2=_clientPokemon$moveTr4[_i14];
+text+=this.getPPUseText(_row2)+"<br />";
 }
-if(clientPokemon.moveTrack.filter(function(_ref2){var moveName=_ref2[0];
+if(clientPokemon.moveTrack.filter(function(_ref){var moveName=_ref[0];
 if(moveName.charAt(0)==='*')return false;
 var move=_this3.battle.dex.moves.get(moveName);
 return!move.isZ&&!move.isMax&&move.name!=='Mimic';
@@ -1472,7 +1473,7 @@ return bullet+" "+move.name+" "+(showKnown?' <small>(revealed)</small>':'');
 };_proto2.
 
 ppUsed=function ppUsed(move,pokemon){for(var _i36=0,_pokemon$moveTrack2=
-pokemon.moveTrack;_i36<_pokemon$moveTrack2.length;_i36++){var _ref3=_pokemon$moveTrack2[_i36];var moveName=_ref3[0];var _ppUsed=_ref3[1];
+pokemon.moveTrack;_i36<_pokemon$moveTrack2.length;_i36++){var _ref2=_pokemon$moveTrack2[_i36];var moveName=_ref2[0];var _ppUsed=_ref2[1];
 if(moveName.charAt(0)==='*')moveName=moveName.substr(1);
 if(move.name===moveName)return _ppUsed;
 }

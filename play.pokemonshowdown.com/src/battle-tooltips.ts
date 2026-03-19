@@ -839,16 +839,17 @@ class BattleTooltips {
 				}
 			}
 
-			let types = serverPokemon?.terastallized ? [serverPokemon.teraType] : this.getPokemonTypes(limitedFoeTooltip && serverPokemon ? serverPokemon : pokemon);
+			const terastallizedType = serverPokemon?.terastallized || pokemon.terastallized;
+			let types = terastallizedType ? [terastallizedType] : this.getPokemonTypes(clientPokemon || serverPokemon || pokemon);
 			let knownPokemon = serverPokemon || clientPokemon!;
 
-			if (pokemon.terastallized) {
+			if (terastallizedType) {
 				text += `<small>(Terastallized)</small><br />`;
 			} else if (clientPokemon?.volatiles.typechange || clientPokemon?.volatiles.typeadd) {
 				text += `<small>(Type changed)</small><br />`;
 			}
 			text += `<span class="textaligned-typeicons">${types.map(type => Dex.getTypeIcon(type)).join(' ')}</span>`;
-			if (pokemon.terastallized) {
+			if (terastallizedType) {
 				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getPokemonTypes(pokemon, true).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
 			} else if (!limitedFoeTooltip && knownPokemon.teraType && !this.battle.rules['Terastal Clause']) {
 				text += `&nbsp; &nbsp; <small>(Tera Type: <span class="textaligned-typeicons">${Dex.getTypeIcon(knownPokemon.teraType)}</span>)</small>`;
@@ -893,7 +894,10 @@ class BattleTooltips {
 
 		let abilityText = '';
 		if (supportsAbilities) {
-			if (limitedFoeTooltip) {
+			abilityText = this.getPokemonAbilityText(
+				clientPokemon, limitedFoeTooltip ? undefined : serverPokemon, isActive, limitedFoeTooltip && !!illusionIndex && illusionIndex > 1
+			);
+			if (!abilityText && limitedFoeTooltip) {
 				const species = clientPokemon?.getSpecies(serverPokemon || undefined) || this.battle.dex.species.get(pokemon.speciesForme);
 				const possibilities = [];
 				if (species.abilities?.['0']) possibilities.push(species.abilities['0']);
@@ -903,10 +907,6 @@ class BattleTooltips {
 				if (possibilities.length) {
 					abilityText = '<small>Possible abilities:</small> ' + possibilities.join(', ');
 				}
-			} else {
-				abilityText = this.getPokemonAbilityText(
-					clientPokemon, serverPokemon, isActive, !!illusionIndex && illusionIndex > 1
-				);
 			}
 		}
 
@@ -976,13 +976,14 @@ class BattleTooltips {
 			// move list (revealed only)
 			text += `<p class="tooltip-section">`;
 			const revealedMoves = new Set<string>();
-			for (const [moveName] of clientPokemon.moveTrack) {
+			for (const row of clientPokemon.moveTrack) {
+				const [moveName] = row;
 				if (moveName.charAt(0) === '*') continue;
 				const move = this.battle.dex.moves.get(moveName);
 				if (move.isZ || move.isMax || move.name === 'Mimic') continue;
 				if (revealedMoves.has(move.name)) continue;
 				revealedMoves.add(move.name);
-				text += `&#8226; ${move.name}<br />`;
+				text += `${this.getPPUseText(row, true)}<br />`;
 			}
 			text += `</p>`;
 		} else if (!limitedFoeTooltip && !this.battle.hardcoreMode && clientPokemon?.moveTrack.length) {
