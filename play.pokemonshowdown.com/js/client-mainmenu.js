@@ -1636,11 +1636,12 @@
 			this.render();
 		},
 		getDefaultFormat: function () {
+			if (app.rooms[''].curFormat && BattleFormats[app.rooms[''].curFormat]) return app.rooms[''].curFormat;
 			for (var i in BattleFormats) {
 				var format = BattleFormats[i];
-				if (format && format.challengeShow && !format.team && format.isTeambuilderFormat) return i;
+				if (format && format.challengeShow) return i;
 			}
-			return app.rooms[''].curFormat || 'gen9ou';
+			return 'gen9randombattle';
 		},
 		getLegacyTeam: function (teamIndex) {
 			teamIndex = +teamIndex;
@@ -1658,6 +1659,10 @@
 				playerTeamIndex: this.$('button[name=selectAIPlayerTeam]').val() || this.selection.playerTeamIndex,
 				aiTeamIndex: this.$('button[name=selectAITeam]').val() || this.selection.aiTeamIndex
 			};
+		},
+		isPresetTeamFormat: function (formatid) {
+			var format = BattleFormats[formatid];
+			return !!(format && format.team);
 		},
 		renderReport: function () {
 			if (!window.BattleAI) {
@@ -1689,13 +1694,17 @@
 		},
 		render: function () {
 			var format = this.selection.format;
+			var presetFormat = this.isPresetTeamFormat(format);
 			var playerTeamIndex = this.selection.playerTeamIndex === '' ? -1 : +this.selection.playerTeamIndex;
 			var aiTeamIndex = this.selection.aiTeamIndex === '' ? -1 : +this.selection.aiTeamIndex;
+			var playerButton = presetFormat ? '<button class="select teamselect preselected" name="selectAIPlayerTeam" value="random" disabled>' + TeamPopup.renderTeam('random') + '</button>' : '<button class="select teamselect" name="selectAIPlayerTeam" value="' + (playerTeamIndex >= 0 ? playerTeamIndex : '') + '">' + TeamPopup.renderTeam(playerTeamIndex) + '</button>';
+			var aiButton = presetFormat ? '<button class="select teamselect preselected" name="selectAITeam" value="random" disabled>' + TeamPopup.renderTeam('random') + '</button>' : '<button class="select teamselect" name="selectAITeam" value="' + (aiTeamIndex >= 0 ? aiTeamIndex : '') + '">' + TeamPopup.renderTeam(aiTeamIndex) + '</button>';
 			var buf = '<p><strong>Challenge AI</strong></p>';
 			buf += '<p><label class="label">Format:</label><button class="select formatselect" name="selectAIFormat" value="' + BattleLog.escapeHTML(format) + '">' + BattleLog.escapeFormat(format) + '</button></p>';
-			buf += '<p><label class="label">Your team:</label><button class="select teamselect" name="selectAIPlayerTeam" value="' + (playerTeamIndex >= 0 ? playerTeamIndex : '') + '">' + TeamPopup.renderTeam(playerTeamIndex) + '</button></p>';
-			buf += '<p><label class="label">AI team:</label><button class="select teamselect" name="selectAITeam" value="' + (aiTeamIndex >= 0 ? aiTeamIndex : '') + '">' + TeamPopup.renderTeam(aiTeamIndex) + '</button></p>';
-			buf += '<p><button type="button" class="button" name="saveChallengeAI"><i class="fa fa-save"></i> Save AI setup</button></p>';
+			buf += '<p><label class="label">Your team:</label>' + playerButton + '</p>';
+			buf += '<p><label class="label">AI team:</label>' + aiButton + '</p>';
+			if (presetFormat) buf += '<p><small>Preset formats like Random Battle do not use teambuilder teams.</small></p>';
+			buf += '<p><button type="button" class="button" name="saveChallengeAI"><i class="fa fa-save"></i> Save AI setup</button> <button type="button" class="button" name="startChallengeAI"><strong>Start Battle</strong></button></p>';
 			buf += '<div class="ai-report">' + this.renderReport() + '</div>';
 			this.$el.css({
 				width: 'min(360px, calc(100vw - 24px))',
@@ -1709,9 +1718,10 @@
 		selectAIFormat: function (format, button) {
 			var self = this;
 			app.addPopup(FormatPopup, {
+				type: 'modal',
 				format: format,
 				sourceEl: button,
-				selectType: 'teambuilder',
+				selectType: 'challenge',
 				onselect: function (newFormat) {
 					self.selection.format = newFormat;
 					self.selection.playerTeamIndex = '';
@@ -1721,15 +1731,21 @@
 			});
 		},
 		selectAIPlayerTeam: function (team, button) {
-			app.addPopup(TeamPopup, {team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
+			if (this.isPresetTeamFormat(this.selection.format)) return;
+			app.addPopup(TeamPopup, {type: 'modal', team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
 		},
 		selectAITeam: function (team, button) {
-			app.addPopup(TeamPopup, {team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
+			if (this.isPresetTeamFormat(this.selection.format)) return;
+			app.addPopup(TeamPopup, {type: 'modal', team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
 		},
 		saveChallengeAI: function () {
 			this.selection = this.getSelectedValues();
 			localStorage.setItem('showdown_ai_challenge_legacy', JSON.stringify(this.selection));
 			this.render();
+		},
+		startChallengeAI: function () {
+			this.saveChallengeAI();
+			app.addPopupMessage('Starting a real AI-vs-player battle still requires simulator/server-side turn execution that is not present in this client-only repository yet. The popup now lets you configure formats (including Random Battle), choose teams where applicable, and save/train the AI setup, but full live battling still needs battle-engine integration.');
 		}
 	});
 
