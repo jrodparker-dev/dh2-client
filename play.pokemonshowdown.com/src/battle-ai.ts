@@ -362,9 +362,15 @@ class BattleAI {
 		return modifier;
 	}
 
-	static unpackTeam(team: Team | null | undefined): AITeamMember[] {
-		if (!team?.packedTeam || typeof PSTeambuilder === 'undefined') return [];
-		return PSTeambuilder.unpackTeam(team.packedTeam) as AITeamMember[];
+	static unpackTeam(team: (Team & {team?: string}) | null | undefined): AITeamMember[] {
+		if (!team) return [];
+		if (team.packedTeam && typeof PSTeambuilder !== 'undefined') {
+			return PSTeambuilder.unpackTeam(team.packedTeam) as AITeamMember[];
+		}
+		if (team.team && typeof Storage !== 'undefined' && Storage.unpackTeam) {
+			return Storage.unpackTeam(team.team) as AITeamMember[];
+		}
+		return [];
 	}
 
 	static requireDex() {

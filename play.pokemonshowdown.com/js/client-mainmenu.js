@@ -58,7 +58,8 @@
 
 			buf += '<div class="menugroup"><p><button class="button mainmenu4 onlineonly disabled" name="joinRoom" value="battles">Watch a battle</button></p>';
 			buf += '<p><button class="button mainmenu5 onlineonly disabled" name="finduser">Find a user</button></p>';
-			buf += '<p><button class="button mainmenu6 onlineonly disabled" name="send" value="/friends">Friends</button></p></div>';
+			buf += '<p><button class="button mainmenu6 onlineonly disabled" name="send" value="/friends">Friends</button></p>';
+			buf += '<p><button class="button mainmenu7 onlineonly disabled" name="challengeai">Challenge AI</button></p></div>';
 
 			this.$('.mainmenu').html(buf);
 
@@ -1121,6 +1122,9 @@
 			this.searching = false;
 			this.updateSearch();
 		},
+		challengeai: function () {
+			app.addPopup(AIChallengePopup, {type: 'semimodal'});
+		},
 		finduser: function () {
 			if (app.isDisconnected) {
 				app.addPopupMessage("You are offline.");
@@ -1613,6 +1617,107 @@
 			var buf = '<strong>' + BattleLog.escapeHTML(team.name) + '</strong><small>';
 			buf += Storage.getTeamIcons(team) + '</small>';
 			return buf;
+		}
+	});
+
+
+	var AIChallengePopup = this.AIChallengePopup = this.Popup.extend({
+		className: 'ps-popup',
+		initialize: function () {
+			var legacySelection = {};
+			try {
+				legacySelection = JSON.parse(localStorage.getItem('showdown_ai_challenge_legacy') || '{}');
+			} catch (e) {}
+			this.selection = {
+				format: legacySelection.format || app.rooms[''].curFormat || 'gen9randombattle',
+				playerTeamIndex: legacySelection.playerTeamIndex || '',
+				aiTeamIndex: legacySelection.aiTeamIndex || ''
+			};
+			this.render();
+		},
+		renderButton: function (html, name) {
+			return html.replace('name="team"', 'name="' + name + '"');
+		},
+		getLegacyTeam: function (teamIndex) {
+			teamIndex = +teamIndex;
+			if (teamIndex < 0 || !Storage.teams || !Storage.teams[teamIndex]) return null;
+			var team = Storage.teams[teamIndex];
+			return {
+				name: team.name,
+				format: team.format,
+				team: team.team
+			};
+		},
+		renderReport: function () {
+			if (!window.BattleAI) {
+				return '<p><em>BattleAI is not loaded yet.</em></p>';
+			}
+			var playerTeam = this.getLegacyTeam(this.selection.playerTeamIndex);
+			var aiTeam = this.getLegacyTeam(this.selection.aiTeamIndex);
+			var report = BattleAI.analyzeTeamMatchup(this.selection.format, playerTeam, aiTeam);
+			var html = '<div class="mainmessage" style="margin-top:10px">';
+			html += '<h3>Scouting report</h3>';
+			html += '<p><strong>Format:</strong> ' + BattleLog.escapeHTML(report.format) + '</p>';
+			if (report.bestAILead) {
+				html += '<p><strong>Best AI lead:</strong> ' + BattleLog.escapeHTML(report.bestAILead.lead) + '</p><ul>';
+				for (var i = 0; i < report.bestAILead.options.length; i++) {
+					var option = report.bestAILead.options[i];
+					html += '<li><strong>' + BattleLog.escapeHTML(option.name) + '</strong> <small>(' + option.score.toFixed(1) + ')</small>';
+					if (option.reasons.length) html += '<div><small>' + BattleLog.escapeHTML(option.reasons.join(' ')) + '</small></div>';
+					html += '</li>';
+				}
+				html += '</ul>';
+			}
+			html += '<ul>';
+			for (var j = 0; j < report.teamPreviewNotes.length; j++) {
+				html += '<li>' + BattleLog.escapeHTML(report.teamPreviewNotes[j]) + '</li>';
+			}
+			html += '</ul></div>';
+			return html;
+		},
+		render: function () {
+			var format = this.selection.format;
+			var playerTeamIndex = this.selection.playerTeamIndex;
+			var aiTeamIndex = this.selection.aiTeamIndex;
+			var formatButton = app.rooms[''].renderFormats(format, true).replace('name="format"', 'name="selectAIFormat"').replace('preselected', '');
+			var playerButton = this.renderButton(app.rooms[''].renderTeams(format, playerTeamIndex), 'selectAIPlayerTeam');
+			var aiButton = this.renderButton(app.rooms[''].renderTeams(format, aiTeamIndex), 'selectAITeam');
+			var buf = '<p><strong>Challenge AI</strong></p>';
+			buf += '<p><label class="label">Format:</label>' + formatButton + '</p>';
+			buf += '<p><label class="label">Your team:</label>' + playerButton + '</p>';
+			buf += '<p><label class="label">AI team:</label>' + aiButton + '</p>';
+			buf += '<p><button type="button" class="button" name="saveChallengeAI"><i class="fa fa-save"></i> Save AI setup</button></p>';
+			buf += '<div class="ai-report">' + this.renderReport() + '</div>';
+			this.$el.html(buf);
+			return this;
+		},
+		selectAIFormat: function (format, button) {
+			var self = this;
+			app.addPopup(FormatPopup, {
+				format: format,
+				sourceEl: button,
+				onselect: function (newFormat) {
+					self.selection.format = newFormat;
+					self.selection.playerTeamIndex = '';
+					self.selection.aiTeamIndex = '';
+					self.render();
+				}
+			});
+		},
+		selectAIPlayerTeam: function (team, button) {
+			app.addPopup(TeamPopup, {team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
+		},
+		selectAITeam: function (team, button) {
+			app.addPopup(TeamPopup, {team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
+		},
+		saveChallengeAI: function () {
+			this.selection = {
+				format: this.$('button[name=selectAIFormat]').val(),
+				playerTeamIndex: this.$('button[name=selectAIPlayerTeam]').val(),
+				aiTeamIndex: this.$('button[name=selectAITeam]').val()
+			};
+			localStorage.setItem('showdown_ai_challenge_legacy', JSON.stringify(this.selection));
+			this.render();
 		}
 	});
 
