@@ -1123,7 +1123,7 @@
 			this.updateSearch();
 		},
 		challengeai: function () {
-			app.addPopup(AIChallengePopup, {type: 'semimodal'});
+			app.addPopup(AIChallengePopup, {type: 'modal'});
 		},
 		finduser: function () {
 			if (app.isDisconnected) {
@@ -1622,21 +1622,25 @@
 
 
 	var AIChallengePopup = this.AIChallengePopup = this.Popup.extend({
-		className: 'ps-popup',
+		className: 'ps-popup ai-challenge-popup',
 		initialize: function () {
 			var legacySelection = {};
 			try {
 				legacySelection = JSON.parse(localStorage.getItem('showdown_ai_challenge_legacy') || '{}');
 			} catch (e) {}
 			this.selection = {
-				format: legacySelection.format || app.rooms[''].curFormat || 'gen9randombattle',
+				format: legacySelection.format || this.getDefaultFormat(),
 				playerTeamIndex: legacySelection.playerTeamIndex || '',
 				aiTeamIndex: legacySelection.aiTeamIndex || ''
 			};
 			this.render();
 		},
-		renderButton: function (html, name) {
-			return html.replace('name="team"', 'name="' + name + '"');
+		getDefaultFormat: function () {
+			for (var i in BattleFormats) {
+				var format = BattleFormats[i];
+				if (format && format.challengeShow && !format.team && format.isTeambuilderFormat) return i;
+			}
+			return app.rooms[''].curFormat || 'gen9ou';
 		},
 		getLegacyTeam: function (teamIndex) {
 			teamIndex = +teamIndex;
@@ -1648,14 +1652,22 @@
 				team: team.team
 			};
 		},
+		getSelectedValues: function () {
+			return {
+				format: this.$('button[name=selectAIFormat]').val() || this.selection.format,
+				playerTeamIndex: this.$('button[name=selectAIPlayerTeam]').val() || this.selection.playerTeamIndex,
+				aiTeamIndex: this.$('button[name=selectAITeam]').val() || this.selection.aiTeamIndex
+			};
+		},
 		renderReport: function () {
 			if (!window.BattleAI) {
 				return '<p><em>BattleAI is not loaded yet.</em></p>';
 			}
-			var playerTeam = this.getLegacyTeam(this.selection.playerTeamIndex);
-			var aiTeam = this.getLegacyTeam(this.selection.aiTeamIndex);
-			var report = BattleAI.analyzeTeamMatchup(this.selection.format, playerTeam, aiTeam);
-			var html = '<div class="mainmessage" style="margin-top:10px">';
+			var values = this.getSelectedValues();
+			var playerTeam = this.getLegacyTeam(values.playerTeamIndex);
+			var aiTeam = this.getLegacyTeam(values.aiTeamIndex);
+			var report = BattleAI.analyzeTeamMatchup(values.format, playerTeam, aiTeam);
+			var html = '<div class="mainmessage ai-report-card">';
 			html += '<h3>Scouting report</h3>';
 			html += '<p><strong>Format:</strong> ' + BattleLog.escapeHTML(report.format) + '</p>';
 			if (report.bestAILead) {
@@ -1677,18 +1689,21 @@
 		},
 		render: function () {
 			var format = this.selection.format;
-			var playerTeamIndex = this.selection.playerTeamIndex;
-			var aiTeamIndex = this.selection.aiTeamIndex;
-			var formatButton = app.rooms[''].renderFormats(format, true).replace('name="format"', 'name="selectAIFormat"').replace('preselected', '');
-			var playerButton = this.renderButton(app.rooms[''].renderTeams(format, playerTeamIndex), 'selectAIPlayerTeam');
-			var aiButton = this.renderButton(app.rooms[''].renderTeams(format, aiTeamIndex), 'selectAITeam');
+			var playerTeamIndex = this.selection.playerTeamIndex === '' ? -1 : +this.selection.playerTeamIndex;
+			var aiTeamIndex = this.selection.aiTeamIndex === '' ? -1 : +this.selection.aiTeamIndex;
 			var buf = '<p><strong>Challenge AI</strong></p>';
-			buf += '<p><label class="label">Format:</label>' + formatButton + '</p>';
-			buf += '<p><label class="label">Your team:</label>' + playerButton + '</p>';
-			buf += '<p><label class="label">AI team:</label>' + aiButton + '</p>';
+			buf += '<p><label class="label">Format:</label><button class="select formatselect" name="selectAIFormat" value="' + BattleLog.escapeHTML(format) + '">' + BattleLog.escapeFormat(format) + '</button></p>';
+			buf += '<p><label class="label">Your team:</label><button class="select teamselect" name="selectAIPlayerTeam" value="' + (playerTeamIndex >= 0 ? playerTeamIndex : '') + '">' + TeamPopup.renderTeam(playerTeamIndex) + '</button></p>';
+			buf += '<p><label class="label">AI team:</label><button class="select teamselect" name="selectAITeam" value="' + (aiTeamIndex >= 0 ? aiTeamIndex : '') + '">' + TeamPopup.renderTeam(aiTeamIndex) + '</button></p>';
 			buf += '<p><button type="button" class="button" name="saveChallengeAI"><i class="fa fa-save"></i> Save AI setup</button></p>';
 			buf += '<div class="ai-report">' + this.renderReport() + '</div>';
-			this.$el.html(buf);
+			this.$el.css({
+				width: 'min(360px, calc(100vw - 24px))',
+				maxWidth: 'calc(100vw - 24px)',
+				maxHeight: 'calc(100vh - 32px)',
+				overflowY: 'auto',
+				boxSizing: 'border-box'
+			}).html(buf);
 			return this;
 		},
 		selectAIFormat: function (format, button) {
@@ -1696,6 +1711,7 @@
 			app.addPopup(FormatPopup, {
 				format: format,
 				sourceEl: button,
+				selectType: 'teambuilder',
 				onselect: function (newFormat) {
 					self.selection.format = newFormat;
 					self.selection.playerTeamIndex = '';
@@ -1711,11 +1727,7 @@
 			app.addPopup(TeamPopup, {team: team, format: this.selection.format, sourceEl: button, folderToggleOn: true, folderNotExpanded: []});
 		},
 		saveChallengeAI: function () {
-			this.selection = {
-				format: this.$('button[name=selectAIFormat]').val(),
-				playerTeamIndex: this.$('button[name=selectAIPlayerTeam]').val(),
-				aiTeamIndex: this.$('button[name=selectAITeam]').val()
-			};
+			this.selection = this.getSelectedValues();
 			localStorage.setItem('showdown_ai_challenge_legacy', JSON.stringify(this.selection));
 			this.render();
 		}
