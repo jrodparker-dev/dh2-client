@@ -58,8 +58,8 @@
 
 			buf += '<div class="menugroup"><p><button class="button mainmenu4 onlineonly disabled" name="joinRoom" value="battles">Watch a battle</button></p>';
 			buf += '<p><button class="button mainmenu5 onlineonly disabled" name="finduser">Find a user</button></p>';
-			buf += '<p><button class="button mainmenu6 onlineonly disabled" name="send" value="/friends">Friends</button></p>';
-			buf += '<p><button class="button mainmenu7 onlineonly disabled" name="challengeai">Challenge AI</button></p></div>';
+			buf += '<p><button class="button mainmenu6 onlineonly disabled" name="send" value="/friends">Friends</button></p></div>';
+			buf += '<div class="menugroup menugroup-ai"><p><button class="button mainmenu7 onlineonly disabled" name="challengeai">Challenge AI</button></p></div>';
 
 			this.$('.mainmenu').html(buf);
 

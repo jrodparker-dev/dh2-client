@@ -805,6 +805,9 @@ p.or:after {
 	padding: 0 0 0 7px;
 }
 
+.menugroup.menugroup-ai {
+	margin-top: -15px;
+}
 .mainmessage p,
 .menugroup p {
 	margin: 10px 0;
