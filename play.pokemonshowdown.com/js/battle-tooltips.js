@@ -304,9 +304,9 @@ var index=1;var _iterator=side.pokemon.entries();for(var _step;!(_step=_iterator
 if(otherPokemon.getBaseSpecies().baseSpecies!==species)continue;
 var illusionServerPokemon=null;
 if(side===this.battle.mySide&&this.battle.myPokemon){
-illusionServerPokemon=this.getServerPokemonForClient(otherPokemon,this.battle.myPokemon,candidateIndex);
+illusionServerPokemon=this.battle.myPokemon[candidateIndex]||null;
 }else if(side===this.battle.farSide&&this.battle.foePokemon){
-illusionServerPokemon=this.getServerPokemonForClient(otherPokemon,this.battle.foePokemon,candidateIndex);
+illusionServerPokemon=this.battle.foePokemon[candidateIndex]||null;
 }
 buf+=this.showPokemonTooltip(otherPokemon,illusionServerPokemon,false,index,'sidebar');
 index++;

@@ -305,9 +305,13 @@ class BattleTooltips {
 
 					let illusionServerPokemon = null;
 					if (side === this.battle.mySide && this.battle.myPokemon) {
-						illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.myPokemon, candidateIndex);
+						illusionServerPokemon = this.battle.myPokemon[candidateIndex] || null;
 					} else if (side === this.battle.farSide && this.battle.foePokemon) {
-						illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.foePokemon, candidateIndex);
+						// Illusion candidates are listed in sidebar/team order. During Illusion, the
+						// client-side Pokemon details can temporarily mirror the disguise, so the
+						// usual ident/searchid/details matching can attach custom type/base-stat
+						// data to the wrong candidate. Read the server data by team position here.
+						illusionServerPokemon = this.battle.foePokemon[candidateIndex] || null;
 					}
 					buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
 					index++;
