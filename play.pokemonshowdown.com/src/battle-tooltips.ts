@@ -296,29 +296,22 @@ class BattleTooltips {
 			} else if (side === this.battle.farSide && this.battle.foePokemon) {
 				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.foePokemon, pokemonIndex);
 			}
-			// AFTER (fixed):
-if (args[3] === 'illusion') {
-    buf = '';
-    const species = pokemon.getBaseSpecies().baseSpecies;
-    let index = 1;
-    for (const otherPokemon of side.pokemon) {
-        if (otherPokemon.getBaseSpecies().baseSpecies === species) {
-            // Look up serverPokemon by identity (no index fallback) so each illusion
-            // candidate gets its own correct foePokemon/myPokemon data. Without this,
-            // terastallized candidates fall back to dex-species base types, which can
-            // duplicate the tera type icon when it matches one of the default species types.
-            let illusionServerPokemon = null;
-            if (side === this.battle.mySide && this.battle.myPokemon) {
-                illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.myPokemon);
-            } else if (side === this.battle.farSide && this.battle.foePokemon) {
-                illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.foePokemon);
-            }
-            buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
-            index++;
-        }
-    }
+			if (args[3] === 'illusion') {
+				buf = '';
+				const species = pokemon.getBaseSpecies().baseSpecies;
+				let index = 1;
+				for (const [candidateIndex, otherPokemon] of side.pokemon.entries()) {
+					if (otherPokemon.getBaseSpecies().baseSpecies !== species) continue;
 
-
+					let illusionServerPokemon = null;
+					if (side === this.battle.mySide && this.battle.myPokemon) {
+						illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.myPokemon, candidateIndex);
+					} else if (side === this.battle.farSide && this.battle.foePokemon) {
+						illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.foePokemon, candidateIndex);
+					}
+					buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
+					index++;
+				}
 			} else {
 				buf = this.showPokemonTooltip(pokemon, serverPokemon, false, undefined, 'sidebar');
 			}
