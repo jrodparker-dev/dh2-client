@@ -850,6 +850,7 @@ class BattleTooltips {
 			const terastallizedType = serverPokemon?.terastallized || pokemon.terastallized;
 			const types = this.getTooltipPokemonTypes(clientPokemon, serverPokemon, pokemon, source);
 			const knownPokemon = serverPokemon || clientPokemon;
+			const isOpponentActiveTooltip = source === 'active' && clientPokemon?.side === this.battle.farSide;
 
 			if (terastallizedType) {
 				text += `<small>(Terastallized)</small><br />`;
@@ -859,7 +860,7 @@ class BattleTooltips {
 			text += `<span class="textaligned-typeicons">${types.map(type => Dex.getTypeIcon(type)).join(' ')}</span>`;
 			if (terastallizedType) {
 				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getBaseTooltipPokemonTypes(clientPokemon, serverPokemon, pokemon).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
-			} else if (!isSidebarTooltip && knownPokemon?.teraType && !this.battle.rules['Terastal Clause']) {
+			} else if (!isSidebarTooltip && !isOpponentActiveTooltip && knownPokemon?.teraType && !this.battle.rules['Terastal Clause']) {
 				text += `&nbsp; &nbsp; <small>(Tera Type: <span class="textaligned-typeicons">${Dex.getTypeIcon(knownPokemon.teraType)}</span>)</small>`;
 			}
 			text += `</h2>`;
@@ -1007,7 +1008,17 @@ class BattleTooltips {
 		if (serverPokemon?.types?.length) {
 			return serverPokemon.types as TypeName[];
 		}
-		if (source === 'sidebar' && clientPokemon?.side === this.battle.farSide && this.battle.foePokemon?.[clientPokemon.slot]?.types?.length) {
+		// Only use the foePokemon slot lookup when serverPokemon is available (i.e. not the
+		// illusion/disguise sidebar path where showPokemonTooltip is called with null serverPokemon).
+		// Without this guard, clientPokemon.slot (the active-battle slot index) is used to index
+		// into foePokemon, which can return the wrong Pokémon's custom types.  Those types are then
+		// shown in addition to the types resolved by getPokemonTypes() below, producing duplicates.
+		if (
+			serverPokemon !== null &&
+			source === 'sidebar' &&
+			clientPokemon?.side === this.battle.farSide &&
+			this.battle.foePokemon?.[clientPokemon.slot]?.types?.length
+		) {
 			return this.battle.foePokemon[clientPokemon.slot].types as TypeName[];
 		}
 		return this.getPokemonTypes(clientPokemon || serverPokemon || pokemon);

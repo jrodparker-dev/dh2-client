@@ -850,6 +850,7 @@ text+="<small>(Changed forme: "+clientPokemon.volatiles.formechange[1]+")</small
 var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
 var types=this.getTooltipPokemonTypes(clientPokemon,serverPokemon,pokemon,source);
 var knownPokemon=serverPokemon||clientPokemon;
+var isOpponentActiveTooltip=source==='active'&&(clientPokemon==null?void 0:clientPokemon.side)===this.battle.farSide;
 
 if(terastallizedType){
 text+="<small>(Terastallized)</small><br />";
@@ -859,7 +860,7 @@ text+="<small>(Type changed)</small><br />";
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
 if(terastallizedType){
 text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getBaseTooltipPokemonTypes(clientPokemon,serverPokemon,pokemon).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
-}else if(!isSidebarTooltip&&knownPokemon!=null&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
+}else if(!isSidebarTooltip&&!isOpponentActiveTooltip&&knownPokemon!=null&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
 text+="&nbsp; &nbsp; <small>(Tera Type: <span class=\"textaligned-typeicons\">"+Dex.getTypeIcon(knownPokemon.teraType)+"</span>)</small>";
 }
 text+="</h2>";
@@ -1007,7 +1008,17 @@ return this.getPokemonTypes(clientPokemon);
 if(serverPokemon!=null&&(_serverPokemon$types=serverPokemon.types)!=null&&_serverPokemon$types.length){
 return serverPokemon.types;
 }
-if(source==='sidebar'&&(clientPokemon==null?void 0:clientPokemon.side)===this.battle.farSide&&(_this$battle$foePokem=this.battle.foePokemon)!=null&&(_this$battle$foePokem=_this$battle$foePokem[clientPokemon.slot])!=null&&(_this$battle$foePokem=_this$battle$foePokem.types)!=null&&_this$battle$foePokem.length){
+
+
+
+
+
+if(
+serverPokemon!==null&&
+source==='sidebar'&&
+(clientPokemon==null?void 0:clientPokemon.side)===this.battle.farSide&&(_this$battle$foePokem=
+this.battle.foePokemon)!=null&&(_this$battle$foePokem=_this$battle$foePokem[clientPokemon.slot])!=null&&(_this$battle$foePokem=_this$battle$foePokem.types)!=null&&_this$battle$foePokem.length)
+{
 return this.battle.foePokemon[clientPokemon.slot].types;
 }
 return this.getPokemonTypes(clientPokemon||serverPokemon||pokemon);
