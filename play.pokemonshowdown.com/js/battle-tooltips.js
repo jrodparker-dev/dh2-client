@@ -302,12 +302,12 @@ var species=_pokemon2.getBaseSpecies().baseSpecies;
 var index=1;for(var _i6=0,_side$pokemon2=
 side.pokemon;_i6<_side$pokemon2.length;_i6++){var otherPokemon=_side$pokemon2[_i6];
 if(otherPokemon.getBaseSpecies().baseSpecies===species){
-buf+=this.showPokemonTooltip(otherPokemon,null,false,index);
+buf+=this.showPokemonTooltip(otherPokemon,null,false,index,'sidebar');
 index++;
 }
 }
 }else{
-buf=this.showPokemonTooltip(_pokemon2,_serverPokemon);
+buf=this.showPokemonTooltip(_pokemon2,_serverPokemon,false,undefined,'sidebar');
 }
 break;
 }
@@ -340,7 +340,7 @@ if(!_serverPokemon2&&_side===this.battle.farSide&&this.battle.foePokemon){
 _serverPokemon2=this.battle.foePokemon[_pokemonIndex];
 }
 if(!_pokemon3)return false;
-buf=this.showPokemonTooltip(_pokemon3,_serverPokemon2,true);
+buf=this.showPokemonTooltip(_pokemon3,_serverPokemon2,true,undefined,'active');
 break;
 }
 case'switchpokemon':{
@@ -354,7 +354,7 @@ var _pokemon4=null;
 
 
 var _serverPokemon3=this.battle.myPokemon[_activeIndex];
-buf=this.showPokemonTooltip(_pokemon4,_serverPokemon3);
+buf=this.showPokemonTooltip(_pokemon4,_serverPokemon3,false,undefined,'switch');
 break;
 }
 case'allypokemon':{
@@ -367,7 +367,7 @@ var _pokemon5=null;
 
 
 var _serverPokemon4=this.battle.myAllyPokemon?this.battle.myAllyPokemon[_activeIndex2]:null;
-buf=this.showPokemonTooltip(_pokemon5,_serverPokemon4);
+buf=this.showPokemonTooltip(_pokemon5,_serverPokemon4,false,undefined,'switch');
 break;
 }
 case'field':{
@@ -814,10 +814,15 @@ return serverPokemonList[index]||null;
 
 
 showPokemonTooltip=function showPokemonTooltip(
-clientPokemon,serverPokemon,isActive,illusionIndex)
-{var _this3=this;
+clientPokemon,
+serverPokemon,
+isActive,
+illusionIndex)
+
+{var _this3=this;var source=arguments.length>4&&arguments[4]!==undefined?arguments[4]:'switch';
 var pokemon=clientPokemon||serverPokemon;
-var limitedFoeTooltip=!!clientPokemon&&clientPokemon.side===this.battle.farSide;
+var isSidebarTooltip=source==='sidebar';
+var limitedTooltip=!!clientPokemon&&(clientPokemon.side===this.battle.farSide||isSidebarTooltip);
 var text='';
 var genderBuf='';
 var gender=pokemon.gender;
@@ -843,7 +848,7 @@ text+="<small>(Changed forme: "+clientPokemon.volatiles.formechange[1]+")</small
 }
 
 var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
-var types=terastallizedType?[terastallizedType]:this.getPokemonTypes(clientPokemon||serverPokemon||pokemon);
+var types=this.getTooltipPokemonTypes(clientPokemon,serverPokemon,pokemon,source);
 var knownPokemon=serverPokemon||clientPokemon;
 
 if(terastallizedType){
@@ -853,8 +858,8 @@ text+="<small>(Type changed)</small><br />";
 }
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
 if(terastallizedType){
-text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getPokemonTypes(pokemon,true).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
-}else if(knownPokemon!=null&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
+text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getBaseTooltipPokemonTypes(clientPokemon,serverPokemon,pokemon).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
+}else if(!isSidebarTooltip&&knownPokemon!=null&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
 text+="&nbsp; &nbsp; <small>(Tera Type: <span class=\"textaligned-typeicons\">"+Dex.getTypeIcon(knownPokemon.teraType)+"</span>)</small>";
 }
 text+="</h2>";
@@ -868,12 +873,12 @@ if(pokemon.fainted){
 text+='<p><small>HP:</small> (fainted)</p>';
 }else if(this.battle.hardcoreMode){
 if(serverPokemon){
-var hpText=limitedFoeTooltip?Pokemon.getHPText(pokemon):serverPokemon.hp+'/'+serverPokemon.maxhp;
+var hpText=limitedTooltip?Pokemon.getHPText(pokemon):serverPokemon.hp+'/'+serverPokemon.maxhp;
 text+='<p><small>HP:</small> '+hpText+(pokemon.status?' <span class="status '+pokemon.status+'">'+pokemon.status.toUpperCase()+'</span>':'')+'</p>';
 }
 }else{
 var exacthp='';
-if(serverPokemon&&!limitedFoeTooltip){
+if(serverPokemon&&!limitedTooltip){
 exacthp=' ('+serverPokemon.hp+'/'+serverPokemon.maxhp+')';
 }else if(pokemon.maxhp===48){
 exacthp=' <small>('+pokemon.hp+'/'+pokemon.maxhp+' pixels)</small>';
@@ -898,9 +903,9 @@ var supportsAbilities=this.battle.gen>2&&!this.battle.tier.includes("Let's Go");
 var abilityText='';
 if(supportsAbilities){
 abilityText=this.getPokemonAbilityText(
-clientPokemon,limitedFoeTooltip?undefined:serverPokemon,isActive,limitedFoeTooltip&&!!illusionIndex&&illusionIndex>1
+clientPokemon,limitedTooltip?undefined:serverPokemon,isActive,limitedTooltip&&!!illusionIndex&&illusionIndex>1
 );
-if(!abilityText&&limitedFoeTooltip){var _species$abilities,_species$abilities2,_species$abilities3,_species$abilities4;
+if(!abilityText&&limitedTooltip){var _species$abilities,_species$abilities2,_species$abilities3,_species$abilities4;
 var species=(clientPokemon==null?void 0:clientPokemon.getSpecies(serverPokemon||undefined))||this.battle.dex.species.get(pokemon.speciesForme);
 var possibilities=[];
 if((_species$abilities=species.abilities)!=null&&_species$abilities['0'])possibilities.push(species.abilities['0']);
@@ -913,7 +918,7 @@ abilityText='<small>Possible abilities:</small> '+possibilities.join(', ');
 }
 }
 
-var itemText=this.getPokemonItemText(clientPokemon,serverPokemon,limitedFoeTooltip);
+var itemText=this.getPokemonItemText(clientPokemon,serverPokemon,limitedTooltip);
 
 if(abilityText||itemText){
 text+='<p>';
@@ -926,14 +931,14 @@ text+=itemText;
 text+='</p>';
 }
 
-if(limitedFoeTooltip&&clientPokemon){
+if(limitedTooltip&&clientPokemon){
 var _this$getSpeedRange=this.getSpeedRange(clientPokemon,serverPokemon||undefined),min=_this$getSpeedRange[0],max=_this$getSpeedRange[1];
 text+="<p><small>Spe</small> "+min+" to "+max+" <small>(before items/abilities/modifiers)</small></p>";
 }else{
 text+=this.renderStats(clientPokemon,serverPokemon,!isActive);
 }
 
-if(!limitedFoeTooltip&&serverPokemon&&!isActive){
+if(!limitedTooltip&&serverPokemon&&!isActive){
 
 text+="<p class=\"tooltip-section\">";
 var battlePokemon=clientPokemon||this.battle.findCorrespondingPokemon(pokemon);for(var _i0=0,_serverPokemon$moves2=
@@ -951,7 +956,7 @@ break;
 text+=moveName+"<br />";
 }
 text+='</p>';
-}else if(limitedFoeTooltip&&clientPokemon!=null&&clientPokemon.moveTrack.length){
+}else if(limitedTooltip&&clientPokemon!=null&&clientPokemon.moveTrack.length){
 
 text+="<p class=\"tooltip-section\">";
 var revealedMoves=new Set();for(var _i12=0,_clientPokemon$moveTr2=
@@ -965,7 +970,7 @@ revealedMoves.add(_move.name);
 text+=this.getPPUseText(_row,true)+"<br />";
 }
 text+="</p>";
-}else if(!limitedFoeTooltip&&!this.battle.hardcoreMode&&clientPokemon!=null&&clientPokemon.moveTrack.length){
+}else if(!limitedTooltip&&!this.battle.hardcoreMode&&clientPokemon!=null&&clientPokemon.moveTrack.length){
 
 text+="<p class=\"tooltip-section\">";for(var _i14=0,_clientPokemon$moveTr4=
 clientPokemon.moveTrack;_i14<_clientPokemon$moveTr4.length;_i14++){var _row2=_clientPokemon$moveTr4[_i14];
@@ -987,6 +992,41 @@ text+="(Your opponent has two indistinguishable Pok\xE9mon, making it impossible
 text+="</p>";
 }
 return text;
+};_proto2.
+getTooltipPokemonTypes=function getTooltipPokemonTypes(
+clientPokemon,
+serverPokemon,
+pokemon,
+source)
+{var _serverPokemon$types,_this$battle$foePokem;
+var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
+if(terastallizedType)return[terastallizedType];
+if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
+return this.getPokemonTypes(clientPokemon);
+}
+if(serverPokemon!=null&&(_serverPokemon$types=serverPokemon.types)!=null&&_serverPokemon$types.length){
+return serverPokemon.types;
+}
+if(source==='sidebar'&&(clientPokemon==null?void 0:clientPokemon.side)===this.battle.farSide&&(_this$battle$foePokem=this.battle.foePokemon)!=null&&(_this$battle$foePokem=_this$battle$foePokem[clientPokemon.slot])!=null&&(_this$battle$foePokem=_this$battle$foePokem.types)!=null&&_this$battle$foePokem.length){
+return this.battle.foePokemon[clientPokemon.slot].types;
+}
+return this.getPokemonTypes(clientPokemon||serverPokemon||pokemon);
+};_proto2.
+getBaseTooltipPokemonTypes=function getBaseTooltipPokemonTypes(
+clientPokemon,
+serverPokemon,
+pokemon)
+{var _serverPokemon$types2;
+if(serverPokemon!=null&&(_serverPokemon$types2=serverPokemon.types)!=null&&_serverPokemon$types2.length){
+return serverPokemon.types;
+}
+if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
+return this.getPokemonTypes(clientPokemon,true);
+}
+if(pokemon.getTypes){
+return this.getPokemonTypes(pokemon,true);
+}
+return this.getPokemonTypes(pokemon);
 };_proto2.
 
 getPokemonItemText=function getPokemonItemText(
