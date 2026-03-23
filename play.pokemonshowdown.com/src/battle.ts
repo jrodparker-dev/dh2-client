@@ -458,7 +458,7 @@ export class Pokemon implements PokemonDetails, PokemonHealth {
 			this.boosts = {};
 		}
 		delete this.volatiles['transform'];
-		delete this.volatiles['formechange'];
+		if (copySource !== true) delete this.volatiles['formechange'];
 
 		pokemon.boosts = {};
 		pokemon.volatiles = {};

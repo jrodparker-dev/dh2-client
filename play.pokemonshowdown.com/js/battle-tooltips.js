@@ -333,9 +333,6 @@ _serverPokemon2=this.getServerPokemonForClient(_pokemon3,this.battle.myAllyPokem
 if(_side===this.battle.farSide&&this.battle.foePokemon){
 _serverPokemon2=this.getServerPokemonForClient(_pokemon3,this.battle.foePokemon,_pokemonIndex);
 }
-if(_side===this.battle.farSide&&this.battle.foePokemon){
-_serverPokemon2=this.battle.foePokemon[_pokemonIndex];
-}
 if(!_pokemon3)return false;
 buf=this.showPokemonTooltip(_pokemon3,_serverPokemon2,true);
 break;
@@ -343,27 +340,21 @@ break;
 case'switchpokemon':{
 
 
-
 var _activeIndex=parseInt(args[1],10);
-var _pokemon4=null;
-
-
-
-
 var _serverPokemon3=this.battle.myPokemon[_activeIndex];
+var _pokemon4=this.battle.findCorrespondingPokemon(_serverPokemon3)||this.battle.mySide.pokemon[_activeIndex]||null;
 buf=this.showPokemonTooltip(_pokemon4,_serverPokemon3);
 break;
 }
 case'allypokemon':{
 
 
-
 var _activeIndex2=parseInt(args[1],10);
-var _pokemon5=null;
-
-
-
 var _serverPokemon4=this.battle.myAllyPokemon?this.battle.myAllyPokemon[_activeIndex2]:null;
+var _pokemon5=_serverPokemon4?this.battle.findCorrespondingPokemon(_serverPokemon4):null;
+if(!_pokemon5&&this.battle.mySide.ally){
+_pokemon5=this.battle.mySide.ally.pokemon[_activeIndex2]||null;
+}
 buf=this.showPokemonTooltip(_pokemon5,_serverPokemon4);
 break;
 }
@@ -911,6 +902,11 @@ abilityText='<small>Possible abilities:</small> '+possibilities.join(', ');
 }
 
 var itemText='';
+var getDisplayItem=function(itemName){
+if(!itemName||itemName.startsWith('('))return'';
+var item=Dex.items.get(itemName);
+return item.exists?item.name:'';
+};
 if(!limitedFoeTooltip&&serverPokemon){
 var item='';
 var itemEffect='';
@@ -919,10 +915,11 @@ item='None';
 var prevItem=Dex.items.get(clientPokemon.prevItem).name;
 itemEffect+=clientPokemon.prevItemEffect?prevItem+' was '+clientPokemon.prevItemEffect:'was '+prevItem;
 }
-if(serverPokemon.item)item=Dex.items.get(serverPokemon.item).name;
+var knownServerItem=getDisplayItem(serverPokemon.item);
+if(knownServerItem)item=knownServerItem;
 if(itemEffect)itemEffect=' ('+itemEffect+')';
 if(item)itemText='<small>Item:</small> '+item+itemEffect;
-}else if(!limitedFoeTooltip&&clientPokemon){
+}else if(clientPokemon){
 var _item='';
 var _itemEffect=clientPokemon.itemEffect||'';
 if(clientPokemon.prevItem){
@@ -931,7 +928,8 @@ if(_itemEffect)_itemEffect+='; ';
 var _prevItem=Dex.items.get(clientPokemon.prevItem).name;
 _itemEffect+=clientPokemon.prevItemEffect?_prevItem+' was '+clientPokemon.prevItemEffect:'was '+_prevItem;
 }
-if(pokemon.item)_item=Dex.items.get(pokemon.item).name;
+var knownClientItem=getDisplayItem(pokemon.item);
+if(knownClientItem)_item=knownClientItem;
 if(_itemEffect)_itemEffect=' ('+_itemEffect+')';
 if(_item)itemText='<small>Item:</small> '+_item+_itemEffect;
 }

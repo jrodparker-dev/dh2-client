@@ -333,9 +333,6 @@ class BattleTooltips {
 			if (side === this.battle.farSide && this.battle.foePokemon) {
 				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.foePokemon, pokemonIndex);
 			}
-			if (side === this.battle.farSide && this.battle.foePokemon) {
-				serverPokemon = this.battle.foePokemon[pokemonIndex];
-			}
 			if (!pokemon) return false;
 			buf = this.showPokemonTooltip(pokemon, serverPokemon, true);
 			break;
@@ -343,27 +340,21 @@ class BattleTooltips {
 		case 'switchpokemon': { // switchpokemon|POKEMON
 			// mouse over switchable pokemon
 			// serverPokemon definitely exists, sidePokemon maybe
-			// let side = this.battle.mySide;
 			let activeIndex = parseInt(args[1], 10);
-			let pokemon = null;
-			/* if (activeIndex < side.active.length && activeIndex < this.battle.pokemonControlled) {
-				pokemon = side.active[activeIndex];
-				if (pokemon && pokemon.side === side.ally) pokemon = null;
-			} */
 			let serverPokemon = this.battle.myPokemon![activeIndex];
+			let pokemon = this.battle.findCorrespondingPokemon(serverPokemon) || this.battle.mySide.pokemon[activeIndex] || null;
 			buf = this.showPokemonTooltip(pokemon, serverPokemon);
 			break;
 		}
 		case 'allypokemon': { // allypokemon|POKEMON
 			// mouse over ally's pokemon in multi battles
 			// serverPokemon definitely exists, sidePokemon maybe
-			// let side = this.battle.mySide.ally;
 			let activeIndex = parseInt(args[1], 10);
-			let pokemon = null;
-			/*if (activeIndex < side.pokemon.length) {
-				pokemon = side.pokemon[activeIndex] || side.ally ? side.ally.pokemon[activeIndex] : null;
-			}*/
 			let serverPokemon = this.battle.myAllyPokemon ? this.battle.myAllyPokemon[activeIndex] : null;
+			let pokemon = serverPokemon ? this.battle.findCorrespondingPokemon(serverPokemon) : null;
+			if (!pokemon && this.battle.mySide.ally) {
+				pokemon = this.battle.mySide.ally.pokemon[activeIndex] || null;
+			}
 			buf = this.showPokemonTooltip(pokemon, serverPokemon);
 			break;
 		}
@@ -911,6 +902,11 @@ class BattleTooltips {
 		}
 
 		let itemText = '';
+		const getDisplayItem = (itemName: string | undefined) => {
+			if (!itemName || itemName.startsWith('(')) return '';
+			const item = Dex.items.get(itemName);
+			return item.exists ? item.name : '';
+		};
 		if (!limitedFoeTooltip && serverPokemon) {
 			let item = '';
 			let itemEffect = '';
@@ -919,10 +915,11 @@ class BattleTooltips {
 				let prevItem = Dex.items.get(clientPokemon.prevItem).name;
 				itemEffect += clientPokemon.prevItemEffect ? prevItem + ' was ' + clientPokemon.prevItemEffect : 'was ' + prevItem;
 			}
-			if (serverPokemon.item) item = Dex.items.get(serverPokemon.item).name;
+			const knownServerItem = getDisplayItem(serverPokemon.item);
+			if (knownServerItem) item = knownServerItem;
 			if (itemEffect) itemEffect = ' (' + itemEffect + ')';
 			if (item) itemText = '<small>Item:</small> ' + item + itemEffect;
-		} else if (!limitedFoeTooltip && clientPokemon) {
+		} else if (clientPokemon) {
 			let item = '';
 			let itemEffect = clientPokemon.itemEffect || '';
 			if (clientPokemon.prevItem) {
@@ -931,7 +928,8 @@ class BattleTooltips {
 				let prevItem = Dex.items.get(clientPokemon.prevItem).name;
 				itemEffect += clientPokemon.prevItemEffect ? prevItem + ' was ' + clientPokemon.prevItemEffect : 'was ' + prevItem;
 			}
-			if (pokemon.item) item = Dex.items.get(pokemon.item).name;
+			const knownClientItem = getDisplayItem(pokemon.item);
+			if (knownClientItem) item = knownClientItem;
 			if (itemEffect) itemEffect = ' (' + itemEffect + ')';
 			if (item) itemText = '<small>Item:</small> ' + item + itemEffect;
 		}
