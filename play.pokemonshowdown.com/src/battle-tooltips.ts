@@ -305,13 +305,13 @@ class BattleTooltips {
 
 					let illusionServerPokemon = null;
 					if (side === this.battle.mySide && this.battle.myPokemon) {
-						illusionServerPokemon = this.battle.myPokemon[candidateIndex] || null;
+						illusionServerPokemon = this.getServerPokemonForTooltipSpecies(
+							otherPokemon, side.pokemon, this.battle.myPokemon, candidateIndex
+						);
 					} else if (side === this.battle.farSide && this.battle.foePokemon) {
-						// Illusion candidates are listed in sidebar/team order. During Illusion, the
-						// client-side Pokemon details can temporarily mirror the disguise, so the
-						// usual ident/searchid/details matching can attach custom type/base-stat
-						// data to the wrong candidate. Read the server data by team position here.
-						illusionServerPokemon = this.battle.foePokemon[candidateIndex] || null;
+						illusionServerPokemon = this.getServerPokemonForTooltipSpecies(
+							otherPokemon, side.pokemon, this.battle.foePokemon, candidateIndex
+						);
 					}
 					buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
 					index++;
@@ -787,6 +787,36 @@ class BattleTooltips {
 		}
 		return text;
 	}
+	getServerPokemonForTooltipSpecies(
+		pokemon: Pokemon | null,
+		clientPokemonList: Pokemon[],
+		serverPokemonList?: ServerPokemon[] | null,
+		index?: number
+	) {
+		if (!pokemon || !serverPokemonList?.length) {
+			if (index === undefined) return null;
+			return serverPokemonList?.[index] || null;
+		}
+
+		const displayedSpecies = toID(pokemon.getSpecies().name);
+		if (displayedSpecies) {
+			let speciesIndex = 0;
+			if (index !== undefined) {
+				for (let i = 0; i < index; i++) {
+					if (toID(clientPokemonList[i]?.getSpecies().name) === displayedSpecies) {
+						speciesIndex++;
+					}
+				}
+			}
+			const speciesMatches = serverPokemonList.filter(serverPokemon =>
+				toID(serverPokemon.speciesForme || serverPokemon.details.split(', ')[0]) === displayedSpecies
+			);
+			if (speciesMatches[speciesIndex]) return speciesMatches[speciesIndex];
+		}
+
+		return this.getServerPokemonForClient(pokemon, serverPokemonList, index);
+	}
+
 	getServerPokemonForClient(pokemon: Pokemon | null, serverPokemonList?: ServerPokemon[] | null, index?: number) {
 		if (!pokemon || !serverPokemonList?.length) {
 			if (index === undefined) return null;

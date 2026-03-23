@@ -304,9 +304,9 @@ var index=1;var _iterator=side.pokemon.entries();for(var _step;!(_step=_iterator
 if(otherPokemon.getBaseSpecies().baseSpecies!==species)continue;
 var illusionServerPokemon=null;
 if(side===this.battle.mySide&&this.battle.myPokemon){
-illusionServerPokemon=this.battle.myPokemon[candidateIndex]||null;
+illusionServerPokemon=this.getServerPokemonForTooltipSpecies(otherPokemon,side.pokemon,this.battle.myPokemon,candidateIndex);
 }else if(side===this.battle.farSide&&this.battle.foePokemon){
-illusionServerPokemon=this.battle.foePokemon[candidateIndex]||null;
+illusionServerPokemon=this.getServerPokemonForTooltipSpecies(otherPokemon,side.pokemon,this.battle.foePokemon,candidateIndex);
 }
 buf+=this.showPokemonTooltip(otherPokemon,illusionServerPokemon,false,index,'sidebar');
 index++;
@@ -782,6 +782,30 @@ text+="<p class=\"movetag\">&#x2713; Wind <small>(activates Wind Power and Wind 
 }
 return text;
 };_proto2.
+getServerPokemonForTooltipSpecies=function getServerPokemonForTooltipSpecies(pokemon,clientPokemonList,serverPokemonList,index){
+if(!pokemon||!(serverPokemonList!=null&&serverPokemonList.length)){
+if(index===undefined)return null;
+return(serverPokemonList==null?void 0:serverPokemonList[index])||null;
+}
+
+var displayedSpecies=toID(pokemon.getSpecies().name);
+if(displayedSpecies){
+var speciesIndex=0;
+if(index!==undefined){
+for(var i=0;i<index;i++){
+var _clientPokemonList$i;
+if(toID((_clientPokemonList$i=clientPokemonList[i])==null?void 0:_clientPokemonList$i.getSpecies().name)===displayedSpecies){
+speciesIndex++;
+}
+}
+}
+var speciesMatches=serverPokemonList.filter(function(serverPokemon){return toID(serverPokemon.speciesForme||serverPokemon.details.split(', ')[0])===displayedSpecies;});
+if(speciesMatches[speciesIndex])return speciesMatches[speciesIndex];
+}
+
+return this.getServerPokemonForClient(pokemon,serverPokemonList,index);
+};_proto2.
+
 getServerPokemonForClient=function getServerPokemonForClient(pokemon,serverPokemonList,index){
 if(!pokemon||!(serverPokemonList!=null&&serverPokemonList.length)){
 if(index===undefined)return null;
