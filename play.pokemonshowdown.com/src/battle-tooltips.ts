@@ -817,24 +817,25 @@ class BattleTooltips {
 		clientPokemon: Pokemon | null, serverPokemon?: ServerPokemon | null, isActive?: boolean, illusionIndex?: number
 	) {
 		const pokemon = clientPokemon || serverPokemon!;
+		const identityPokemon = this.getTooltipIdentityPokemon(clientPokemon, serverPokemon, isActive);
 		const limitedFoeTooltip = !!clientPokemon && clientPokemon.side === this.battle.farSide;
 		let text = '';
 		let genderBuf = '';
-		const gender = pokemon.gender;
+		const gender = identityPokemon.gender;
 		if (gender === 'M' || gender === 'F') {
 			genderBuf = ` <img src="${Dex.fxPrefix}gender-${gender.toLowerCase()}.png" alt="${gender}" width="7" height="10" class="pixelated" /> `;
 		}
 
-		let name = BattleLog.escapeHTML(pokemon.name);
-		if (pokemon.speciesForme !== pokemon.name) {
-			name += ' <small>(' + BattleLog.escapeHTML(pokemon.speciesForme) + ')</small>';
+		let name = BattleLog.escapeHTML(identityPokemon.name);
+		if (identityPokemon.speciesForme !== identityPokemon.name) {
+			name += ' <small>(' + BattleLog.escapeHTML(identityPokemon.speciesForme) + ')</small>';
 		}
 
 		let levelBuf = (pokemon.level !== 100 ? ` <small>L${pokemon.level}</small>` : ``);
 		if (!illusionIndex || illusionIndex === 1) {
 			text += `<h2>${name}${genderBuf}${illusionIndex ? '' : levelBuf}<br />`;
 
-			if (clientPokemon?.volatiles.formechange) {
+			if (clientPokemon?.volatiles.formechange && identityPokemon === clientPokemon) {
 				if (clientPokemon.volatiles.transform) {
 					text += `<small>(Transformed into ${clientPokemon.volatiles.formechange[1]})</small><br />`;
 				} else {
@@ -843,8 +844,7 @@ class BattleTooltips {
 			}
 
 			const terastallizedType = serverPokemon?.terastallized || pokemon.terastallized;
-			const types = terastallizedType ? [terastallizedType] : this.getPokemonTypes(clientPokemon || serverPokemon || pokemon);
-			const knownPokemon = serverPokemon || clientPokemon;
+			const types = terastallizedType ? [terastallizedType] : this.getPokemonTypes(identityPokemon);
 
 			if (terastallizedType) {
 				text += `<small>(Terastallized)</small><br />`;
@@ -853,9 +853,7 @@ class BattleTooltips {
 			}
 			text += `<span class="textaligned-typeicons">${types.map(type => Dex.getTypeIcon(type)).join(' ')}</span>`;
 			if (terastallizedType) {
-				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getPokemonTypes(pokemon, true).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
-			} else if (knownPokemon?.teraType && !this.battle.rules['Terastal Clause']) {
-				text += `&nbsp; &nbsp; <small>(Tera Type: <span class="textaligned-typeicons">${Dex.getTypeIcon(knownPokemon.teraType)}</span>)</small>`;
+				text += `&nbsp; &nbsp; <small>(base: <span class="textaligned-typeicons">${this.getPokemonTypes(identityPokemon, true).map(type => Dex.getTypeIcon(type)).join(' ')}</span>)</small>`;
 			}
 			text += `</h2>`;
 		}
@@ -1025,6 +1023,22 @@ class BattleTooltips {
 		}
 		if (itemEffect) itemEffect = ` (${itemEffect})`;
 		return item ? `<small>Item:</small> ${item}${itemEffect}` : '';
+	}
+	getTooltipIdentityPokemon(
+		clientPokemon: Pokemon | null,
+		serverPokemon: ServerPokemon | null | undefined,
+		isActive?: boolean
+	) {
+		if (!clientPokemon || !serverPokemon || !isActive || clientPokemon.volatiles.transform) {
+			return clientPokemon || serverPokemon!;
+		}
+		const limitedFoeTooltip = clientPokemon.side === this.battle.farSide;
+		const hasIllusionMismatch = clientPokemon.speciesForme !== serverPokemon.speciesForme;
+		if (!hasIllusionMismatch) return clientPokemon;
+		if (!limitedFoeTooltip || !clientPokemon.volatiles['illusion']) {
+			return serverPokemon;
+		}
+		return clientPokemon;
 	}
 
 	showFieldTooltip() {
