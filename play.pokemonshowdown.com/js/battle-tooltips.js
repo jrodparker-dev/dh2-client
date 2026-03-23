@@ -333,7 +333,10 @@ _serverPokemon2=this.getServerPokemonForClient(_pokemon3,this.battle.myAllyPokem
 if(_side===this.battle.farSide&&this.battle.foePokemon){
 _serverPokemon2=this.getServerPokemonForClient(_pokemon3,this.battle.foePokemon,_pokemonIndex);
 }
-if(_side===this.battle.farSide&&this.battle.foePokemon){
+if(!_serverPokemon2&&_side===this.battle.farSide&&this.battle.foePokemon){
+
+
+
 _serverPokemon2=this.battle.foePokemon[_pokemonIndex];
 }
 if(!_pokemon3)return false;
@@ -851,7 +854,7 @@ text+="<small>(Type changed)</small><br />";
 text+="<span class=\"textaligned-typeicons\">"+types.map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>";
 if(terastallizedType){
 text+="&nbsp; &nbsp; <small>(base: <span class=\"textaligned-typeicons\">"+this.getPokemonTypes(pokemon,true).map(function(type){return Dex.getTypeIcon(type);}).join(' ')+"</span>)</small>";
-}else if(!limitedFoeTooltip&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
+}else if(knownPokemon!=null&&knownPokemon.teraType&&!this.battle.rules['Terastal Clause']){
 text+="&nbsp; &nbsp; <small>(Tera Type: <span class=\"textaligned-typeicons\">"+Dex.getTypeIcon(knownPokemon.teraType)+"</span>)</small>";
 }
 text+="</h2>";
@@ -910,31 +913,7 @@ abilityText='<small>Possible abilities:</small> '+possibilities.join(', ');
 }
 }
 
-var itemText='';
-if(!limitedFoeTooltip&&serverPokemon){
-var item='';
-var itemEffect='';
-if(clientPokemon!=null&&clientPokemon.prevItem){
-item='None';
-var prevItem=Dex.items.get(clientPokemon.prevItem).name;
-itemEffect+=clientPokemon.prevItemEffect?prevItem+' was '+clientPokemon.prevItemEffect:'was '+prevItem;
-}
-if(serverPokemon.item)item=Dex.items.get(serverPokemon.item).name;
-if(itemEffect)itemEffect=' ('+itemEffect+')';
-if(item)itemText='<small>Item:</small> '+item+itemEffect;
-}else if(!limitedFoeTooltip&&clientPokemon){
-var _item='';
-var _itemEffect=clientPokemon.itemEffect||'';
-if(clientPokemon.prevItem){
-_item='None';
-if(_itemEffect)_itemEffect+='; ';
-var _prevItem=Dex.items.get(clientPokemon.prevItem).name;
-_itemEffect+=clientPokemon.prevItemEffect?_prevItem+' was '+clientPokemon.prevItemEffect:'was '+_prevItem;
-}
-if(pokemon.item)_item=Dex.items.get(pokemon.item).name;
-if(_itemEffect)_itemEffect=' ('+_itemEffect+')';
-if(_item)itemText='<small>Item:</small> '+_item+_itemEffect;
-}
+var itemText=this.getPokemonItemText(clientPokemon,serverPokemon,limitedFoeTooltip);
 
 if(abilityText||itemText){
 text+='<p>';
@@ -1008,6 +987,44 @@ text+="(Your opponent has two indistinguishable Pok\xE9mon, making it impossible
 text+="</p>";
 }
 return text;
+};_proto2.
+
+getPokemonItemText=function getPokemonItemText(
+clientPokemon,
+serverPokemon,
+limitedFoeTooltip)
+{
+var item='';
+var itemEffect='';
+if(limitedFoeTooltip){
+if(!clientPokemon)return'';
+item=clientPokemon.item?Dex.items.get(clientPokemon.item).name:'';
+itemEffect=clientPokemon.itemEffect||'';
+if(clientPokemon.prevItem){
+item=item||'None';
+if(itemEffect)itemEffect+='; ';
+var prevItem=Dex.items.get(clientPokemon.prevItem).name;
+itemEffect+=clientPokemon.prevItemEffect?prevItem+" was "+clientPokemon.prevItemEffect:"was "+prevItem;
+}
+}else if(serverPokemon){
+item=serverPokemon.item?Dex.items.get(serverPokemon.item).name:'';
+if(clientPokemon!=null&&clientPokemon.prevItem){
+item=item||'None';
+var _prevItem=Dex.items.get(clientPokemon.prevItem).name;
+itemEffect=clientPokemon.prevItemEffect?_prevItem+" was "+clientPokemon.prevItemEffect:"was "+_prevItem;
+}
+}else if(clientPokemon){
+item=clientPokemon.item?Dex.items.get(clientPokemon.item).name:'';
+itemEffect=clientPokemon.itemEffect||'';
+if(clientPokemon.prevItem){
+item=item||'None';
+if(itemEffect)itemEffect+='; ';
+var _prevItem2=Dex.items.get(clientPokemon.prevItem).name;
+itemEffect+=clientPokemon.prevItemEffect?_prevItem2+" was "+clientPokemon.prevItemEffect:"was "+_prevItem2;
+}
+}
+if(itemEffect)itemEffect=" ("+itemEffect+")";
+return item?"<small>Item:</small> "+item+itemEffect:'';
 };_proto2.
 
 showFieldTooltip=function showFieldTooltip(){
