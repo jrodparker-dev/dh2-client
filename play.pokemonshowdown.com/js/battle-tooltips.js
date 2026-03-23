@@ -296,16 +296,29 @@ _serverPokemon=this.getServerPokemonForClient(_pokemon2,this.battle.myPokemon,po
 }else if(side===this.battle.farSide&&this.battle.foePokemon){
 _serverPokemon=this.getServerPokemonForClient(_pokemon2,this.battle.foePokemon,pokemonIndex);
 }
+
 if(args[3]==='illusion'){
 buf='';
 var species=_pokemon2.getBaseSpecies().baseSpecies;
 var index=1;for(var _i6=0,_side$pokemon2=
 side.pokemon;_i6<_side$pokemon2.length;_i6++){var otherPokemon=_side$pokemon2[_i6];
 if(otherPokemon.getBaseSpecies().baseSpecies===species){
-buf+=this.showPokemonTooltip(otherPokemon,null,false,index,'sidebar');
+
+
+
+
+var illusionServerPokemon=null;
+if(side===this.battle.mySide&&this.battle.myPokemon){
+illusionServerPokemon=this.getServerPokemonForClient(otherPokemon,this.battle.myPokemon);
+}else if(side===this.battle.farSide&&this.battle.foePokemon){
+illusionServerPokemon=this.getServerPokemonForClient(otherPokemon,this.battle.foePokemon);
+}
+buf+=this.showPokemonTooltip(otherPokemon,illusionServerPokemon,false,index,'sidebar');
 index++;
 }
 }
+
+
 }else{
 buf=this.showPokemonTooltip(_pokemon2,_serverPokemon,false,undefined,'sidebar');
 }
