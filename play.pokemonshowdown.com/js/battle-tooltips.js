@@ -294,19 +294,26 @@ var _serverPokemon=null;
 if(side===this.battle.mySide&&this.battle.myPokemon){
 _serverPokemon=this.getServerPokemonForClient(_pokemon2,this.battle.myPokemon,pokemonIndex);
 }else if(side===this.battle.farSide&&this.battle.foePokemon){
-_serverPokemon=this.getServerPokemonForClient(_pokemon2,this.battle.foePokemon,pokemonIndex);
+_serverPokemon=this.getServerPokemonForTooltipSpecies(
+_pokemon2,side.pokemon,this.battle.foePokemon,pokemonIndex
+);
 }
-
 if(args[3]==='illusion'){
 buf='';
 var species=_pokemon2.getBaseSpecies().baseSpecies;
-var index=1;var _iterator=side.pokemon.entries();for(var _step;!(_step=_iterator.next()).done;){var _step$value=_step.value,candidateIndex=_step$value[0],otherPokemon=_step$value[1];
+var index=1;for(var _i6=0,_side$pokemon$entries2=
+side.pokemon.entries();_i6<_side$pokemon$entries2.length;_i6++){var _ref=_side$pokemon$entries2[_i6];var candidateIndex=_ref[0];var otherPokemon=_ref[1];
 if(otherPokemon.getBaseSpecies().baseSpecies!==species)continue;
+
 var illusionServerPokemon=null;
 if(side===this.battle.mySide&&this.battle.myPokemon){
-illusionServerPokemon=this.getServerPokemonForTooltipSpecies(otherPokemon,side.pokemon,this.battle.myPokemon,candidateIndex);
+illusionServerPokemon=this.getServerPokemonForTooltipSpecies(
+otherPokemon,side.pokemon,this.battle.myPokemon,candidateIndex
+);
 }else if(side===this.battle.farSide&&this.battle.foePokemon){
-illusionServerPokemon=this.getServerPokemonForTooltipSpecies(otherPokemon,side.pokemon,this.battle.foePokemon,candidateIndex);
+illusionServerPokemon=this.getServerPokemonForTooltipSpecies(
+otherPokemon,side.pokemon,this.battle.foePokemon,candidateIndex
+);
 }
 buf+=this.showPokemonTooltip(otherPokemon,illusionServerPokemon,false,index,'sidebar');
 index++;
@@ -782,7 +789,12 @@ text+="<p class=\"movetag\">&#x2713; Wind <small>(activates Wind Power and Wind 
 }
 return text;
 };_proto2.
-getServerPokemonForTooltipSpecies=function getServerPokemonForTooltipSpecies(pokemon,clientPokemonList,serverPokemonList,index){
+getServerPokemonForTooltipSpecies=function getServerPokemonForTooltipSpecies(
+pokemon,
+clientPokemonList,
+serverPokemonList,
+index)
+{
 if(!pokemon||!(serverPokemonList!=null&&serverPokemonList.length)){
 if(index===undefined)return null;
 return(serverPokemonList==null?void 0:serverPokemonList[index])||null;
@@ -792,14 +804,15 @@ var displayedSpecies=toID(pokemon.getSpecies().name);
 if(displayedSpecies){
 var speciesIndex=0;
 if(index!==undefined){
-for(var i=0;i<index;i++){
-var _clientPokemonList$i;
+for(var i=0;i<index;i++){var _clientPokemonList$i;
 if(toID((_clientPokemonList$i=clientPokemonList[i])==null?void 0:_clientPokemonList$i.getSpecies().name)===displayedSpecies){
 speciesIndex++;
 }
 }
 }
-var speciesMatches=serverPokemonList.filter(function(serverPokemon){return toID(serverPokemon.speciesForme||serverPokemon.details.split(', ')[0])===displayedSpecies;});
+var speciesMatches=serverPokemonList.filter(function(serverPokemon){return(
+toID(serverPokemon.speciesForme||serverPokemon.details.split(', ')[0])===displayedSpecies);}
+);
 if(speciesMatches[speciesIndex])return speciesMatches[speciesIndex];
 }
 
@@ -1006,7 +1019,7 @@ text+="<p class=\"tooltip-section\">";for(var _i14=0,_clientPokemon$moveTr4=
 clientPokemon.moveTrack;_i14<_clientPokemon$moveTr4.length;_i14++){var _row2=_clientPokemon$moveTr4[_i14];
 text+=this.getPPUseText(_row2)+"<br />";
 }
-if(clientPokemon.moveTrack.filter(function(_ref){var moveName=_ref[0];
+if(clientPokemon.moveTrack.filter(function(_ref2){var moveName=_ref2[0];
 if(moveName.charAt(0)==='*')return false;
 var move=_this3.battle.dex.moves.get(moveName);
 return!move.isZ&&!move.isMax&&move.name!=='Mimic';
@@ -1028,7 +1041,7 @@ clientPokemon,
 serverPokemon,
 pokemon,
 source)
-{var _serverPokemon$types,_this$battle$foePokem;
+{var _serverPokemon$types;
 var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
 if(terastallizedType)return[terastallizedType];
 if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
@@ -1036,19 +1049,6 @@ return this.getPokemonTypes(clientPokemon);
 }
 if(serverPokemon!=null&&(_serverPokemon$types=serverPokemon.types)!=null&&_serverPokemon$types.length){
 return serverPokemon.types;
-}
-
-
-
-
-
-if(
-serverPokemon!==null&&
-source==='sidebar'&&
-(clientPokemon==null?void 0:clientPokemon.side)===this.battle.farSide&&(_this$battle$foePokem=
-this.battle.foePokemon)!=null&&(_this$battle$foePokem=_this$battle$foePokem[clientPokemon.slot])!=null&&(_this$battle$foePokem=_this$battle$foePokem.types)!=null&&_this$battle$foePokem.length)
-{
-return this.battle.foePokemon[clientPokemon.slot].types;
 }
 return this.getPokemonTypes(clientPokemon||serverPokemon||pokemon);
 };_proto2.
@@ -1135,8 +1135,8 @@ return"<p>"+buf+"</p>";
 
 pokemonHasClones=function pokemonHasClones(pokemon){
 var side=pokemon.side;
-if(side.battle.speciesClause)return false;for(var _i18=0,_side$pokemon4=
-side.pokemon;_i18<_side$pokemon4.length;_i18++){var ally=_side$pokemon4[_i18];
+if(side.battle.speciesClause)return false;for(var _i18=0,_side$pokemon2=
+side.pokemon;_i18<_side$pokemon2.length;_i18++){var ally=_side$pokemon2[_i18];
 if(pokemon!==ally&&pokemon.searchid===ally.searchid){
 return true;
 }
@@ -1570,7 +1570,7 @@ return bullet+" "+move.name+" "+(showKnown?' <small>(revealed)</small>':'');
 };_proto2.
 
 ppUsed=function ppUsed(move,pokemon){for(var _i36=0,_pokemon$moveTrack2=
-pokemon.moveTrack;_i36<_pokemon$moveTrack2.length;_i36++){var _ref2=_pokemon$moveTrack2[_i36];var moveName=_ref2[0];var _ppUsed=_ref2[1];
+pokemon.moveTrack;_i36<_pokemon$moveTrack2.length;_i36++){var _ref3=_pokemon$moveTrack2[_i36];var moveName=_ref3[0];var _ppUsed=_ref3[1];
 if(moveName.charAt(0)==='*')moveName=moveName.substr(1);
 if(move.name===moveName)return _ppUsed;
 }

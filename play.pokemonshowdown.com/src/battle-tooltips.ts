@@ -294,7 +294,9 @@ class BattleTooltips {
 			if (side === this.battle.mySide && this.battle.myPokemon) {
 				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.myPokemon, pokemonIndex);
 			} else if (side === this.battle.farSide && this.battle.foePokemon) {
-				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.foePokemon, pokemonIndex);
+				serverPokemon = this.getServerPokemonForTooltipSpecies(
+					pokemon, side.pokemon, this.battle.foePokemon, pokemonIndex
+				);
 			}
 			if (args[3] === 'illusion') {
 				buf = '';
@@ -1047,19 +1049,6 @@ class BattleTooltips {
 		}
 		if (serverPokemon?.types?.length) {
 			return serverPokemon.types as TypeName[];
-		}
-		// Only use the foePokemon slot lookup when serverPokemon is available (i.e. not the
-		// illusion/disguise sidebar path where showPokemonTooltip is called with null serverPokemon).
-		// Without this guard, clientPokemon.slot (the active-battle slot index) is used to index
-		// into foePokemon, which can return the wrong Pokémon's custom types.  Those types are then
-		// shown in addition to the types resolved by getPokemonTypes() below, producing duplicates.
-		if (
-			serverPokemon !== null &&
-			source === 'sidebar' &&
-			clientPokemon?.side === this.battle.farSide &&
-			this.battle.foePokemon?.[clientPokemon.slot]?.types?.length
-		) {
-			return this.battle.foePokemon[clientPokemon.slot].types as TypeName[];
 		}
 		return this.getPokemonTypes(clientPokemon || serverPokemon || pokemon);
 	}
