@@ -294,31 +294,30 @@ class BattleTooltips {
 			if (side === this.battle.mySide && this.battle.myPokemon) {
 				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.myPokemon, pokemonIndex);
 			} else if (side === this.battle.farSide && this.battle.foePokemon) {
-				serverPokemon = this.getServerPokemonForClient(pokemon, this.battle.foePokemon, pokemonIndex);
+				serverPokemon = this.getServerPokemonForTooltipSpecies(
+					pokemon, side.pokemon, this.battle.foePokemon, pokemonIndex
+				);
 			}
-			// AFTER (fixed):
-if (args[3] === 'illusion') {
-    buf = '';
-    const species = pokemon.getBaseSpecies().baseSpecies;
-    let index = 1;
-    for (const otherPokemon of side.pokemon) {
-        if (otherPokemon.getBaseSpecies().baseSpecies === species) {
-            // Look up serverPokemon by identity (no index fallback) so each illusion
-            // candidate gets its own correct foePokemon/myPokemon data. Without this,
-            // terastallized candidates fall back to dex-species base types, which can
-            // duplicate the tera type icon when it matches one of the default species types.
-            let illusionServerPokemon = null;
-            if (side === this.battle.mySide && this.battle.myPokemon) {
-                illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.myPokemon);
-            } else if (side === this.battle.farSide && this.battle.foePokemon) {
-                illusionServerPokemon = this.getServerPokemonForClient(otherPokemon, this.battle.foePokemon);
-            }
-            buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
-            index++;
-        }
-    }
+			if (args[3] === 'illusion') {
+				buf = '';
+				const species = pokemon.getBaseSpecies().baseSpecies;
+				let index = 1;
+				for (const [candidateIndex, otherPokemon] of side.pokemon.entries()) {
+					if (otherPokemon.getBaseSpecies().baseSpecies !== species) continue;
 
-
+					let illusionServerPokemon = null;
+					if (side === this.battle.mySide && this.battle.myPokemon) {
+						illusionServerPokemon = this.getServerPokemonForTooltipSpecies(
+							otherPokemon, side.pokemon, this.battle.myPokemon, candidateIndex
+						);
+					} else if (side === this.battle.farSide && this.battle.foePokemon) {
+						illusionServerPokemon = this.getServerPokemonForTooltipSpecies(
+							otherPokemon, side.pokemon, this.battle.foePokemon, candidateIndex
+						);
+					}
+					buf += this.showPokemonTooltip(otherPokemon, illusionServerPokemon, false, index, 'sidebar');
+					index++;
+				}
 			} else {
 				buf = this.showPokemonTooltip(pokemon, serverPokemon, false, undefined, 'sidebar');
 			}
@@ -790,6 +789,36 @@ if (args[3] === 'illusion') {
 		}
 		return text;
 	}
+	getServerPokemonForTooltipSpecies(
+		pokemon: Pokemon | null,
+		clientPokemonList: Pokemon[],
+		serverPokemonList?: ServerPokemon[] | null,
+		index?: number
+	) {
+		if (!pokemon || !serverPokemonList?.length) {
+			if (index === undefined) return null;
+			return serverPokemonList?.[index] || null;
+		}
+
+		const displayedSpecies = toID(pokemon.getSpecies().name);
+		if (displayedSpecies) {
+			let speciesIndex = 0;
+			if (index !== undefined) {
+				for (let i = 0; i < index; i++) {
+					if (toID(clientPokemonList[i]?.getSpecies().name) === displayedSpecies) {
+						speciesIndex++;
+					}
+				}
+			}
+			const speciesMatches = serverPokemonList.filter(serverPokemon =>
+				toID(serverPokemon.speciesForme || serverPokemon.details.split(', ')[0]) === displayedSpecies
+			);
+			if (speciesMatches[speciesIndex]) return speciesMatches[speciesIndex];
+		}
+
+		return this.getServerPokemonForClient(pokemon, serverPokemonList, index);
+	}
+
 	getServerPokemonForClient(pokemon: Pokemon | null, serverPokemonList?: ServerPokemon[] | null, index?: number) {
 		if (!pokemon || !serverPokemonList?.length) {
 			if (index === undefined) return null;
@@ -1020,19 +1049,6 @@ if (args[3] === 'illusion') {
 		}
 		if (serverPokemon?.types?.length) {
 			return serverPokemon.types as TypeName[];
-		}
-		// Only use the foePokemon slot lookup when serverPokemon is available (i.e. not the
-		// illusion/disguise sidebar path where showPokemonTooltip is called with null serverPokemon).
-		// Without this guard, clientPokemon.slot (the active-battle slot index) is used to index
-		// into foePokemon, which can return the wrong Pokémon's custom types.  Those types are then
-		// shown in addition to the types resolved by getPokemonTypes() below, producing duplicates.
-		if (
-			serverPokemon !== null &&
-			source === 'sidebar' &&
-			clientPokemon?.side === this.battle.farSide &&
-			this.battle.foePokemon?.[clientPokemon.slot]?.types?.length
-		) {
-			return this.battle.foePokemon[clientPokemon.slot].types as TypeName[];
 		}
 		return this.getPokemonTypes(clientPokemon || serverPokemon || pokemon);
 	}
