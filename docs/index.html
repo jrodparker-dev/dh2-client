@@ -9,57 +9,44 @@
   <link rel="stylesheet" href="https://play.pokemonshowdown.com/style/replay.css" />
   <link rel="stylesheet" href="https://play.pokemonshowdown.com/style/utilichart.css" />
   <style>
-    body {
-      font-family: Verdana, Arial, sans-serif;
-      margin: 0;
-      padding: 16px;
-      background: #e6e9ee;
-      color: #1f2937;
-    }
-    .layout {
-      width: min(1400px, 100%);
-      margin: 0 auto;
-    }
-    .panel {
-      background: white;
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 12px;
-      border: 1px solid #d8dde6;
-      box-shadow: 0 4px 10px rgba(16, 24, 40, 0.04);
-    }
+    body { font-family: Verdana, Arial, sans-serif; margin: 0; padding: 16px; background: #f3f4f6; color: #111827; }
+    .layout { width: min(1300px, 100%); margin: 0 auto; }
+    .panel { background: #fff; border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid #d1d5db; }
     .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .textbox { width: 100%; }
     .wrapper {
-      width: 100%;
-      background: #f4f5f7;
-      border-radius: 10px;
-      border: 1px solid #c9ced6;
-      overflow: hidden;
-      box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
+      position: relative;
+      width: 955px;
+      max-width: 100%;
+      margin: 0 auto;
+      padding-top: 460px;
+      font-family: Verdana, sans-serif;
+      font-size: 10pt;
     }
     .wrapper .mobile-side-log-toggle {
       display: none;
-      width: 100%;
-      border: 0;
-      border-bottom: 1px solid #cfd5de;
-      background: linear-gradient(180deg, #f8f9fb 0%, #edf1f6 100%);
-      color: #243245;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 10px 12px;
+      width: auto;
+      border: 1px solid #9ca3af;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 10pt;
+      margin-bottom: 6px;
+      padding: 6px 10px;
       text-align: left;
       cursor: pointer;
     }
-    .wrapper .body.replay-body {
-      display: flex;
-      width: 100%;
-      min-width: 975px;
-      min-height: 360px;
-    }
+    .wrapper .body.replay-body { min-height: 0; }
     .wrapper .battle {
+      position: absolute;
+      text-align: left;
+      top: 9px;
+      left: -1px;
+      border: 1px solid #AAAAAA;
+      background: #CFD5DA;
+      color: black;
       width: 640px;
       height: 360px;
+      overflow: hidden;
       margin: 0 !important;
       flex: 0 0 640px;
     }
@@ -69,20 +56,35 @@
       height: 360px;
     }
     .wrapper .battle-log {
-      width: 335px;
+      position: absolute;
+      text-align: left;
+      border: 1px solid #AAAAAA;
+      background: #EEF2F5;
+      color: black;
+      top: 9px;
+      left: 640px;
+      right: -1px;
       height: 360px;
-      box-sizing: border-box;
       overflow: auto;
+      overflow-y: scroll;
       display: block !important;
-      flex: 0 0 335px;
-      border-left: 1px solid #9ca3af;
-      background: #d6dbe0;
+      word-wrap: break-word;
     }
     .wrapper .replay-controls {
+      position: absolute;
+      top: 373px;
+      left: 5px;
+      right: 0;
+      text-align: left;
       width: 640px;
       margin: 0;
     }
     .wrapper .replay-controls-2 {
+      position: absolute;
+      top: 415px;
+      left: 5px;
+      right: 0;
+      text-align: left;
       width: 640px;
       margin: 0;
     }
@@ -90,8 +92,8 @@
       width: 100%;
       box-sizing: border-box;
       padding: 12px;
-      border-top: 1px solid #c9ced6;
-      background: #d2d7dd;
+      border: 1px solid #AAAAAA;
+      background: #EEF2F5;
       overflow-wrap: anywhere;
       overflow: auto;
       max-height: 60vh;
@@ -104,21 +106,25 @@
       display: none;
     }
     @media (max-width: 980px) {
-      body {
-        padding: 8px;
-      }
-      .controls {
-        grid-template-columns: 1fr;
+      body { padding: 8px; }
+      .controls { grid-template-columns: 1fr; }
+      .wrapper {
+        width: 100%;
+        padding-top: 0;
+        margin: 0;
       }
       .wrapper .mobile-side-log-toggle {
         display: block;
       }
       .wrapper .body.replay-body {
-        min-width: 0;
         display: block;
         position: relative;
+        min-height: 360px;
       }
       .wrapper .battle {
+        position: relative;
+        top: auto;
+        left: auto;
         width: 100%;
         max-width: 640px;
       }
@@ -129,10 +135,11 @@
       }
       .wrapper .battle-log {
         position: absolute;
-        top: 0;
+        top: 1px;
         right: 0;
-        height: 360px;
-        max-width: 90vw;
+        left: auto;
+        width: min(335px, 90vw);
+        height: 358px;
         transform: translateX(101%);
         transition: transform 0.2s ease-in-out;
         z-index: 5;
@@ -143,12 +150,14 @@
       }
       .wrapper .replay-controls,
       .wrapper .replay-controls-2 {
+        position: static;
         width: 100%;
-        padding: 4px 4px 0;
+        padding: 4px 0 0;
         box-sizing: border-box;
       }
       .wrapper .battle-log-full {
         max-height: 50vh;
+        margin-top: 8px;
       }
     }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
