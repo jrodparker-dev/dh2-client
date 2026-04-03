@@ -11,44 +11,116 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f6f7fb; }
     .layout { max-width: 1200px; margin: 0 auto; }
-    .panel { background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .panel { background: white; border-radius: 8px; padding: 12px; margin-top: 12px; }
     .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .textbox { width: 100%; }
-    .wrapper.replay-wrapper { max-width: 1180px; margin: 0 auto; background: white; border-radius: 8px; padding: 8px; }
+    .wrapper.replay-wrapper {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+      align-items: flex-start;
+    }
+    .wrapper.replay-wrapper .battle {
+      flex: 0 0 640px;
+      max-width: 100%;
+    }
+    .wrapper.replay-wrapper .battle-log {
+      flex: 1 1 360px;
+      min-width: 340px;
+      min-height: 420px;
+      max-height: 520px;
+      overflow: auto;
+      display: block !important;
+    }
+    .wrapper.replay-wrapper .replay-controls,
+    .wrapper.replay-wrapper .replay-controls-2 {
+      flex: 1 0 100%;
+    }
+    @media (max-width: 1120px) {
+      .wrapper.replay-wrapper .battle,
+      .wrapper.replay-wrapper .battle-log,
+      .wrapper.replay-wrapper .replay-controls,
+      .wrapper.replay-wrapper .replay-controls-2 { flex: 1 0 100%; min-width: 0; }
+      .wrapper.replay-wrapper .battle-log { min-height: 260px; max-height: 360px; }
+    }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
     .status { color: #444; margin-top: 6px; }
+
+    .import-panel-hidden { display: none; }
+    .settings-toggle.hidden { display: none; }
+
+    .import-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .import-modal.hidden { display: none; }
+    .import-modal-card {
+      width: min(900px, 100%);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      position: relative;
+    }
+    .import-modal-close {
+      position: sticky;
+      float: right;
+      top: 0;
+      right: 0;
+    }
   </style>
 </head>
 <body>
   <div class="layout">
-    <div class="panel">
-      <h1>Static Replay Viewer (GitHub Pages-safe)</h1>
-      <p>Load a replay from a local <code>.log</code>/<code>.json</code>, a URL, or paste raw battle log text.</p>
-      <div class="controls">
-        <input id="sourceUrl" class="textbox" placeholder="Replay URL (example: ./replays/example.json or https://.../battle.log)" />
-        <button id="loadUrl" class="button"><i class="fa fa-cloud-download"></i> Load URL</button>
-      </div>
-      <div class="controls" style="margin-top:8px;">
-        <input id="spriteBaseUrl" class="textbox" placeholder="Sprite base URL (example: https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/)" />
-        <button id="applySprites" class="button"><i class="fa fa-paint-brush"></i> Apply Sprites</button>
-      </div>
-      <p>
-        <input id="fileInput" type="file" accept=".json,.log,.txt" />
-      </p>
-      <p>
-        <textarea id="logInput" placeholder="Paste raw replay log here (lines beginning with |turn| etc.)"></textarea>
-      </p>
-      <p>
-        <button id="loadText" class="button"><i class="fa fa-play"></i> Render Pasted Log</button>
-      </p>
-      <div class="status" id="status"></div>
-    </div>
-
     <div class="wrapper replay-wrapper">
       <div class="battle" style="position: relative"></div>
       <div class="battle-log"></div>
       <div class="replay-controls"></div>
       <div class="replay-controls-2"></div>
+    </div>
+
+    <div class="panel" id="importPanel">
+      <div id="importControlsContent">
+        <h1>Static Replay Viewer (GitHub Pages-safe)</h1>
+        <p>Load a replay from a local <code>.log</code>/<code>.json</code>, a URL, or paste raw battle log text.</p>
+        <div class="controls">
+          <input id="sourceUrl" class="textbox" placeholder="Replay URL (example: ./replays/example.json or https://.../battle.log)" />
+          <button id="loadUrl" class="button"><i class="fa fa-cloud-download"></i> Load URL</button>
+        </div>
+        <div class="controls" style="margin-top:8px;">
+          <input id="spriteBaseUrl" class="textbox" placeholder="Sprite base URL (example: https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/)" />
+          <button id="applySprites" class="button"><i class="fa fa-paint-brush"></i> Apply Sprites</button>
+        </div>
+        <p>
+          <input id="fileInput" type="file" accept=".html,.htm,.json,.log,.txt" />
+        </p>
+        <p>
+          <textarea id="logInput" placeholder="Paste raw replay log here (lines beginning with |turn| etc.)"></textarea>
+        </p>
+        <p>
+          <button id="loadText" class="button"><i class="fa fa-play"></i> Render Pasted Log</button>
+        </p>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div id="importModal" class="import-modal hidden" role="dialog" aria-modal="true" aria-label="Replay import settings">
+    <div class="import-modal-card">
+      <button id="closeImportModal" class="button import-modal-close"><i class="fa fa-times"></i> Close</button>
+      <div id="importModalMount"></div>
     </div>
   </div>
 
