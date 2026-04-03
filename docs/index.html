@@ -14,7 +14,38 @@
     .panel { background: white; border-radius: 8px; padding: 12px; margin-top: 12px; }
     .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .textbox { width: 100%; }
-    .wrapper.replay-wrapper { max-width: 1180px; margin: 0 auto; background: white; border-radius: 8px; padding: 8px; }
+    .wrapper.replay-wrapper {
+      max-width: 1180px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: 640px minmax(360px, 1fr);
+      gap: 10px 12px;
+      align-items: start;
+    }
+    .wrapper.replay-wrapper .battle { grid-column: 1; grid-row: 1; }
+    .wrapper.replay-wrapper .battle-log {
+      grid-column: 2;
+      grid-row: 1;
+      min-height: 420px;
+      max-height: 520px;
+      overflow: auto;
+    }
+    .wrapper.replay-wrapper .replay-controls { grid-column: 1 / -1; grid-row: 2; }
+    .wrapper.replay-wrapper .replay-controls-2 { grid-column: 1 / -1; grid-row: 3; }
+    @media (max-width: 1120px) {
+      .wrapper.replay-wrapper { grid-template-columns: 1fr; }
+      .wrapper.replay-wrapper .battle,
+      .wrapper.replay-wrapper .battle-log,
+      .wrapper.replay-wrapper .replay-controls,
+      .wrapper.replay-wrapper .replay-controls-2 { grid-column: 1; }
+      .wrapper.replay-wrapper .battle { grid-row: 1; }
+      .wrapper.replay-wrapper .battle-log { grid-row: 2; min-height: 260px; max-height: 360px; }
+      .wrapper.replay-wrapper .replay-controls { grid-row: 3; }
+      .wrapper.replay-wrapper .replay-controls-2 { grid-row: 4; }
+    }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
     .status { color: #444; margin-top: 6px; }
 
