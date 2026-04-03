@@ -9,16 +9,47 @@
   <link rel="stylesheet" href="https://play.pokemonshowdown.com/style/replay.css" />
   <link rel="stylesheet" href="https://play.pokemonshowdown.com/style/utilichart.css" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f6f7fb; }
-    .layout { width: 100%; }
-    .panel { background: white; border-radius: 8px; padding: 12px; margin-top: 12px; }
+    body {
+      font-family: Verdana, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #e6e9ee;
+      color: #1f2937;
+    }
+    .layout {
+      width: min(1400px, 100%);
+      margin: 0 auto;
+    }
+    .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px solid #d8dde6;
+      box-shadow: 0 4px 10px rgba(16, 24, 40, 0.04);
+    }
     .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .textbox { width: 100%; }
     .wrapper {
       width: 100%;
-      background: white;
-      border-radius: 8px;
+      background: #f4f5f7;
+      border-radius: 10px;
+      border: 1px solid #c9ced6;
       overflow: hidden;
+      box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
+    }
+    .wrapper .mobile-side-log-toggle {
+      display: none;
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid #cfd5de;
+      background: linear-gradient(180deg, #f8f9fb 0%, #edf1f6 100%);
+      color: #243245;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
     }
     .wrapper .body.replay-body {
       display: flex;
@@ -44,6 +75,8 @@
       overflow: auto;
       display: block !important;
       flex: 0 0 335px;
+      border-left: 1px solid #9ca3af;
+      background: #d6dbe0;
     }
     .wrapper .replay-controls {
       width: 640px;
@@ -57,9 +90,11 @@
       width: 100%;
       box-sizing: border-box;
       padding: 12px;
-      border-top: 1px solid #d6d6d6;
-      background: #fff;
+      border-top: 1px solid #c9ced6;
+      background: #d2d7dd;
       overflow-wrap: anywhere;
+      overflow: auto;
+      max-height: 60vh;
     }
     .wrapper .battle-log-full pre {
       margin: 0;
@@ -68,8 +103,53 @@
     .wrapper .battle-log-full.hidden {
       display: none;
     }
-    @media (max-width: 1000px) {
-      .wrapper { overflow-x: auto; }
+    @media (max-width: 980px) {
+      body {
+        padding: 8px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      .wrapper .mobile-side-log-toggle {
+        display: block;
+      }
+      .wrapper .body.replay-body {
+        min-width: 0;
+        display: block;
+        position: relative;
+      }
+      .wrapper .battle {
+        width: 100%;
+        max-width: 640px;
+      }
+      .wrapper .innerbattle,
+      .wrapper .weather {
+        width: 100%;
+        max-width: 640px;
+      }
+      .wrapper .battle-log {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 360px;
+        max-width: 90vw;
+        transform: translateX(101%);
+        transition: transform 0.2s ease-in-out;
+        z-index: 5;
+        box-shadow: -8px 0 20px rgba(0, 0, 0, 0.16);
+      }
+      .wrapper.side-log-open .battle-log {
+        transform: translateX(0);
+      }
+      .wrapper .replay-controls,
+      .wrapper .replay-controls-2 {
+        width: 100%;
+        padding: 4px 4px 0;
+        box-sizing: border-box;
+      }
+      .wrapper .battle-log-full {
+        max-height: 50vh;
+      }
     }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
     .status { color: #444; margin-top: 6px; }
@@ -108,6 +188,7 @@
 <body>
   <div class="layout">
     <div class="wrapper">
+      <button id="mobileSideLogToggle" class="mobile-side-log-toggle" aria-expanded="false">Show side battle log</button>
       <div class="body replay-body">
         <div class="battle" style="position: relative"></div>
         <div class="battle-log"></div>

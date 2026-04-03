@@ -14,10 +14,19 @@
   const importModalEl = document.getElementById('importModal');
   const importModalMountEl = document.getElementById('importModalMount');
   const battleLogFullEl = document.getElementById('battleLogFull');
+  const wrapperEl = document.querySelector('.wrapper');
+  const mobileSideLogToggleEl = document.getElementById('mobileSideLogToggle');
   const DEFAULT_SPRITE_BASE = 'https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/';
 
   function setStatus(message) {
     statusEl.textContent = message;
+  }
+
+  function setMobileSideLogState(isOpen) {
+    if (!wrapperEl || !mobileSideLogToggleEl) return;
+    wrapperEl.classList.toggle('side-log-open', isOpen);
+    mobileSideLogToggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    mobileSideLogToggleEl.textContent = isOpen ? 'Hide side battle log' : 'Show side battle log';
   }
 
   function parseReplayPayload(text) {
@@ -187,6 +196,7 @@
 
   function mountBattle(payload, id) {
     if (battle) battle.destroy();
+    if (!wrapperEl) throw new Error('Replay wrapper element was not found.');
     const logText = payload && typeof payload.log === 'string' ? payload.log : '';
     const htmlLog = payload && typeof payload.htmlLog === 'string' ? payload.htmlLog : '';
 
@@ -197,11 +207,10 @@
       .split('\n')
       .map(line => sanitizeControlChars(line));
 
-    const wrapper = document.querySelector('.wrapper');
     battle = new Battle({
       id: id || 'custom-replay',
-      $frame: $(wrapper).find('.battle'),
-      $logFrame: $(wrapper).find('.battle-log'),
+      $frame: $(wrapperEl).find('.battle'),
+      $logFrame: $(wrapperEl).find('.battle-log'),
       log: cleanedLines,
       isReplay: true,
       paused: true,
@@ -218,6 +227,7 @@
     moveImportControlsIntoSettings();
     closeImportModal();
     updateControls();
+    setMobileSideLogState(false);
     renderFullBattleLog(htmlLog, logText);
     setStatus('Replay loaded successfully.');
   }
@@ -269,7 +279,8 @@
       reader.readAsText(file);
     });
 
-    document.querySelector('.wrapper').addEventListener('click', function (event) {
+    if (!wrapperEl) return;
+    wrapperEl.addEventListener('click', function (event) {
       const target = event.target.closest('button');
       if (!target || !battle) return;
       const action = target.dataset.action;
@@ -288,6 +299,20 @@
         battle.seekTurn(n);
       }
       updateControls();
+    });
+
+    if (mobileSideLogToggleEl) {
+      mobileSideLogToggleEl.addEventListener('click', function () {
+        const nextState = !wrapperEl.classList.contains('side-log-open');
+        setMobileSideLogState(nextState);
+      });
+    }
+
+    document.addEventListener('click', function (event) {
+      if (!wrapperEl || !wrapperEl.classList.contains('side-log-open')) return;
+      if (window.innerWidth > 980) return;
+      if (wrapperEl.contains(event.target)) return;
+      setMobileSideLogState(false);
     });
 
     document.querySelector('.replay-controls-2').addEventListener('click', function (event) {
