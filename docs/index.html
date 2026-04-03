@@ -20,32 +20,51 @@
       background: white;
       border-radius: 8px;
       padding: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 12px;
-      align-items: flex-start;
+      display: grid;
+      grid-template-columns: minmax(640px, 1fr) minmax(340px, 460px);
+      grid-template-areas:
+        "battle log"
+        "controls log"
+        "controls2 log";
+      gap: 8px 12px;
+      align-items: start;
     }
     .wrapper.replay-wrapper .battle {
-      flex: 0 0 640px;
-      max-width: 100%;
+      grid-area: battle;
+      max-width: 640px;
+      margin-top: 0 !important;
+      align-self: start;
     }
     .wrapper.replay-wrapper .battle-log {
-      flex: 1 1 360px;
-      min-width: 340px;
-      min-height: 420px;
+      grid-area: log;
+      width: 100%;
+      min-width: 0;
+      min-height: 500px;
       max-height: 520px;
       overflow: auto;
       display: block !important;
     }
-    .wrapper.replay-wrapper .replay-controls,
+    .wrapper.replay-wrapper .replay-controls {
+      grid-area: controls;
+      margin-top: 4px;
+    }
     .wrapper.replay-wrapper .replay-controls-2 {
-      flex: 1 0 100%;
+      grid-area: controls2;
+      margin-top: 2px;
     }
     @media (max-width: 1120px) {
+      .wrapper.replay-wrapper {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "battle"
+          "controls"
+          "controls2"
+          "log";
+      }
       .wrapper.replay-wrapper .battle,
       .wrapper.replay-wrapper .battle-log,
       .wrapper.replay-wrapper .replay-controls,
-      .wrapper.replay-wrapper .replay-controls-2 { flex: 1 0 100%; min-width: 0; }
+      .wrapper.replay-wrapper .replay-controls-2 { min-width: 0; max-width: 100%; }
       .wrapper.replay-wrapper .battle-log { min-height: 260px; max-height: 360px; }
     }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
