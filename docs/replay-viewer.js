@@ -29,6 +29,18 @@
       throw new Error('JSON replay is missing a `log` field.');
     }
 
+    if (trimmed.startsWith('<')) {
+      const htmlBattleLogDataMatch = trimmed.match(/<script[^>]*class=["'][^"']*battle-log-data[^"']*["'][^>]*>([\s\S]*?)<\/script>/i);
+      if (htmlBattleLogDataMatch && htmlBattleLogDataMatch[1]) {
+        return htmlBattleLogDataMatch[1];
+      }
+      const htmlTextareaMatch = trimmed.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/i);
+      if (htmlTextareaMatch && htmlTextareaMatch[1]) {
+        return htmlTextareaMatch[1];
+      }
+      throw new Error('HTML replay payload was missing a battle log block.');
+    }
+
     return text;
   }
 
