@@ -15,57 +15,54 @@
     .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .textbox { width: 100%; }
     .wrapper.replay-wrapper {
-      max-width: 1180px;
+      position: relative;
+      width: 976px;
+      max-width: 100%;
       margin: 0 auto;
+      padding-top: 452px;
       background: white;
       border-radius: 8px;
-      padding: 8px;
-      display: grid;
-      grid-template-columns: minmax(640px, 1fr) minmax(340px, 460px);
-      grid-template-areas:
-        "battle log"
-        "controls log"
-        "controls2 log";
-      gap: 8px 12px;
-      align-items: start;
+      overflow: hidden;
     }
     .wrapper.replay-wrapper .battle {
-      grid-area: battle;
-      max-width: 640px;
-      margin-top: 0 !important;
-      align-self: start;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 360px;
+      margin: 0 !important;
+    }
+    .wrapper.replay-wrapper .innerbattle,
+    .wrapper.replay-wrapper .weather {
+      width: 640px;
+      height: 360px;
     }
     .wrapper.replay-wrapper .battle-log {
-      grid-area: log;
-      width: 100%;
-      min-width: 0;
-      min-height: 500px;
-      max-height: 520px;
+      position: absolute;
+      top: 0;
+      left: 640px;
+      width: 336px;
+      height: 362px;
+      box-sizing: border-box;
       overflow: auto;
       display: block !important;
     }
     .wrapper.replay-wrapper .replay-controls {
-      grid-area: controls;
-      margin-top: 4px;
+      position: absolute;
+      top: 366px;
+      left: 0;
+      width: 640px;
+      margin: 0;
     }
     .wrapper.replay-wrapper .replay-controls-2 {
-      grid-area: controls2;
-      margin-top: 2px;
+      position: absolute;
+      top: 408px;
+      left: 0;
+      width: 640px;
+      margin: 0;
     }
-    @media (max-width: 1120px) {
-      .wrapper.replay-wrapper {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "battle"
-          "controls"
-          "controls2"
-          "log";
-      }
-      .wrapper.replay-wrapper .battle,
-      .wrapper.replay-wrapper .battle-log,
-      .wrapper.replay-wrapper .replay-controls,
-      .wrapper.replay-wrapper .replay-controls-2 { min-width: 0; max-width: 100%; }
-      .wrapper.replay-wrapper .battle-log { min-height: 260px; max-height: 360px; }
+    @media (max-width: 1000px) {
+      .wrapper.replay-wrapper { overflow-x: auto; }
     }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
     .status { color: #444; margin-top: 6px; }

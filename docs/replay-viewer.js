@@ -178,7 +178,7 @@
       log: cleanedLines,
       isReplay: true,
       paused: true,
-      autoresize: true,
+      autoresize: false,
     });
 
     battle.subscribe(function (state) {
