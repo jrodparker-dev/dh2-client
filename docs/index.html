@@ -20,31 +20,33 @@
       background: white;
       border-radius: 8px;
       padding: 8px;
-      display: grid;
-      grid-template-columns: 640px minmax(360px, 1fr);
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px 12px;
-      align-items: start;
+      align-items: flex-start;
     }
-    .wrapper.replay-wrapper .battle { grid-column: 1; grid-row: 1; }
+    .wrapper.replay-wrapper .battle {
+      flex: 0 0 640px;
+      max-width: 100%;
+    }
     .wrapper.replay-wrapper .battle-log {
-      grid-column: 2;
-      grid-row: 1;
+      flex: 1 1 360px;
+      min-width: 340px;
       min-height: 420px;
       max-height: 520px;
       overflow: auto;
+      display: block !important;
     }
-    .wrapper.replay-wrapper .replay-controls { grid-column: 1 / -1; grid-row: 2; }
-    .wrapper.replay-wrapper .replay-controls-2 { grid-column: 1 / -1; grid-row: 3; }
+    .wrapper.replay-wrapper .replay-controls,
+    .wrapper.replay-wrapper .replay-controls-2 {
+      flex: 1 0 100%;
+    }
     @media (max-width: 1120px) {
-      .wrapper.replay-wrapper { grid-template-columns: 1fr; }
       .wrapper.replay-wrapper .battle,
       .wrapper.replay-wrapper .battle-log,
       .wrapper.replay-wrapper .replay-controls,
-      .wrapper.replay-wrapper .replay-controls-2 { grid-column: 1; }
-      .wrapper.replay-wrapper .battle { grid-row: 1; }
-      .wrapper.replay-wrapper .battle-log { grid-row: 2; min-height: 260px; max-height: 360px; }
-      .wrapper.replay-wrapper .replay-controls { grid-row: 3; }
-      .wrapper.replay-wrapper .replay-controls-2 { grid-row: 4; }
+      .wrapper.replay-wrapper .replay-controls-2 { flex: 1 0 100%; min-width: 0; }
+      .wrapper.replay-wrapper .battle-log { min-height: 260px; max-height: 360px; }
     }
     textarea { width: 100%; min-height: 180px; font-family: monospace; }
     .status { color: #444; margin-top: 6px; }
@@ -102,7 +104,7 @@
           <button id="applySprites" class="button"><i class="fa fa-paint-brush"></i> Apply Sprites</button>
         </div>
         <p>
-          <input id="fileInput" type="file" accept=".json,.log,.txt" />
+          <input id="fileInput" type="file" accept=".html,.htm,.json,.log,.txt" />
         </p>
         <p>
           <textarea id="logInput" placeholder="Paste raw replay log here (lines beginning with |turn| etc.)"></textarea>

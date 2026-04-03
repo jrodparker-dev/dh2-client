@@ -32,6 +32,20 @@
     return text;
   }
 
+  function sanitizeControlChars(value) {
+    return String(value || '').replace(/[\u0000-\u001f\u007f]/g, '');
+  }
+
+  function installTypeIconGuardrails() {
+    if (!window.Dex || typeof Dex.getTypeIcon !== 'function' || Dex.__typeIconGuardrailsInstalled) return;
+    const originalGetTypeIcon = Dex.getTypeIcon.bind(Dex);
+    Dex.getTypeIcon = function (type, isInaccessible) {
+      const cleanedType = sanitizeControlChars(type).trim();
+      return originalGetTypeIcon(cleanedType, isInaccessible);
+    };
+    Dex.__typeIconGuardrailsInstalled = true;
+  }
+
   function normalizeSpriteBase(url) {
     const trimmed = (url || '').trim();
     if (!trimmed) return '';
@@ -140,13 +154,16 @@
     const normalizedLog = logText
       .replace(/\\\//g, '/')
       .replace(/\r\n?/g, '\n');
+    const cleanedLines = normalizedLog
+      .split('\n')
+      .map(line => sanitizeControlChars(line));
 
     const wrapper = document.querySelector('.wrapper');
     battle = new Battle({
       id: id || 'custom-replay',
       $frame: $(wrapper).find('.battle'),
       $logFrame: $(wrapper).find('.battle-log'),
-      log: normalizedLog.split('\n'),
+      log: cleanedLines,
       isReplay: true,
       paused: true,
       autoresize: true,
@@ -270,6 +287,7 @@
   }
 
   initSecondaryControls();
+  installTypeIconGuardrails();
   bindEvents();
   loadFromQueryParam();
   setStatus('Ready.');
