@@ -2,12 +2,17 @@
   /** @type {Battle | null} */
   let battle = null;
   let muted = false;
+  let importControlsMoved = false;
 
   const statusEl = document.getElementById('status');
   const sourceUrlEl = document.getElementById('sourceUrl');
   const spriteBaseUrlEl = document.getElementById('spriteBaseUrl');
   const fileInputEl = document.getElementById('fileInput');
   const logInputEl = document.getElementById('logInput');
+  const importPanelEl = document.getElementById('importPanel');
+  const importContentEl = document.getElementById('importControlsContent');
+  const importModalEl = document.getElementById('importModal');
+  const importModalMountEl = document.getElementById('importModalMount');
   const DEFAULT_SPRITE_BASE = 'https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/';
 
   function setStatus(message) {
@@ -76,7 +81,30 @@
       '<div class="chooser colorchooser"> <em>Color scheme:</em> <div>' +
       '<button class="sel" value="light">Light</button><button value="dark">Dark</button></div> </div>' +
       '<div class="chooser soundchooser"> <em>Music:</em> <div>' +
-      '<button class="sel" value="on">On</button><button value="off">Off</button></div> </div>';
+      '<button class="sel" value="on">On</button><button value="off">Off</button></div> </div>' +
+      '<div class="chooser importchooser"> <em>Import:</em> <div>' +
+      '<button id="settingsToggle" class="settings-toggle hidden" value="settings"><i class="fa fa-cog"></i> Settings</button></div> </div>';
+  }
+
+  function revealSettingsToggle() {
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.classList.remove('hidden');
+  }
+
+  function moveImportControlsIntoSettings() {
+    if (importControlsMoved) return;
+    importModalMountEl.appendChild(importContentEl);
+    importPanelEl.classList.add('import-panel-hidden');
+    importControlsMoved = true;
+    revealSettingsToggle();
+  }
+
+  function openImportModal() {
+    importModalEl.classList.remove('hidden');
+  }
+
+  function closeImportModal() {
+    importModalEl.classList.add('hidden');
   }
 
   function changeSetting(type, value, buttonEl) {
@@ -109,12 +137,16 @@
   function mountBattle(logText, id) {
     if (battle) battle.destroy();
 
+    const normalizedLog = logText
+      .replace(/\\\//g, '/')
+      .replace(/\r\n?/g, '\n');
+
     const wrapper = document.querySelector('.wrapper');
     battle = new Battle({
       id: id || 'custom-replay',
       $frame: $(wrapper).find('.battle'),
       $logFrame: $(wrapper).find('.battle-log'),
-      log: logText.replace(/\\\//g, '/').split('\n'),
+      log: normalizedLog.split('\n'),
       isReplay: true,
       paused: true,
       autoresize: true,
@@ -127,6 +159,8 @@
       updateControls();
     });
 
+    moveImportControlsIntoSettings();
+    closeImportModal();
     updateControls();
     setStatus('Replay loaded successfully.');
   }
@@ -202,10 +236,23 @@
     document.querySelector('.replay-controls-2').addEventListener('click', function (event) {
       const target = event.target.closest('button');
       if (!target) return;
+      if (target.id === 'settingsToggle') {
+        openImportModal();
+        return;
+      }
       const chooser = target.closest('.chooser');
+      if (!chooser) return;
       if (chooser.classList.contains('colorchooser')) changeSetting('color', target.value, target);
       if (chooser.classList.contains('soundchooser')) changeSetting('sound', target.value, target);
       if (chooser.classList.contains('speedchooser')) changeSetting('speed', target.value, target);
+    });
+
+    document.getElementById('closeImportModal').addEventListener('click', function () {
+      closeImportModal();
+    });
+
+    importModalEl.addEventListener('click', function (event) {
+      if (event.target === importModalEl) closeImportModal();
     });
   }
 
