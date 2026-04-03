@@ -41,9 +41,40 @@
 }
 .replay-wrapper {
 	position: relative;
-	padding-top: 460px !important;
+	padding-top: 452px !important;
+	width: 976px;
+	max-width: 100%;
 	font-family: Verdana, sans-serif;
 	font-size: 10pt;
+}
+.replay-wrapper .battle {
+	top: 0;
+	left: 0;
+	width: 640px;
+	height: 360px;
+}
+.replay-wrapper .innerbattle,
+.replay-wrapper .weather {
+	width: 640px;
+	height: 360px;
+}
+.replay-wrapper .battle-log {
+	top: 0;
+	left: 640px;
+	right: auto;
+	width: 336px;
+	height: 362px;
+	box-sizing: border-box;
+}
+.replay-wrapper .replay-controls {
+	top: 366px;
+	left: 0;
+	right: 0;
+}
+.replay-wrapper .replay-controls-2 {
+	top: 408px;
+	left: 0;
+	right: 0;
 }
 .replay-controls button {
 	font-family: Verdana, sans-serif;
