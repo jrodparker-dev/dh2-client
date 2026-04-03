@@ -13,6 +13,7 @@
   const importContentEl = document.getElementById('importControlsContent');
   const importModalEl = document.getElementById('importModal');
   const importModalMountEl = document.getElementById('importModalMount');
+  const battleLogFullEl = document.getElementById('battleLogFull');
   const DEFAULT_SPRITE_BASE = 'https://raw.githubusercontent.com/jrodparker-dev/pokemon-sprites/main/';
 
   function setStatus(message) {
@@ -25,23 +26,47 @@
 
     if (trimmed.startsWith('{')) {
       const parsed = JSON.parse(trimmed);
-      if (parsed && typeof parsed.log === 'string') return parsed.log;
+      if (parsed && typeof parsed.log === 'string') {
+        return {log: parsed.log, htmlLog: ''};
+      }
       throw new Error('JSON replay is missing a `log` field.');
     }
 
     if (trimmed.startsWith('<')) {
+      let htmlLog = '';
+      const htmlBattleLogMatch = trimmed.match(/<div[^>]*class=["'][^"']*battle-log[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+      if (htmlBattleLogMatch && htmlBattleLogMatch[1]) htmlLog = htmlBattleLogMatch[1];
       const htmlBattleLogDataMatch = trimmed.match(/<script[^>]*class=["'][^"']*battle-log-data[^"']*["'][^>]*>([\s\S]*?)<\/script>/i);
       if (htmlBattleLogDataMatch && htmlBattleLogDataMatch[1]) {
-        return htmlBattleLogDataMatch[1];
+        return {log: htmlBattleLogDataMatch[1], htmlLog: htmlLog};
       }
       const htmlTextareaMatch = trimmed.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/i);
       if (htmlTextareaMatch && htmlTextareaMatch[1]) {
-        return htmlTextareaMatch[1];
+        return {log: htmlTextareaMatch[1], htmlLog: htmlLog};
       }
       throw new Error('HTML replay payload was missing a battle log block.');
     }
 
-    return text;
+    return {log: text, htmlLog: ''};
+  }
+
+  function renderFullBattleLog(htmlLog, logText) {
+    if (!battleLogFullEl) return;
+    if (htmlLog && htmlLog.trim()) {
+      battleLogFullEl.innerHTML = htmlLog;
+      battleLogFullEl.classList.remove('hidden');
+      return;
+    }
+    if (logText && logText.trim()) {
+      const preEl = document.createElement('pre');
+      preEl.textContent = sanitizeControlChars(logText);
+      battleLogFullEl.innerHTML = '';
+      battleLogFullEl.appendChild(preEl);
+      battleLogFullEl.classList.remove('hidden');
+      return;
+    }
+    battleLogFullEl.innerHTML = '';
+    battleLogFullEl.classList.add('hidden');
   }
 
   function sanitizeControlChars(value) {
@@ -160,8 +185,10 @@
     }
   }
 
-  function mountBattle(logText, id) {
+  function mountBattle(payload, id) {
     if (battle) battle.destroy();
+    const logText = payload && typeof payload.log === 'string' ? payload.log : '';
+    const htmlLog = payload && typeof payload.htmlLog === 'string' ? payload.htmlLog : '';
 
     const normalizedLog = logText
       .replace(/\\\//g, '/')
@@ -191,6 +218,7 @@
     moveImportControlsIntoSettings();
     closeImportModal();
     updateControls();
+    renderFullBattleLog(htmlLog, logText);
     setStatus('Replay loaded successfully.');
   }
 
@@ -200,8 +228,8 @@
     const response = await fetch(url);
     if (!response.ok) throw new Error('HTTP ' + response.status + ' while loading replay URL.');
     const payload = await response.text();
-    const log = parseReplayPayload(payload);
-    mountBattle(log, url.split('/').pop() || 'url-replay');
+    const logPayload = parseReplayPayload(payload);
+    mountBattle(logPayload, url.split('/').pop() || 'url-replay');
   }
 
   function bindEvents() {
