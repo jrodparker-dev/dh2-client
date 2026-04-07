@@ -830,11 +830,19 @@ export class BattleScene implements BattleSceneStub {
 				if (textBuf) textBuf += ' / ';
 				textBuf += pokemon.speciesForme;
 				let url = spriteData.url;
-				var placeholderSprite = spriteData.isFrontSprite // Pet Mods placeholder sprites
-				? "https://play.pokemonshowdown.com/sprites/gen5/substitute.png"
-				: "https://play.pokemonshowdown.com/sprites/gen5-back/substitute.png";
+				const fallbackSpriteId = (url.split('/').pop() || 'substitute.png').replace(/\.(gif|png)$/, '');
+				const gen5PngFallback = spriteData.isFrontSprite
+					? `${Dex.resourcePrefix}sprites/gen5/${fallbackSpriteId}.png`
+					: `${Dex.resourcePrefix}sprites/gen5-back/${fallbackSpriteId}.png`;
+				const gen5AniFallback = spriteData.isFrontSprite
+					? `${Dex.resourcePrefix}sprites/gen5ani/${fallbackSpriteId}.gif`
+					: `${Dex.resourcePrefix}sprites/gen5ani-back/${fallbackSpriteId}.gif`;
+				const placeholderSprite = spriteData.isFrontSprite // Pet Mods placeholder sprites
+					? `${Dex.resourcePrefix}sprites/gen5/substitute.png`
+					: `${Dex.resourcePrefix}sprites/gen5-back/substitute.png`;
+				const fallbackHandler = `if(!this.dataset.gen5PngFallback){this.dataset.gen5PngFallback='1';this.src='${gen5PngFallback}';}else if(!this.dataset.gen5AniFallback){this.dataset.gen5AniFallback='1';this.src='${gen5AniFallback}';}else{this.onerror=null;this.src='${placeholderSprite}';}`;
 				// if (this.paused) url.replace('/xyani', '/xy').replace('.gif', '.png');
-				buf += '<img src="' + url + '" width="' + spriteData.w + '" height="' + spriteData.h + '" style="position:absolute;top:' + Math.floor(y - spriteData.h / 2) + 'px;left:' + Math.floor(x - spriteData.w / 2) + 'px" onerror="this.src=\'' + placeholderSprite + '\'"/>';
+				buf += '<img src="' + url + '" width="' + spriteData.w + '" height="' + spriteData.h + '" style="position:absolute;top:' + Math.floor(y - spriteData.h / 2) + 'px;left:' + Math.floor(x - spriteData.w / 2) + 'px" onerror="' + BattleLog.escapeHTML(fallbackHandler) + '"/>';
 				buf2 += '<div style="position:absolute;top:' + (y + 45) + 'px;left:' + (x - 40) + 'px;width:80px;font-size:10px;text-align:center;color:#FFF;">';
 				const gender = pokemon.gender;
 				if (gender === 'M' || gender === 'F') {
@@ -1829,6 +1837,46 @@ interface InitScenePos {
 	display?: string;
 }
 
+function setGen5PngFallback($img: JQuery, spriteURL: string) {
+	$img.each(function () {
+		const img = this as HTMLImageElement;
+		delete img.dataset.gen5AniFallbackTried;
+		delete img.dataset.gen5PngFallbackTried;
+	});
+	let gen5PngFallbackURL = '';
+	let gen5AniFallbackURL = '';
+	if (spriteURL.includes('/sprites/ani-back/')) {
+		gen5PngFallbackURL = spriteURL.replace('/sprites/ani-back/', '/sprites/gen5-back/').replace(/\.gif($|\?)/, '.png$1');
+		gen5AniFallbackURL = spriteURL.replace('/sprites/ani-back/', '/sprites/gen5ani-back/');
+	} else if (spriteURL.includes('/sprites/ani/')) {
+		gen5PngFallbackURL = spriteURL.replace('/sprites/ani/', '/sprites/gen5/').replace(/\.gif($|\?)/, '.png$1');
+		gen5AniFallbackURL = spriteURL.replace('/sprites/ani/', '/sprites/gen5ani/');
+	} else if (spriteURL.includes('/sprites/gen5-back/')) {
+		gen5AniFallbackURL = spriteURL.replace('/sprites/gen5-back/', '/sprites/gen5ani-back/').replace(/\.png($|\?)/, '.gif$1');
+	} else if (spriteURL.includes('/sprites/gen5/')) {
+		gen5AniFallbackURL = spriteURL.replace('/sprites/gen5/', '/sprites/gen5ani/').replace(/\.png($|\?)/, '.gif$1');
+	} else if (spriteURL.includes('/sprites/gen5ani-back/')) {
+		gen5PngFallbackURL = spriteURL.replace('/sprites/gen5ani-back/', '/sprites/gen5-back/').replace(/\.gif($|\?)/, '.png$1');
+	} else if (spriteURL.includes('/sprites/gen5ani/')) {
+		gen5PngFallbackURL = spriteURL.replace('/sprites/gen5ani/', '/sprites/gen5/').replace(/\.gif($|\?)/, '.png$1');
+	}
+	if (!gen5PngFallbackURL && !gen5AniFallbackURL) return;
+	$img.off('error.gen5pngfallback').on('error.gen5pngfallback', function () {
+		const img = this as HTMLImageElement;
+		if (!img.dataset.gen5PngFallbackTried && gen5PngFallbackURL) {
+			img.dataset.gen5PngFallbackTried = '1';
+			img.src = gen5PngFallbackURL;
+			return;
+		}
+		if (!img.dataset.gen5AniFallbackTried && gen5AniFallbackURL) {
+			img.dataset.gen5AniFallbackTried = '1';
+			img.src = gen5AniFallbackURL;
+			return;
+		}
+		img.onerror = null;
+	});
+}
+
 export class Sprite {
 	scene: BattleScene;
 	$el: JQuery = null!;
@@ -1844,6 +1892,7 @@ export class Sprite {
 			let rawHTML = sp.rawHTML ||
 				'<img src="' + sp.url + '" style="display:none;position:absolute"' + (sp.pixelated ? ' class="pixelated"' : '') + ' />';
 			this.$el = $(rawHTML);
+			setGen5PngFallback(this.$el, sp.url);
 		} else {
 			sp = {
 				w: 0,
@@ -2093,6 +2142,7 @@ export class PokemonSprite extends Sprite {
 
 		const $el = this.isSubActive ? this.$sub! : this.$el;
 		$el.attr('src', sp.url!);
+		setGen5PngFallback($el, sp.url!);
 		$el.css(this.scene.pos({
 			x: this.x,
 			y: this.y,
@@ -2109,6 +2159,7 @@ export class PokemonSprite extends Sprite {
 		});
 		this.subsp = subsp;
 		this.$sub = $('<img src="' + subsp.url + '" style="display:block;opacity:0;position:absolute"' + (subsp.pixelated ? ' class="pixelated"' : '') + ' />');
+		setGen5PngFallback(this.$sub, subsp.url);
 		this.scene.$spritesFront[+this.isFrontSprite].append(this.$sub);
 		this.isSubActive = true;
 		if (instant) {
@@ -2241,6 +2292,7 @@ export class PokemonSprite extends Sprite {
 			this.$el.stop(true, false);
 			this.$el.remove();
 			const $newEl = $('<img src="' + this.sp.url + '" style="display:none;position:absolute"' + (this.sp.pixelated ? ' class="pixelated"' : '') + ' />');
+			setGen5PngFallback($newEl, this.sp.url);
 			this.$el = $newEl;
 		}
 
@@ -2669,6 +2721,7 @@ export class PokemonSprite extends Sprite {
 		}
 		// Constructing here gives us 300ms extra time to preload the new sprite
 		let $newEl = $('<img src="' + sp.url + '" style="display:block;opacity:0;position:absolute"' + (sp.pixelated ? ' class="pixelated"' : '') + ' />');
+		setGen5PngFallback($newEl, sp.url);
 		$newEl.css(this.scene.pos({
 			x: this.x,
 			y: this.y,
