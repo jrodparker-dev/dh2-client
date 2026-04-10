@@ -831,16 +831,12 @@ export class BattleScene implements BattleSceneStub {
 				textBuf += pokemon.speciesForme;
 				let url = spriteData.url;
 				const fallbackSpriteId = (url.split('/').pop() || 'substitute.png').replace(/\.(gif|png)$/, '');
-				const gen5PngFallback = spriteData.isFrontSprite
-					? `${Dex.resourcePrefix}sprites/gen5/${fallbackSpriteId}.png`
-					: `${Dex.resourcePrefix}sprites/gen5-back/${fallbackSpriteId}.png`;
-				const gen5AniFallback = spriteData.isFrontSprite
-					? `${Dex.resourcePrefix}sprites/gen5ani/${fallbackSpriteId}.gif`
-					: `${Dex.resourcePrefix}sprites/gen5ani-back/${fallbackSpriteId}.gif`;
-				const placeholderSprite = spriteData.isFrontSprite // Pet Mods placeholder sprites
-					? `${Dex.resourcePrefix}sprites/gen5/substitute.png`
-					: `${Dex.resourcePrefix}sprites/gen5-back/substitute.png`;
-				const fallbackHandler = `if(!this.dataset.gen5PngFallback){this.dataset.gen5PngFallback='1';this.src='${gen5PngFallback}';}else if(!this.dataset.gen5AniFallback){this.dataset.gen5AniFallback='1';this.src='${gen5AniFallback}';}else{this.onerror=null;this.src='${placeholderSprite}';}`;
+				const sideSuffix = spriteData.isFrontSprite ? '' : '-back';
+				const aniFallback = `${Dex.resourcePrefix}sprites/ani${sideSuffix}/${fallbackSpriteId}.gif`;
+				const gen5PngFallback = `${Dex.resourcePrefix}sprites/gen5${sideSuffix}/${fallbackSpriteId}.png`;
+				const gen5AniFallback = `${Dex.resourcePrefix}sprites/gen5ani${sideSuffix}/${fallbackSpriteId}.gif`;
+				const placeholderSprite = `${Dex.resourcePrefix}sprites/gen5${sideSuffix}/substitute.png`; // Pet Mods placeholder sprites
+				const fallbackHandler = `if(!this.dataset.aniFallback){this.dataset.aniFallback='1';this.src='${aniFallback}';}else if(!this.dataset.gen5PngFallback){this.dataset.gen5PngFallback='1';this.src='${gen5PngFallback}';}else if(!this.dataset.gen5AniFallback){this.dataset.gen5AniFallback='1';this.src='${gen5AniFallback}';}else{this.onerror=null;this.src='${placeholderSprite}';}`;
 				// if (this.paused) url.replace('/xyani', '/xy').replace('.gif', '.png');
 				buf += '<img src="' + url + '" width="' + spriteData.w + '" height="' + spriteData.h + '" style="position:absolute;top:' + Math.floor(y - spriteData.h / 2) + 'px;left:' + Math.floor(x - spriteData.w / 2) + 'px" onerror="' + BattleLog.escapeHTML(fallbackHandler) + '"/>';
 				buf2 += '<div style="position:absolute;top:' + (y + 45) + 'px;left:' + (x - 40) + 'px;width:80px;font-size:10px;text-align:center;color:#FFF;">';

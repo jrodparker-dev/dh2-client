@@ -468,10 +468,12 @@ const Dex = new class implements ModdedDex {
 		if ((!optionsMod || !window.ModSprites[spriteId][optionsMod]) && !overrideStandard) { // for custom elements only, it will use sprites from another mod if the mod provided doesn't have one
 			for (const modName in window.ModSprites[spriteId]) {
 				if (window.ModSprites[spriteId][modName].includes(filepath)) return modName;
+				if (window.ModSprites[spriteId][modName].includes('ani-' + filepath)) return modName;
 				if (window.ModSprites[spriteId][modName].includes('ani' + filepath)) return modName;
 			}
 		}
 		if (optionsMod && window.ModSprites[spriteId][optionsMod]) {		
+			if (window.ModSprites[spriteId][optionsMod].includes('ani-' + filepath)) return optionsMod;
 			if (window.ModSprites[spriteId][optionsMod].includes('ani' + filepath)) return optionsMod;
 			if (window.ModSprites[spriteId][optionsMod].includes(filepath)) return optionsMod;
 		}
@@ -667,7 +669,10 @@ const Dex = new class implements ModdedDex {
 		}
 		
 		let hasCustomAnim = false;
-		if (hasCustomSprite && window.ModSprites[modSpriteId][options.mod].includes('ani' + facing)){
+		if (hasCustomSprite && (
+			window.ModSprites[modSpriteId][options.mod].includes('ani-' + facing) ||
+			window.ModSprites[modSpriteId][options.mod].includes('ani' + facing)
+		)){
 			hasCustomAnim = true;
 			animationData[facing] = {};
 			animationData[facing].w = 192;
