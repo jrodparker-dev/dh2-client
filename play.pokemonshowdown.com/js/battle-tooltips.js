@@ -1044,6 +1044,9 @@ source)
 {var _serverPokemon$types;
 var terastallizedType=(serverPokemon==null?void 0:serverPokemon.terastallized)||pokemon.terastallized;
 if(terastallizedType)return[terastallizedType];
+if(clientPokemon!=null&&clientPokemon.volatiles.formechange){
+return this.getPokemonTypes(clientPokemon);
+}
 if(clientPokemon!=null&&clientPokemon.volatiles.typechange||clientPokemon!=null&&clientPokemon.volatiles.typeadd){
 return this.getPokemonTypes(clientPokemon);
 }
@@ -1057,6 +1060,9 @@ clientPokemon,
 serverPokemon,
 pokemon)
 {var _serverPokemon$types2;
+if(clientPokemon!=null&&clientPokemon.volatiles.formechange){
+return this.getPokemonTypes(clientPokemon,true);
+}
 if(serverPokemon!=null&&(_serverPokemon$types2=serverPokemon.types)!=null&&_serverPokemon$types2.length){
 return serverPokemon.types;
 }
