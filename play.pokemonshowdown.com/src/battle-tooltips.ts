@@ -1044,6 +1044,9 @@ class BattleTooltips {
 	): ReadonlyArray<TypeName> {
 		const terastallizedType = serverPokemon?.terastallized || pokemon.terastallized;
 		if (terastallizedType) return [terastallizedType as TypeName];
+		if (clientPokemon?.volatiles.formechange) {
+			return this.getPokemonTypes(clientPokemon);
+		}
 		if (clientPokemon?.volatiles.typechange || clientPokemon?.volatiles.typeadd) {
 			return this.getPokemonTypes(clientPokemon);
 		}
@@ -1057,6 +1060,9 @@ class BattleTooltips {
 		serverPokemon: ServerPokemon | null | undefined,
 		pokemon: Pokemon | ServerPokemon
 	): ReadonlyArray<TypeName> {
+		if (clientPokemon?.volatiles.formechange) {
+			return this.getPokemonTypes(clientPokemon, true);
+		}
 		if (serverPokemon?.types?.length) {
 			return serverPokemon.types as TypeName[];
 		}
