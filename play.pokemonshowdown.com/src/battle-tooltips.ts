@@ -1686,6 +1686,8 @@ if (pokemon.status === 'frb') {
 				moveType = 'Fairy';
 			} else if (this.battle.hasPseudoWeather('Psychic Terrain')) {
 				moveType = 'Psychic';
+			} else if (this.battle.hasPseudoWeather('Dark Terrain')) {
+				moveType = 'Dark';
 			}
 		}
 		if (move.id === 'terablast' && pokemon.terastallized) {
@@ -2010,7 +2012,8 @@ if (pokemon.status === 'frb') {
 				this.battle.hasPseudoWeather('Electric Terrain') ||
 				this.battle.hasPseudoWeather('Grassy Terrain') ||
 				this.battle.hasPseudoWeather('Misty Terrain') ||
-				this.battle.hasPseudoWeather('Psychic Terrain')
+				this.battle.hasPseudoWeather('Psychic Terrain') ||
+				this.battle.hasPseudoWeather('Dark Terrain')
 			) {
 				value.modify(2, 'Terrain Pulse boost');
 			}
