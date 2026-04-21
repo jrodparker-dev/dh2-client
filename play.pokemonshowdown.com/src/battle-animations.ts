@@ -1218,16 +1218,23 @@ export class BattleScene implements BattleSceneStub {
 				time: instant ? 0 : 300,
 			});
 			break;
+		case 'steamfield': {
+  const ref = this.sideConditions[siden][id];
+  if (ref && ref[0]) ref[0].destroy();
+  this.sideConditions[siden][id] = undefined!;
+  break;
+}
+
 		case 'puddle':
 			const puddle = new Sprite(BattleEffects.puddle, {
 				display: 'block',
 				x: x + side.leftof(5),
 				y: y - 8,
-				z: side.behind(-10),
+				z: side.z,
 				scale: 0.7,
 				opacity: 0.4,
 			}, this);
-			this.$sprites[spriteIndex].append(puddle.$el!);
+			this.$spritesFront[spriteIndex].append(puddle.$el!);
 			this.sideConditions[siden][id] = [puddle];
 			puddle.anim({
 				opacity: 0.7,
@@ -1237,12 +1244,13 @@ export class BattleScene implements BattleSceneStub {
 				time: instant ? 0 : 300,
 			});
 			break;
-		case 'steamfield': {
-  const ref = this.sideConditions[siden][id];
-  if (ref && ref[0]) ref[0].destroy();
-  this.sideConditions[siden][id] = undefined!;
-  break;
+			case 'puddle': {
+	const ref = this.sideConditions[siden][id];
+	if (ref && ref[0]) ref[0].destroy();
+	this.sideConditions[siden][id] = undefined!;
+	break;
 }
+			
 		case 'stealthrock':
 			const rock1 = new Sprite(BattleEffects.rock1, {
 				display: 'block',
